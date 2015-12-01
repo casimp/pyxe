@@ -1,0 +1,10 @@
+EDI12.egg-info/PKG-INFO
+EDI12.egg-info/SOURCES.txt
+EDI12.egg-info/dependency_links.txt
+EDI12.egg-info/top_level.txt
+edi12/XRD_analysis.py
+edi12/__init__.py
+edi12/fitting_optimization.py
+edi12/merge_tools.py
+edi12/peak_fitting.py
+edi12/plotting.py

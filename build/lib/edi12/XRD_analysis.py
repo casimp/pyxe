@@ -19,7 +19,7 @@ from edi12.peak_fitting import *
 from edi12.merge_tools import *
 import shutil
 from edi12.plotting import plot_complex, line_extract
-from edi12.peak_fitting import cos_
+from .peak_fitting import cos_
 
 class XRD_scrape():
     """

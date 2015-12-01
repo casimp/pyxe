@@ -1,0 +1,17 @@
+Metadata-Version: 1.0
+Name: EDI12
+Version: 0.1.0
+Summary: Analysis of data produced on the I12 beam line. Notably allowing for the calculation of strain and stress.
+Home-page: http://pypi.python.org/pypi/EDI12/
+Author: C. Simpson
+Author-email: c.a.simpson01@gmail.com
+License: LICENSE.txt
+Description: # EDXD Analysis
+        
+        Analysis of data produced on the I12 beam line.
+        
+        Notably allowing for the calculation of strain and stress.
+        
+        
+        
+Platform: UNKNOWN
