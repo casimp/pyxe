@@ -160,6 +160,8 @@ class XRD_tools(XRD_scrape):
         plt.plot(theta, self.strain[point][..., q_idx][:-1], 'k*')
         theta_2 = np.linspace(0, np.pi, 1000)
         plt.plot(theta_2, cos_(theta_2, *p), 'k-')
+        plt.xlabel('Detector angle')
+        plt.ylabel('Strain')
             
             
     def plot_mohrs(self, point = (0), q_idx = 0, angle = 0, figsize = (7, 5)):
@@ -197,10 +199,10 @@ class XRD_tools(XRD_scrape):
         
         
         
-        plt.show()
+        #plt.show()
         #the = np.arctan(2 * tau_xy/ (e_xx - e_yy))/2
         #eva = 0.5 * (e_xx + e_yy) - (0.5 *(e_xx - e_yy) * np.cos(2 * the) + tau_xy * np.sin(2 * the))
-        print(p[1])#, e_xx, e_yy)
+        #print(p[1])#, e_xx, e_yy)
         #print(0.5 * (e_xx + e_yy), 0.5 *(e_xx - e_yy) * np.sin(2 * the), tau_xy * np.cos(2 * the))
 
 
