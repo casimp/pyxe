@@ -22,6 +22,19 @@ from edi12.XRD_scrape import XRD_scrape
 
 
 
+def coord_arrange(dims, data):
+    
+    co_ords = []
+    for dim in dims:    
+        if dim == 'ss2_x':
+            co_ords += data[0]
+        if dim == 'ss2_y':
+            co_ords += data[1]
+        if dim == 'ss2_z':
+            co_ords += data[2]
+            
+    return co_ords
+
 class XRD_tools(XRD_scrape):
     """
     Takes post-processed .nxs file from the I12 EDXD detector. File should have
@@ -38,6 +51,8 @@ class XRD_tools(XRD_scrape):
                        'Run XRD_analysis tool.')
             raise
         self.dims = group['dims'][:]
+        #### Temporary
+        self.co_ords = coord_arrange(self.dims, [self.ss2_x, self.ss2_y, self.ss2_z])
         self.q0 = group['q0'][:]
         self.peak_windows = group['peak_windows'][:]
         self.peaks = group['peaks'][:]
@@ -55,10 +70,11 @@ class XRD_tools(XRD_scrape):
         Shifts centre point to user defined location. Not reflected in .nxs
         file unless saved. Accept offset for both 2D and 3D data sets (x, y,z).
         """
-        co_ords = [self.ss2_x, self.ss2_y, self.ss2_z]
+        pass # this won't work        
+        #co_ords = [self.ss2_x, self.ss2_y, self.ss2_z]
         
-        for dimension, offset in enumerate(co_ords):
-            co_ords[dimension] += offset
+        #for dimension, offset in enumerate(co_ords):
+        #    co_ords[dimension] += offset
             
             
     def extract_line(self, pnt = (0, 0), angle = 0, npnts = 100, 
@@ -71,6 +87,10 @@ class XRD_tools(XRD_scrape):
         # npnts:      Number of points (default = 100) to extract along line
         # method:     Interpolation mehod (default = 'linear')
         """
+
+        assert len(self.dims) == 2, 'extract_line method only compatible with \
+                                     2d data sets'
+
         x_ext, y_ext = line_extract(self.ss2_x, self.ss2_y, pnt, angle, npnts)
         data_shape = self.strain.shape
         
