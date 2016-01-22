@@ -95,24 +95,6 @@ class XRD_tools(XRD_scrape):
                 
         return x_ext, y_ext, strain_ext
 
-
-    def strain_angle(self, angle = 45, method = 'linear'):
-        """
-        Extracts strain field at angle (default = 45)
-
-        # method:     Interpolation mehod (default = 'linear')
-        """
-        sin_angles = np.sin(np.linspace(0, np.pi, 23))    
-        
-        interp_data = np.nan * np.ones(self.strain[..., 0, :].shape)
-        for position in np.ndindex(self.strain[..., 0, :].shape):
-            strain_field = self.strain[position[:-1]][..., :-1, position[-1]]
-            f = interp1d(sin_angles, strain_field, method)
-            interp_data[position] = f(np.sin(angle))
-        
-        self.angle = angle
-        self.strain_theta = interp_data
-
         
     def plot_intensity(self, detector = 0, point = None):
         """
