@@ -20,7 +20,7 @@ from edi12.plotting import plot_complex, line_extract
 from edi12.peak_fitting import cos_
 from edi12.XRD_scrape import XRD_scrape
 
-
+### temporary
 
 def coord_arrange(dims, data):
     
@@ -91,29 +91,55 @@ class XRD_tools(XRD_scrape):
         assert len(self.dims) == 2, 'extract_line method only compatible with \
                                      2d data sets'
 
-        x_ext, y_ext = line_extract(self.ss2_x, self.ss2_y, pnt, angle, npnts)
+        dim_1, dim_2 = self.co_ords
+        dim_1_ext, dim_2_ext = line_extract(dim_1, dim_2, pnt, angle, npnts)
         data_shape = self.strain.shape
+        strain_ext = np.nan * np.ones(((len(dim_1),) + data_shape[-2:]))
         
-        strain_ext = np.nan * np.ones(((len(x_ext),) + data_shape[-2:]))
         for detector, q_idx in np.ndindex(self.strain.shape[-2:]):
             not_nan = ~np.isnan(self.strain[..., detector, q_idx])
             try:
-                strain_line = griddata((self.ss2_x[not_nan], self.ss2_y[not_nan]), 
+                strain_line = griddata((self.dim_1[not_nan], self.dim_2[not_nan]), 
                                    self.strain[..., detector, q_idx][not_nan], 
-                                   (x_ext, y_ext), method = method)
+                                   (dim_1_ext, dim_2_ext), method = method)
             except ValueError:
                 pass
             strain_ext[:, detector, q_idx] = strain_line
-        x_min, y_min = np.min(x_ext), np.min(y_ext)
-        zero = ((pnt[0] - x_min)**2 + (pnt[1] - y_min)**2)**0.5
+        dim_1_min, dim_2_min = np.min(dim_1_ext), np.min(dim_2_ext)
+        zero = ((pnt[0] - dim_1_min)**2 + (pnt[1] - dim_2_min)**2)**0.5
         
-        self.scalar_ext = ((x_ext - x_min)**2 + (y_ext - y_min)**2)**0.5 - zero
-        self.x_ext = x_ext 
-        self.y_ext = y_ext
+        self.scalar_ext = ((dim_1_ext - dim_1_min)**2 + 
+                           (dim_2_ext - dim_2_min)**2)**0.5 - zero
+        self.dim_1_ext = dim_1_ext 
+        self.dim_2_ext = dim_2_ext
         self.strain_ext = strain_ext  
         self.line_centre = pnt
                 
-        return x_ext, y_ext, strain_ext
+        return dim_1_ext, dim_2_ext, strain_ext
+        
+        #x_ext, y_ext = line_extract(self.ss2_x, self.ss2_y, pnt, angle, npnts)
+        #data_shape = self.strain.shape
+        
+        #strain_ext = np.nan * np.ones(((len(x_ext),) + data_shape[-2:]))
+        #for detector, q_idx in np.ndindex(self.strain.shape[-2:]):
+        #    not_nan = ~np.isnan(self.strain[..., detector, q_idx])
+        #    try:
+        #        strain_line = griddata((self.ss2_x[not_nan], self.ss2_y[not_nan]), 
+        #                           self.strain[..., detector, q_idx][not_nan], 
+        #                           (x_ext, y_ext), method = method)
+        #    except ValueError:
+        #        pass
+        #    strain_ext[:, detector, q_idx] = strain_line
+        #x_min, y_min = np.min(x_ext), np.min(y_ext)
+        #zero = ((pnt[0] - x_min)**2 + (pnt[1] - y_min)**2)**0.5
+        
+        #self.scalar_ext = ((x_ext - x_min)**2 + (y_ext - y_min)**2)**0.5 - zero
+        #self.x_ext = x_ext 
+        #self.y_ext = y_ext
+        #self.strain_ext = strain_ext  
+        #self.line_centre = pnt
+                
+        #return x_ext, y_ext, strain_ext
 
         
     def plot_intensity(self, detector = 0, point = None):
