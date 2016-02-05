@@ -1,13 +1,5 @@
-Welcome to edi12's documentation!
-=================================
-
-The edi12 package provides a simple means to handle Energy Dispersive X-ray Diffraction (EDXD) data from the Diamond Light Source's I12 (EH2) beamline. 
-The package's core functionality is to take raw NeXus data files and output enhanced files which include detector specific strain and the associated in-plane strain state.
-A plotting module builds upon the data analysis to allow for the convenient visulisation of strain data, with notable emphasis being placed on the visulisation of 2D-data sets. 
-While 3D functionality is planned and partially implemented, this is not currently a priority and support is limited.
-
 1.0 Strain Calculations
------------------------
+=======================
 
 Strain is calculated from each specified peak individually (i.e. this is not a Reitveld type refinement) although the strain from many individual peaks may be calculated and stored.
 Strain is calculated against the unstrained inter-planar spacing, :math:`d_0`, such that:
@@ -37,24 +29,3 @@ This can be more accurate than the equivalent detector specific strain due to th
 
 In a system in which material along one axis is under constraint and the strain can be approximated to zero, the full strain trensor collapses down to the 2D in-plane state.
 This then allows for the convenient calculation of stress. It must be emphasised that this is only a valid calculation in material under plane strain conditions.
-
-2.0 Plotting
-------------
-
-In addition to the the extraction and manipulation of strain data, the edi12 package also provides some plotting functions to allow for the visulisation of the strain data.
-
-
-Contents:
-
-.. toctree::
-   :maxdepth: 2
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
