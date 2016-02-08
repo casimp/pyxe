@@ -1,0 +1,2 @@
+v 0.1.0, 20151130 -- Initial release
+v 0.1.1, 20160208 -- Minor updates and restructuring
