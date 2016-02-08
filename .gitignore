@@ -2,19 +2,6 @@
 *.pyc
 *.ipynb
 
-# Test data, results and analysis
-/results
-/test_data
-/color_maps
-
-# Old Code
-/old_code
-
-# Rubbish
-*test*
-untitled*
-line_scans.py
-
 #Docs
 /docs/_*
 
@@ -32,3 +19,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# Extra
+
+edi12/XRD_tools_b.py

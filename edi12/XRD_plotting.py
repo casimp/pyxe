@@ -13,7 +13,7 @@ from __future__ import unicode_literals
 import numpy as np
 import matplotlib.pyplot as plt 
 from scipy.interpolate import griddata, interp1d
-
+from edi12.peak_fitting import cos_
 from edi12.plotting import plot_complex, line_extract
 
 
