@@ -2,7 +2,7 @@
 """
 Created on Tue Oct 20 17:40:07 2015
 
-@author: casim
+@author: casimp
 """
 
 from __future__ import absolute_import
@@ -12,9 +12,9 @@ from __future__ import unicode_literals
 
 import numpy as np
 import matplotlib.pyplot as plt 
-from scipy.interpolate import griddata, interp1d
+from scipy.interpolate import griddata
 from edi12.peak_fitting import cos_
-from edi12.plotting import plot_complex, line_extract
+from edi12.plotting import plot_complex
 
 
 class XRD_plotting():
@@ -114,10 +114,9 @@ class XRD_plotting():
                   'Run extract_line method.')
 
 
-    def plot_map(self, detector = 0, q_idx = 0, cmap = 'RdBu_r', res = 10, 
+    def plot_detector(self, detector = 0, q_idx = 0, cmap = 'RdBu_r', res = 10, 
                  lvls = 11, figsize = (10, 10), plotting = plot_complex, 
                  line = False, line_props = 'w--', mark = None):
-                 
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -163,6 +162,26 @@ class XRD_plotting():
     def plot_angle(self, angle = 0, detector = 0, q_idx = 0, cmap = 'RdBu_r',  
                  res = 10, lvls = 11, figsize = (10, 10), plotting = plot_complex, 
                  line = False, line_props = 'w--', mark = None):
+        """
+        Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
+        
+        # angle:      Angle in radians - default (0). 
+        # q0_index:   Specify lattice parameter/peak to display.  
+        # res:        Resolution in points per unit length (of raw data) 
+                      - only implemented for merged data
+        # cmap:       The colormap (default - 'RdBu_r') to use for plotting
+        # lvls:       Number of contours to overlay on map. Can also explicitly 
+                      define levels.
+        # figsize:    Tuple containing the fig size (x, y) - default (10, 10).
+                      Constrained by axis being equal.
+        
+        Additional functionality allows for the overlaying of a line on top of 
+        the map - to be used in conjunction with the line plotting.
+        
+        # line:       Plot line (default = False)
+        # line_props: Define line properties (default = 'w-')
+        # mark:       Mark properties for centre point of line (default = None)
+        """
         strain_field = np.nan * self.ss2_x
         for idx in np.ndindex(strain_field.shape):
             p = self.strain_param[idx][0]
@@ -180,14 +199,33 @@ class XRD_plotting():
             X, Y = self.ss2_x, self.ss2_y
             Z = strain_field
             
-        #print(np.shape(x), np.shape(X), np.shape(y), np.shape(Y), np.shape(Z))
         f, ax = plotting(self.ss2_x, self.ss2_y, X, Y, Z, cmap, lvls, figsize)
 
 
     def plot_shear(self, angle = 0, q_idx = 0, cmap = 'RdBu_r',  res = 10, 
                    lvls = 11, figsize = (10, 10), plotting = plot_complex, 
                    line = False, line_props = 'w--', mark = None):
+        """
+        Plot a 2D heat map of the shear strain field. 
+        *Not yet implemented in 3D.*
         
+        # angle:      Angle in radians - default (0). 
+        # q0_index:   Specify lattice parameter/peak to display.  
+        # res:        Resolution in points per unit length (of raw data) 
+                      - only implemented for merged data
+        # cmap:       The colormap (default - 'RdBu_r') to use for plotting
+        # lvls:       Number of contours to overlay on map. Can also explicitly 
+                      define levels.
+        # figsize:    Tuple containing the fig size (x, y) - default (10, 10).
+                      Constrained by axis being equal.
+        
+        Additional functionality allows for the overlaying of a line on top of 
+        the map - to be used in conjunction with the line plotting.
+        
+        # line:       Plot line (default = False)
+        # line_props: Define line properties (default = 'w-')
+        # mark:       Mark properties for centre point of line (default = None)
+        """        
         strain_field = np.nan * self.ss2_x
         
         for idx in np.ndindex(strain_field.shape):
@@ -211,6 +249,5 @@ class XRD_plotting():
             X, Y = self.ss2_x, self.ss2_y
             Z = strain_field
             
-        #print(np.shape(x), np.shape(X), np.shape(y), np.shape(Y), np.shape(Z))
         f, ax = plotting(self.ss2_x, self.ss2_y, X, Y, Z, cmap, lvls, figsize)
 

@@ -2,7 +2,7 @@
 """
 Created on Tue Oct 20 17:40:07 2015
 
-@author: casim
+@author: casimp
 """
 
 from __future__ import absolute_import
@@ -38,4 +38,6 @@ class XRD_scrape():
         self.ss2_x = dimension_fill(self.f, 'ss2_x')   
         self.ss2_y = dimension_fill(self.f, 'ss2_y')
         self.ss2_z = dimension_fill(self.f, 'ss2_z')
+        self.co_ords = {b'ss2_x': self.ss2_x,b'ss2_y': self.ss2_y, 
+                        b'self_z': self.ss2_z} 
 

@@ -2,7 +2,7 @@
 """
 Created on Tue Oct 20 17:40:07 2015
 
-@author: casim
+@author: casimp
 """
 
 from __future__ import absolute_import
@@ -33,8 +33,7 @@ class XRD_analysis(XRD_tools):
         either one or multiple (list) q0s.
         """
         super(XRD_tools, self).__init__(file)
-        scan_command = self.f['entry1/scan_command'][:]#.astype(str)#[0]
-        print(scan_command)
+        scan_command = self.f['entry1/scan_command'][:]
         self.dims = re.findall(b'ss2_\w+', scan_command)
         self.slit_size = self.f['entry1/before_scan/s4/s4_xs'][0]
         group = self.f['entry1']['EDXD_elements']
@@ -60,15 +59,11 @@ class XRD_analysis(XRD_tools):
             self.peaks[..., idx], self.peaks_err[..., idx] = fit_data
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
-        
-        self.strain_theta = None
-        self.theta = None
         self.strain_fit()
 
     def strain_fit(self):
         """
         Fits a sin function to the 
-        ***** Should ONLY Need this here - not in tools!
         """
         data_shape = self.strain.shape
         self.strain_param = np.nan * np.ones(data_shape[:-2] + \
@@ -106,3 +101,5 @@ class XRD_analysis(XRD_tools):
             for data_id, data in zip(data_ids, data_array):
                 base_tree = 'entry1/EDXD_elements/%s'
                 f.create_dataset(base_tree % data_id, data = data)
+                
+                
