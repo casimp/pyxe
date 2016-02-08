@@ -117,13 +117,10 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         # e_xy:       Option to save shear strain data extracted at angles 
                       (default = [0]).
         """                
+        data_array = ()
+        for i in self.dims:
+            data_array += (self.co_ords[i], )
 
-        data_array = (self.ss2_x.flatten(), self.ss2_y.flatten())
-        try:
-            data_array += (self.ss2_z.flatten(), )
-        except AttributeError:
-            pass
-        
         if detectors == None:
             for angle in angles:
                 strain_field = np.nan * self.ss2_x
