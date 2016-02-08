@@ -19,4 +19,4 @@ line_scans.py
 /docs/_*
 
 # Build
-/EDI12.egg-info
+*.egg-info/
