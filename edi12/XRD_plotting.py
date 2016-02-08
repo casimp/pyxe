@@ -38,12 +38,13 @@ class XRD_plotting():
         try:
             group = self.f['entry1']['EDXD_elements']
             q = group['edxd_q'][detector]
-            if self.ss2_z == None:            
+            
+            if len(self.dims) == 1:   
+                I = group['data'][0, detector]
+            elif len(self.dims) == 2:
                 I = group['data'][0, 0, detector]
-                
             else:
                 I = group['data'][0, 0, 0, detector]
-                
             plt.plot(q, I)
         except (NameError, AttributeError):
             print("Can't plot spectrum on merged data.")
@@ -137,29 +138,36 @@ class XRD_plotting():
         # line_props: Define line properties (default = 'w-')
         # mark:       Mark properties for centre point of line (default = None)
         """
-        if self.ss2_x.ndim != 2:
-            x_points = np.ceil(res * (np.max(self.ss2_x) - np.min(self.ss2_x)))
-            y_points = np.ceil(res * (np.max(self.ss2_y) - np.min(self.ss2_y)))
-            x = np.linspace(np.min(self.ss2_x), np.max(self.ss2_x), x_points)
-            y = np.linspace(np.min(self.ss2_y), np.max(self.ss2_y), y_points)
-            X, Y = np.meshgrid(x, y)
-            Z = griddata((self.ss2_x.flatten(), self.ss2_y.flatten()), 
-                          self.strain[..., detector, q_idx].flatten(), (X, Y))
+        assert len(self.dims) == 2, 'plotting method only compatible with \
+                                     2d data sets'
+                                     
+        d1, d2 = [self.co_ords[x] for x in self.dims]           
+        
+        if self.strain[..., 0, 0].ndim != 2:
+            # Data point spacing based on resolution
+            d1_points = np.ceil(res * (np.max(d1) - np.min(d1)))
+            d2_points = np.ceil(res * (np.max(d2) - np.min(d2)))
+            # Data point location
+            d1_ = np.linspace(np.min(d1), np.max(d1), d1_points)
+            d2_ = np.linspace(np.min(d2), np.max(d2), d2_points)
+            D1, D2 = np.meshgrid(d1_, d2_)
+            Z = griddata((d1.flatten(), d2.flatten()), 
+                          self.strain[..., detector, q_idx].flatten(), (D1, D2))
         else:
-            X, Y = self.ss2_x, self.ss2_y
-            x, y = X, Y
+            D1, D2 = d1, d2#X, Y = self.ss2_x, self.ss2_y
+            #x, y = X, Y
             Z = self.strain[..., detector, q_idx]
-        f, ax = plotting(self.ss2_x, self.ss2_y, X, Y, Z, cmap, lvls, figsize)
-        if line == True:
-            try:            
-                ax.plot(self.x_ext, self.y_ext, line_props, linewidth = 2)
-                if mark != None:
-                    ax.plot(self.line_centre[0], self.line_centre[1], mark)
-            except AttributeError:
-                print('Run line_extract method before plotting line.')
+        f, ax = plotting(d1, d2, D1, D2, Z, cmap, lvls, figsize)
+        #if line == True:
+        #    try:            
+        #        ax.plot(self.x_ext, self.y_ext, line_props, linewidth = 2)
+        #        if mark != None:
+        #            ax.plot(self.line_centre[0], self.line_centre[1], mark)
+        #    except AttributeError:
+        #        print('Run line_extract method before plotting line.')
 
 
-    def plot_angle(self, angle = 0, detector = 0, q_idx = 0, cmap = 'RdBu_r',  
+    def plot_angle(self, angle = 0, shear = False, q_idx = 0, cmap = 'RdBu_r',  
                  res = 10, lvls = 11, figsize = (10, 10), plotting = plot_complex, 
                  line = False, line_props = 'w--', mark = None):
         """
@@ -182,72 +190,39 @@ class XRD_plotting():
         # line_props: Define line properties (default = 'w-')
         # mark:       Mark properties for centre point of line (default = None)
         """
-        strain_field = np.nan * self.ss2_x
+        
+
+        assert len(self.dims) == 2, 'plotting method only compatible with \
+                                     2d data sets'
+                                     
+        d1, d2 = [self.co_ords[x] for x in self.dims]   
+        strain_field = np.nan * self.strain[..., 0, 0]
         for idx in np.ndindex(strain_field.shape):
             p = self.strain_param[idx][0]
-            strain_field[idx] = cos_(angle, *p)
-            
-        if self.ss2_x.ndim != 2:
-            x_points = np.ceil(res * (np.max(self.ss2_x) - np.min(self.ss2_x)))
-            y_points = np.ceil(res * (np.max(self.ss2_y) - np.min(self.ss2_y)))
-            x = np.linspace(np.min(self.ss2_x), np.max(self.ss2_x), x_points)
-            y = np.linspace(np.min(self.ss2_y), np.max(self.ss2_y), y_points)
-            X, Y = np.meshgrid(x, y)
-            Z = griddata((self.ss2_x.flatten(), self.ss2_y.flatten()), 
-                          strain_field.flatten(), (X, Y))
+            if shear == True:
+                e_1, e_2 = (p[2] + p[0]), (p[2] - p[0])    
+                theta = p[1]
+                tau_xy = -np.sin(2 * theta + angle) * (e_1 - e_2)/2
+                strain_field[idx] = tau_xy
+            else:
+                strain_field[idx] = cos_(angle, *p)
+        
+        # Testing whether it is merged (and therefore flattened) data
+        if self.strain[..., 0, 0].ndim != 2:
+            # Data point spacing based on resolution
+            d1_points = np.ceil(res * (np.max(d1) - np.min(d1)))
+            d2_points = np.ceil(res * (np.max(d2) - np.min(d2)))
+            # Data point location
+            d1_ = np.linspace(np.min(d1), np.max(d1), d1_points)
+            d2_ = np.linspace(np.min(d2), np.max(d2), d2_points)
+            D1, D2 = np.meshgrid(d1_, d2_)
+            Z = griddata((d1.flatten(), d2.flatten()), 
+                         strain_field.flatten(), (D1, D2))
         else:
-            X, Y = self.ss2_x, self.ss2_y
+            D1, D2 = d1, d2
             Z = strain_field
             
-        f, ax = plotting(self.ss2_x, self.ss2_y, X, Y, Z, cmap, lvls, figsize)
+        f, ax = plotting(d1, d2, D1, D2, Z, cmap, lvls, figsize)
 
 
-    def plot_shear(self, angle = 0, q_idx = 0, cmap = 'RdBu_r',  res = 10, 
-                   lvls = 11, figsize = (10, 10), plotting = plot_complex, 
-                   line = False, line_props = 'w--', mark = None):
-        """
-        Plot a 2D heat map of the shear strain field. 
-        *Not yet implemented in 3D.*
-        
-        # angle:      Angle in radians - default (0). 
-        # q0_index:   Specify lattice parameter/peak to display.  
-        # res:        Resolution in points per unit length (of raw data) 
-                      - only implemented for merged data
-        # cmap:       The colormap (default - 'RdBu_r') to use for plotting
-        # lvls:       Number of contours to overlay on map. Can also explicitly 
-                      define levels.
-        # figsize:    Tuple containing the fig size (x, y) - default (10, 10).
-                      Constrained by axis being equal.
-        
-        Additional functionality allows for the overlaying of a line on top of 
-        the map - to be used in conjunction with the line plotting.
-        
-        # line:       Plot line (default = False)
-        # line_props: Define line properties (default = 'w-')
-        # mark:       Mark properties for centre point of line (default = None)
-        """        
-        strain_field = np.nan * self.ss2_x
-        
-        for idx in np.ndindex(strain_field.shape):
-            p = self.strain_param[idx][0]
-
-            e_1, e_2 = (p[2] + p[0]), (p[2] - p[0])              
-                    
-            theta = p[1]
-            tau_xy = -np.sin(2 * theta + angle) * (e_1 - e_2)/2
-            strain_field[idx] = tau_xy
-            
-        if self.ss2_x.ndim != 2:
-            x_points = np.ceil(res * (np.max(self.ss2_x) - np.min(self.ss2_x)))
-            y_points = np.ceil(res * (np.max(self.ss2_y) - np.min(self.ss2_y)))
-            x = np.linspace(np.min(self.ss2_x), np.max(self.ss2_x), x_points)
-            y = np.linspace(np.min(self.ss2_y), np.max(self.ss2_y), y_points)
-            X, Y = np.meshgrid(x, y)
-            Z = griddata((self.ss2_x.flatten(), self.ss2_y.flatten()), 
-                          strain_field.flatten(), (X, Y))
-        else:
-            X, Y = self.ss2_x, self.ss2_y
-            Z = strain_field
-            
-        f, ax = plotting(self.ss2_x, self.ss2_y, X, Y, Z, cmap, lvls, figsize)
 

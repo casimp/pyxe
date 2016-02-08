@@ -37,7 +37,6 @@ class XRD_tools(XRD_scrape, XRD_plotting):
                        'Run XRD_analysis tool.')
             raise
         self.dims = group['dims'][:]
-
         self.q0 = group['q0'][:]
         self.peak_windows = group['peak_windows'][:]
         self.peaks = group['peaks'][:]
@@ -58,7 +57,7 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         pass
         #co_ords = [self.ss2_x, self.ss2_y, self.ss2_z]
         
-        #for co_ord, offset in zip(co_ords):
+        #for co_ord, offset in zip(co_ords, centre):
         #    co_ord += offset
             
             
@@ -123,7 +122,7 @@ class XRD_tools(XRD_scrape, XRD_plotting):
 
         if detectors == None:
             for angle in angles:
-                strain_field = np.nan * self.ss2_x
+                strain_field = np.nan * data_x.strain[..., 0, 0]
             
                 for idx in np.ndindex(strain_field.shape):
                     p = self.strain_param[idx][0]
@@ -136,7 +135,7 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         if e_xy != False:
             
             for angle in e_xy:
-                strain_field = np.nan * self.ss2_x
+                strain_field = np.nan * data_x.strain[..., 0, 0]
         
                 for idx in np.ndindex(strain_field.shape):
                     p = self.strain_param[idx][q0_index]

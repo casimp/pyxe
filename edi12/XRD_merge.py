@@ -37,6 +37,10 @@ class XRD_merge(XRD_tools):
         self.q0 = self.data[0].q0
         self.peak_windows = self.data[0].peak_windows
         
+        # Check that you are merging similar data
+        for i in self.data:
+            assert self.data[0].dims == i.dims
+        self.dims = self.data[0].dims
         
         if order == 'slit':
             priority = [data.slit_size for data in self.data]
@@ -69,6 +73,8 @@ class XRD_merge(XRD_tools):
 
         self.strain, self.strain_err, self.peaks, self.peaks_err, self.ss2_x, \
         self.ss2_y, self.ss2_z = masked_merge(data_mask[0], data_mask[1])
+        self.co_ords = {b'ss2_x': self.ss2_x,b'ss2_y': self.ss2_y, 
+                        b'self_z': self.ss2_z} 
         self.slit_size = None
         self.strain_fit()
         

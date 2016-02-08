@@ -63,7 +63,7 @@ class XRD_analysis(XRD_tools):
 
     def strain_fit(self):
         """
-        Fits a sin function to the 
+        Fits a sin function to the strain information from each detector. 
         """
         data_shape = self.strain.shape
         self.strain_param = np.nan * np.ones(data_shape[:-2] + \

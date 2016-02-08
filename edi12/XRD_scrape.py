@@ -11,7 +11,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import h5py
-#from edi12.XRD_plotting import XRD_plotting
 
 def dimension_fill(data, dim_ID):
     """
