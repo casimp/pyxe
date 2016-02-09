@@ -16,11 +16,9 @@ from scipy.optimize import curve_fit
 
 def cos_(x, *p):
     """
-    Guassian curve fit for diffraction data.
-    #   Constant Background          : p[0]
-    #   Peak height above background : p[1]
-    #   Central value                : p[2]
-    #   Standard deviation           : p[3]
+    #   Amplitude                    : p[0]
+    #   Angle (rad)                  : p[1]
+    #   Mean                         : p[2]
     """
     return p[0]*np.cos(2 * (x + p[1])) + p[2]
 
