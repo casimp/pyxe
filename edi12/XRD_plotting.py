@@ -27,29 +27,34 @@ class XRD_plotting():
         pass
 
         
-    def plot_intensity(self, detector = 0, point = None):
+    def plot_intensity(self, detector = 0, point = ()):
         """
         Plots q v intensity. *Not implemented for merged files.*
         
         # detector:   0 based indexing - 0 (default) to 23 - detector 23 empty. 
         # point:      Define point (index) from which to extract q v I plot.
-                      First point in array chosen if None (default) specified.
+                      First point in array chosen if not (default) specified.
         """
         try:
             group = self.f['entry1']['EDXD_elements']
             q = group['edxd_q'][detector]
-            
-            if len(self.dims) == 1:   
-                I = group['data'][0, detector]
-            elif len(self.dims) == 2:
-                I = group['data'][0, 0, detector]
-            else:
-                I = group['data'][0, 0, 0, detector]
+            if point == ():
+                point = (0, ) * len(self.dims)
+            assert len(self.dims) == len(point), 'must define point with correct '\
+                                     'number of dimensions.'
+            I = group['data'][point][detector]
+
             plt.plot(q, I)
         except (NameError, AttributeError):
             print("Can't plot spectrum on merged data.")
             
-    def plot_fitted(self, point = (0), q_idx = 0, figsize = (7, 5)):
+    def plot_fitted(self, point = (), q_idx = 0, figsize = (7, 5)):
+        if point == ():
+            point = (0, ) * len(self.dims)
+
+        assert len(self.dims) == len(point), 'must define point with correct '\
+                                             'number of dimensions.'
+        
         plt.figure(figsize = figsize)
         p = self.strain_param[point][q_idx]
         theta = np.linspace(0, np.pi, 23)
@@ -64,7 +69,8 @@ class XRD_plotting():
         """
         Mohrs circle for each point.
         """
-        p = self.strain_param[point][q_idx]
+        p = self.strain_param[point][q_idx][0] ### test change
+        print(p)
         R = p[0]
         theta = p[1] + angle
 
