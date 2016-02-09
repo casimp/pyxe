@@ -42,7 +42,7 @@ def p0_approx(data, peak_window, func = gaussian):
     return p0
 
 
-def peak_fit(data, window, p0 = None, func = gaussian):
+def peak_fit(data, window, p0 = [], func = gaussian):
     """
     Takes a function (guassian/lorentzian) and information about the peak 
     and calculates the peak location and standard deviation. 
@@ -51,7 +51,7 @@ def peak_fit(data, window, p0 = None, func = gaussian):
         data[0] = data[0][::-1]
         data[1] = data[1][::-1]
  
-    if p0 == None:
+    if p0 == []:
         p0 = p0_approx(data, window, func)
         
     peak_ind = np.searchsorted(data[0], window)
@@ -99,12 +99,11 @@ def window_optimize(folder, fnum, q0, delta_q = 0.01, steps = 100,
 
 
                 
-def array_fit(q_array, I_array, peak_window, func, unused_detectors = [23], 
-              error_limit = 1 * 10 **-4):
+def array_fit(q_array, I_array, peak_window, func, error_limit = 1 * 10 **-4, 
+              output = 'verbose', unused_detectors = [23]):
         
     peaks = np.zeros(I_array.shape[:-1]) * np.nan
     stdevs = np.zeros(I_array.shape[:-1]) * np.nan
-    
     detectors = [i for i in range(q_array.shape[0])]
     try:
         for detector in unused_detectors:
@@ -113,29 +112,47 @@ def array_fit(q_array, I_array, peak_window, func, unused_detectors = [23],
         detectors = [i for i in range(q_array.shape[0])]
         print('Unused detectors invalid. Analyzing all detectors.')
 
+    total_err_exceed = 0
+    total_run_error = 0
+
     for detector in detectors:
-        "Load in detector calibrated q array"
+        err_exceed = 0
+        run_error = 0
+        # Load in detector calibrated q array
         q = q_array[detector]
         for position in np.ndindex(I_array.shape[:-2]):
             index = position + (detector,)
-            "Select 4096 count intensity vector to analyze"
             I = I_array[index]
             p0 = p0_approx((q, I), peak_window, func)
-            "Fit peak across window"
+            # Fit peak across window
             try:
                 peak, stdev = peak_fit((q, I), peak_window, p0, func)[0]
                 if stdev / peak > error_limit:
-                    print('Error too great for peak at index %s' % (index, ))
+                    #print('Error too great for peak at index %s' % (index, ))
                     peaks[index] = np.nan
                     stdevs[index] = np.nan
+                    err_exceed += 1
                 else:
                     peaks[index] = peak
                     stdevs[index] = stdev
             except RuntimeError:
-                print('Peak not found at index %s' % (index, ))
+                #print('Peak not found at index %s' % (index, ))
                 peaks[index] = np.nan
                 stdevs[index] = np.nan
-
+                run_error += 1
+                
+        if output == 'verbose':
+            print('D%02d: Peak not found at %i positions, err_limit exceeded '
+                  '%i times.' % (detector, run_error, err_exceed))
+                  
+        total_err_exceed += err_exceed
+        total_run_error += run_error 
+         
+    print('Total points: %i (23 detectors x %i positions)'
+          '\nPeak not found in %i position/detector combintions'
+          '\nError limit exceeded (or pcov not estimated) %i times' % 
+          (23*peaks.size/24, peaks.size/24, total_run_error, total_err_exceed))                  
+    
     return(peaks, stdevs)
     
 
@@ -160,7 +177,6 @@ def q0_analysis(fname, q0_approx, window = 0.25, func = gaussian):
     for idx, window in enumerate(peak_windows):
         peaks[..., idx], peaks_err[..., idx] = array_fit(q, I, window, func)
         
-    
     q0_mean = np.nan * np.ones(peaks.shape[-2:])
     q0_mean_err = np.nan * np.ones(peaks.shape[-2:])
     for detector, q_app in np.ndindex(q0_mean.shape):
