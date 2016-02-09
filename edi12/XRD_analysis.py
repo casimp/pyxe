@@ -27,7 +27,8 @@ class XRD_analysis(XRD_tools):
     associated error. 
     """
    
-    def __init__(self, file, q0, window, func = gaussian):
+    def __init__(self, file, q0, window, func = gaussian, 
+                 error_limit = 1 * 10 ** -4, output = 'simple'):
         """
         Extract and manipulate all pertinent data from the .nxs file. Takes 
         either one or multiple (list) q0s.
@@ -36,7 +37,7 @@ class XRD_analysis(XRD_tools):
         scan_command = self.f['entry1/scan_command'][:]
         self.dims = re.findall(b'ss2_\w+', scan_command)
         self.slit_size = self.f['entry1/before_scan/s4/s4_xs'][0]
-        group = self.f['entry1']['EDXD_elements']
+        group = self.f['entry1/EDXD_elements']
         q, I = group['edxd_q'], group['data']
         
         # Convert int or float to list
@@ -54,16 +55,20 @@ class XRD_analysis(XRD_tools):
         array_shape = I.shape[:-1] + (np.shape(q0)[-1],)
         self.peaks = np.nan * np.ones(array_shape)
         self.peaks_err = np.nan * np.ones(array_shape)
+        
+        print('\nFile: %s - %s acquisition points\n' % 
+             (self.filename, self.f['entry1/EDXD_elements/ss2_x'].size))
+        
         for idx, window in enumerate(self.peak_windows):
-            fit_data = array_fit(q, I, window, func)
+            fit_data = array_fit(q, I, window, func, error_limit, output)
             self.peaks[..., idx], self.peaks_err[..., idx] = fit_data
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
-        self.strain_fit()
+        self.strain_fit(error_limit)
 
-    def strain_fit(self):
+    def strain_fit(self, error_limit):
         """
-        Fits a sin function to the strain information from each detector. 
+        Fits a sinusoidal curve to the strain information from each detector. 
         """
         data_shape = self.strain.shape
         self.strain_param = np.nan * np.ones(data_shape[:-2] + \
@@ -72,12 +77,20 @@ class XRD_analysis(XRD_tools):
             data = self.strain[idx[:-1]][:-1][..., idx[-1]]
             not_nan = ~np.isnan(data)
             angle = np.linspace(0, np.pi, 23)
-            p0 = [np.nanmean(data), 3*np.nanstd(data)/(2**0.5), 0]
-            try:
-                a, b = curve_fit(cos_, angle[not_nan], data[not_nan], p0)
-                self.strain_param[idx] = a
-            except (TypeError, RuntimeError):
-                print('Type or runtime error...')
+            if angle[not_nan].size > 2:
+                p0 = [np.nanmean(data), 3*np.nanstd(data)/(2**0.5), 0]
+                try:
+                    a, b = curve_fit(cos_, angle[not_nan], data[not_nan], p0)
+                    perr_ = np.diag(b)
+                    perr = np.sqrt(perr_[0] + perr_[2])
+                    if perr > 2 * error_limit:              
+                        self.strain_param[idx] = a
+                except (TypeError, RuntimeError):
+                    print('Unable to fit peak.')
+            else:
+                print('Insufficient data to attempt curve_fit.')
+                
+        
 
     def save_to_nxs(self, fname = None):
         """
