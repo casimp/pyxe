@@ -78,12 +78,13 @@ class XRD_analysis(XRD_tools):
             not_nan = ~np.isnan(data)
             angle = np.linspace(0, np.pi, 23)
             if angle[not_nan].size > 2:
+                # Estimate curve parameters
                 p0 = [np.nanmean(data), 3*np.nanstd(data)/(2**0.5), 0]
                 try:
                     a, b = curve_fit(cos_, angle[not_nan], data[not_nan], p0)
                     perr_ = np.diag(b)
                     perr = np.sqrt(perr_[0] + perr_[2])
-                    if perr > 2 * error_limit:              
+                    if perr < 2 * error_limit:              
                         self.strain_param[idx] = a
                 except (TypeError, RuntimeError):
                     print('Unable to fit peak.')
