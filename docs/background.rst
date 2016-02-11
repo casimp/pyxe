@@ -1,3 +1,6 @@
+I12 and Energy Dispersive X-ray Diffraction
+===========================================
+
 Strain Calculation
 ==================
 
@@ -20,8 +23,8 @@ In-plane strain state
 ~~~~~~~~~~~~~~~~~~~~~
 
 The detector, and therefore angle, specific strain values can be further utilised to fit and extract a full description of the in-plane strain state.
-This is beneficial due to the additional information that is then available, notably the principal in-plane strains and shear strain. 
-Further to this, these parameters allow for the extraction of strain at any defined angle. 
+This is beneficial due to the additional information that is then available, notably the principal in-plane strains and shear strain.
+Further to this, these parameters allow for the extraction of strain at any defined angle.
 This can be more accurate than the equivalent detector specific strain due to the additional information that is effectively leveraged in the calculations.
 
 Plane-strain stress calculations
