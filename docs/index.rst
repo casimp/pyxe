@@ -37,6 +37,8 @@ Installing edi12
 ----------------
 Installing edi12 is easily done using pip<sup>1</sup>. Assuming it is installed, just run the following from the command-line:
 
+::
+
     pip install edi12
 
 This command will download the latest version of edi12 from the Python Package Index and install it to your system.
@@ -46,6 +48,8 @@ Alternatively, you can install from the distribution using the setup.py script. 
 * https://github.com/casimp/edi12
 
 Simply download and unpack, then navigate to the download directory and run the following from the command-line:
+
+::
 
     python setup.py install
 
