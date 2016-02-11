@@ -6,13 +6,14 @@ I12 and EDXD
 
 *Beamline I12-JEEP (Joint Engineering, Environmental, and Processing) is a high energy X-ray beamline for imaging, diffraction and scattering, which operates at energies of 53-150 keV.*
 
-Specifications for the I12-JEEP beamline have be detailed in the Journal of Synchrontron Radiation (REF). Much of this information is replicated on the Diamond Light Source's website:
+The I12-JEEP beamline is located at the Diamond Light Source in Oxfordshire, UK. Specifications for the beamline have be detailed in the Journal of Synchrontron Radiation (REF). Much of this information is replicated on the Diamond Light Source's website:
 
 http://www.diamond.ac.uk/Beamlines/Engineering-and-Environment/I12.html
 
 Information about the 23 element array can be found:
 
-![The EDXD system. (a) Geometry of the detector, detector slits and sample slits showing the semi-annular arrangement of 23 independent Ge crystals (REF).](docs\EDXD.png)
+.. image:: EDXD.png
+The EDXD system. (a) Geometry of the detector, detector slits and sample slits showing the semi-annular arrangement of 23 independent Ge crystals (REF).
 
 http://www.diamond.ac.uk/Beamlines/Engineering-and-Environment/I12/detectors/EDXD.html
 
