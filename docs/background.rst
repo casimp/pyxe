@@ -12,7 +12,10 @@ http://www.diamond.ac.uk/Beamlines/Engineering-and-Environment/I12.html
 
 Information about the 23 element array can be found:
 
-.. image:: EDXD.png
+.. figure:: EDXD.png
+    :width: 400px
+    :alt: EDXD setup
+    :figclass: align-center
 The EDXD system. (a) Geometry of the detector, detector slits and sample slits showing the semi-annular arrangement of 23 independent Ge crystals (REF).
 
 http://www.diamond.ac.uk/Beamlines/Engineering-and-Environment/I12/detectors/EDXD.html
