@@ -11,9 +11,9 @@ visulisation of strain data, with notable emphasis being placed on the
 visulisation of 2D-data sets. While 3D functionality is planned and partially
 implemented, this is not currently a priority and support is limited.
 
-
+============
 Installation
-=======
+============
 
 edi12 is designed to be cross platform and should work happily on Windows (under a variety of different Python frameworks), OS X, and Linux. The library has been (and continues to be) developed in Python 3. Efforts have been made to
 ensure backwards compatibility with Python 2.7, with Python 3 specific syntax and packages being avoided. Despite this, testing has been limited and no guarantees can be made for the stability of the library under Python 2.
