@@ -1,8 +1,14 @@
-General Introduction
-====================
+Tools
+=====
 
-I12
----
+XRD_analysis
+------------
 
-Energy Dispersive X-ray Diffraction
------------------------------------
+XRD_tools
+---------
+
+XRD_merge
+---------
+
+XRD_plotting
+------------
