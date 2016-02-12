@@ -1,2 +1,3 @@
 v 0.1.0, 20151130 -- Initial release
 v 0.1.1, 20160208 -- Minor updates and restructuring
+v 0.2.0, 20160212 -- Reworked all core functionality to allow for data that is acquired in any dimensional order e.g. (x, y) v (z, x).

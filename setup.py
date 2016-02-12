@@ -6,7 +6,7 @@ except ImportError:
 
 setup(
     name='edi12',
-    version='0.1.1',
+    version='0.2.0',
     author='C. Simpson',
     author_email='c.a.simpson01@gmail.com',
     packages=['edi12'],
@@ -21,8 +21,3 @@ setup(
 #        "h5py"
 #    ],
 )
-
-#        "numpy >= 1.9.0",
-#        "scipy >= 0.16.0",
-#        "matplotlib >= 1.4.0",
-#        "h5py >= 2.5.0"
