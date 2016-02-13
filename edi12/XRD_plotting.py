@@ -48,7 +48,17 @@ class XRD_plotting():
         except (NameError, AttributeError):
             print("Can't plot spectrum on merged data.")
             
+            
     def plot_fitted(self, point = (), q_idx = 0, figsize = (7, 5)):
+        """
+        Plots fitted in-plane strain field for given data point. 
+        *Not implemented for merged files.*
+        
+        # point:      Define point (index) from which to plot fitted in-plane
+                      strain field.
+        # q_idx:      0 based indexing - 0 (default) to 23 - detector 23 empty.
+        # figsize:    Figure dimensions
+        """
         if point == ():
             point = (0, ) * len(self.dims)
 
@@ -61,7 +71,7 @@ class XRD_plotting():
         plt.plot(theta, self.strain[point][..., q_idx][:-1], 'k*')
         theta_2 = np.linspace(0, np.pi, 1000)
         plt.plot(theta_2, cos_(theta_2, *p), 'k-')
-        plt.xlabel('Detector angle')
+        plt.xlabel('Detector angle (rad)')
         plt.ylabel('Strain')
             
             
