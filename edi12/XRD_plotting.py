@@ -77,10 +77,16 @@ class XRD_plotting():
             
     def plot_mohrs(self, point = (0), q_idx = 0, angle = 0, figsize = (7, 5)):
         """
-        Mohrs circle for each point.
+        Use fitted in-plane styrain tensor to plot Mohr's circle. 
+        *Not implemented for merged files.*
+        
+        # point:      Define point (index) from which to plot fitted in-plane
+                      strain field.
+        # q_idx:      0 based indexing - 0 (default) to 23 - detector 23 empty.
+        # angle:      Angle to highlight on circle (inc + 90deg).
+        # figsize:    Figure dimensions
         """
         p = self.strain_param[point][q_idx][0] ### test change
-        print(p)
         R = p[0]
         theta = p[1] + angle
 
