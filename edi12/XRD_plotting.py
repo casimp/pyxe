@@ -169,17 +169,19 @@ class XRD_plotting():
             Z = griddata((d1.flatten(), d2.flatten()), 
                           self.strain[..., detector, q_idx].flatten(), (D1, D2))
         else:
-            D1, D2 = d1, d2#X, Y = self.ss2_x, self.ss2_y
-            #x, y = X, Y
+            D1, D2 = d1, d2
             Z = self.strain[..., detector, q_idx]
         f, ax = plotting(d1, d2, D1, D2, Z, cmap, lvls, figsize)
-        #if line == True:
-        #    try:            
-        #        ax.plot(self.x_ext, self.y_ext, line_props, linewidth = 2)
-        #        if mark != None:
-        #            ax.plot(self.line_centre[0], self.line_centre[1], mark)
-        #    except AttributeError:
-        #        print('Run line_extract method before plotting line.')
+
+############ UNFINISHED ###############
+
+        if line == True:
+            A = self.extract_line()     
+            ax.plot(A[0], A[1], line_props, linewidth = 2)
+            self.plot_line()
+            #if mark != None:
+             #   ax.plot(self.line_centre[0], self.line_centre[1], mark)
+
 
 
     def plot_angle(self, angle = 0, shear = False, q_idx = 0, cmap = 'RdBu_r',  
