@@ -113,7 +113,8 @@ class XRD_plotting():
         ax.annotate('  %s' % r'$\epsilon_{2}$', xy=(e_2, 0), textcoords='offset points')
 
 
-    def plot_line(self, detector = 0, q0_index = 0, axis = 'scalar', pnt = (0, 0), angle = 0, npnts = 100, method = 'linear'):
+    def plot_line(self, detector = 0, q0_index = 0, axis = 'scalar', 
+                  pnt = (0, 0), angle = 0, npnts = 100, method = 'linear'):
         """
         Plots a line profile through a 2D strain field - extract_line method
         must be run first. *Not yet implemented in 3D.*
@@ -124,9 +125,8 @@ class XRD_plotting():
                       position. 'scalar' co-ordinates re-zeroed/centred against 
                       point specified in the extract_line command.
         """
-        pass
-        #dim_1_ext, dim_2_ext, strain_ext = self.extract_line(self, pnt = (0, 0)
-        #, angle = 0, npnts = 100, method = 'linear')
+        A = self.extract_line()        
+        plt.plot(A[0], A[2][..., 0, 0], '-*')
 
 
 
