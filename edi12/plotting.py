@@ -15,15 +15,15 @@ def line_extract(X, Y, point, theta, npoints = 10):
     Draw line through an x, y point cloud. Line is defined by a point and an 
     angle. The user defined point must lie within the point cloud.
     """
-    if theta % 90 == 0:
-        if theta % 180 != 0:
+    if theta % np.pi/2 == 0:
+        if theta % np.pi != 0:
             y = np.linspace(np.min(Y), np.max(Y), npoints)
             x = y * 0 + point[0]
         else:
             x = np.linspace(np.min(X), np.max(X), npoints)
             y = x * 0 + point[1]            
     else:
-        m = np.tan(np.deg2rad(theta))
+        m = np.tan(theta)
         c = point[1] - m * point[0]
         
         y_lim = [m * np.min(X) + c, m * np.max(X) + c]
