@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 from scipy.optimize import curve_fit
 import numpy as np
 import h5py
+import sys
 from edi12.peak_fitting import gaussian, lorentzian, psuedo_voigt
 
 
@@ -115,7 +116,8 @@ def array_fit(q_array, I_array, peak_window, func, error_limit = 1 * 10 **-4,
     total_err_exceed = 0
     total_run_error = 0
 
-    for detector in detectors:
+    for idx, detector in enumerate(detectors):
+
         err_exceed = 0
         run_error = 0
         # Load in detector calibrated q array
@@ -141,6 +143,11 @@ def array_fit(q_array, I_array, peak_window, func, error_limit = 1 * 10 **-4,
                 stdevs[index] = np.nan
                 run_error += 1
                 
+            if output != 'verbose':
+                sys.stdout.write("\rProgress: [{0:20s}] {1:.0f}%".format('#' * 
+                int(20*(idx + 1) / len(detectors)), 100*((idx + 1)/len(detectors))))
+                sys.stdout.flush()
+                
         if output == 'verbose':
             print('D%02d: Peak not found at %i positions, err_limit exceeded '
                   '%i times.' % (detector, run_error, err_exceed))
@@ -148,7 +155,7 @@ def array_fit(q_array, I_array, peak_window, func, error_limit = 1 * 10 **-4,
         total_err_exceed += err_exceed
         total_run_error += run_error 
          
-    print('Total points: %i (23 detectors x %i positions)'
+    print('\nTotal points: %i (23 detectors x %i positions)'
           '\nPeak not found in %i position/detector combintions'
           '\nError limit exceeded (or pcov not estimated) %i times' % 
           (23*peaks.size/24, peaks.size/24, total_run_error, total_err_exceed))                  
