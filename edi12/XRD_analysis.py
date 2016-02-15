@@ -42,15 +42,15 @@ class XRD_analysis(XRD_tools):
         
         # Convert int or float to list
         self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
-        self.peak_windows = [[q - window/2, q + window/2] for q in q0]
+        self.peak_windows = [[q - window/2, q + window/2] for q in self.q0]
         
         # Accept detector specific q0 2d-array
-        if len(np.shape(q0)) == 2:
-            q0_av = np.nanmean(q0, 0)
+        if len(np.shape(self.q0)) == 2:
+            q0_av = np.nanmean(self.q0, 0)
             self.peak_windows = [[q - window/2, q + window/2] for q in q0_av]
  
         # Iterate across q0 values and fit peaks for all detectors
-        array_shape = I.shape[:-1] + (np.shape(q0)[-1],)
+        array_shape = I.shape[:-1] + (np.shape(self.q0)[-1],)
         self.peaks = np.nan * np.ones(array_shape)
         self.peaks_err = np.nan * np.ones(array_shape)
         
