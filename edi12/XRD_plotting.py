@@ -176,9 +176,10 @@ class XRD_plotting():
 ############ UNFINISHED ###############
 
         if line == True:
-            A = self.extract_line()     
+            A = self.extract_line(pnt = (0, 0), angle = 0, npnts = 100, method = 'linear')     
             ax.plot(A[0], A[1], line_props, linewidth = 2)
-            self.plot_line()
+            plt.figure()
+            self.plot_line(detector, q_idx, axis = 'scalar', pnt = (0, 0), angle = 0, npnts = 100, method = 'linear')
             #if mark != None:
              #   ax.plot(self.line_centre[0], self.line_centre[1], mark)
 
