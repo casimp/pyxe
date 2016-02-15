@@ -41,9 +41,7 @@ class XRD_analysis(XRD_tools):
         q, I = group['edxd_q'], group['data']
         
         # Convert int or float to list
-        if type(q0) == int or type(q0) == float or type(q0) == np.float64:
-            q0 = [q0]
-        self.q0 = q0
+        self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
         self.peak_windows = [[q - window/2, q + window/2] for q in q0]
         
         # Accept detector specific q0 2d-array
