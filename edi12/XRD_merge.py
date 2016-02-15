@@ -39,7 +39,8 @@ class XRD_merge(XRD_tools):
         
         # Check that you are merging similar data
         for i in self.data:
-            assert self.data[0].dims == i.dims
+            error = 'Trying to merge incompatible data (e.g. 2D with 3D)'
+            assert self.data[0].dims == i.dims, error
         self.dims = self.data[0].dims
         
         if order == 'slit':
