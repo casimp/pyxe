@@ -113,8 +113,8 @@ class XRD_plotting():
         ax.annotate('  %s' % r'$\epsilon_{2}$', xy=(e_2, 0), textcoords='offset points')
 
 
-    def plot_line(self, detector = 0, q0_index = 0, axis = 'scalar', 
-                  pnt = (0, 0), angle = 0, npnts = 100, method = 'linear'):
+    def plot_line(self, az_angles = [0, np.pi/2], q_idx = 0, line_angle = 0, 
+                  pnt = (0, 0), npts = 100, axis = 'scalar', method = 'linear', detectors = [], e_xy = False):
         """
         Plots a line profile through a 2D strain field - extract_line method
         must be run first. *Not yet implemented in 3D.*
@@ -125,14 +125,27 @@ class XRD_plotting():
                       position. 'scalar' co-ordinates re-zeroed/centred against 
                       point specified in the extract_line command.
         """
-        A = self.extract_line()        
-        plt.plot(A[0], A[2][..., 0, 0], '-*')
+        d1, d2, strain = self.extract_line(az_angles = az_angles, q_idx = q_idx, 
+                                line_angle = line_angle, pnt = pnt, npts = npts, 
+                                method = method, detectors = detectors, e_xy = e_xy)  
+                                
+        d1_min, d2_min = np.min(d1), np.min(d2)            
+        zero = ((pnt[0] - d1_min)**2 + (pnt[1] - d2_min)**2)**0.5
+        scalar_ext = ((d1 - d1_min)**2 + (d2 - d2_min)**2)**0.5 - zero
+        
+        if axis == 'd1':
+            plt.plot(d1, strain, '-*')
+        elif axis == 'd2':
+            plt.plot(d2, strain, '-*')
+        else:
+            plt.plot(scalar_ext, strain, '-*')
 
 
 
     def plot_detector(self, detector = 0, q_idx = 0, cmap = 'RdBu_r', res = 10, 
                  lvls = 11, figsize = (10, 10), plotting = plot_complex, 
-                 line = False, line_props = 'w--', mark = None):
+                 line = False, pnt = (0,0), line_angle = 0, npts = 100, 
+                 method = 'linear', line_props = 'w--', mark = None):
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -173,13 +186,18 @@ class XRD_plotting():
             Z = self.strain[..., detector, q_idx]
         f, ax = plotting(d1, d2, D1, D2, Z, cmap, lvls, figsize)
 
-############ UNFINISHED ###############
-
         if line == True:
-            A = self.extract_line(pnt = (0, 0), angle = 0, npnts = 100, method = 'linear')     
-            ax.plot(A[0], A[1], line_props, linewidth = 2)
+            d1, d2, strain = self.extract_line([], q_idx = q_idx, line_angle = line_angle, pnt = pnt,
+                                    npts = npts,  method = method, detectors = [detector], save = False)   
+
+            print(d1, d2)
+            
+           
+            ax.plot(d1, d2, line_props, linewidth = 2)
             plt.figure()
-            self.plot_line(detector, q_idx, axis = 'scalar', pnt = (0, 0), angle = 0, npnts = 100, method = 'linear')
+            self.plot_line(az_angles = [], q_idx = q_idx, 
+                           line_angle = line_angle, pnt = pnt, npts = npts, 
+                           method = method, detectors = [detector])
             #if mark != None:
              #   ax.plot(self.line_centre[0], self.line_centre[1], mark)
 
@@ -187,7 +205,8 @@ class XRD_plotting():
 
     def plot_angle(self, angle = 0, shear = False, q_idx = 0, cmap = 'RdBu_r',  
                  res = 10, lvls = 11, figsize = (10, 10), plotting = plot_complex, 
-                 line = False, line_props = 'w--', mark = None):
+                 line = False, pnt = (0,0), line_angle = 0, npts = 100, 
+                 method = 'linear', line_props = 'w--', mark = None):
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -241,6 +260,19 @@ class XRD_plotting():
             Z = strain_field
             
         f, ax = plotting(d1, d2, D1, D2, Z, cmap, lvls, figsize)
+        
+        if line == True:
+            d1, d2, strain = self.extract_line([angle], q_idx = q_idx, line_angle = line_angle, pnt = pnt,
+                                    npts = npts,  method = method, save = False)   
+
+            print(d1, d2)
+            
+           
+            ax.plot(d1, d2, line_props, linewidth = 2)
+            plt.figure()
+            self.plot_line(az_angles = [angle], q_idx = q_idx, 
+                           line_angle = line_angle, pnt = pnt, npts = npts, 
+                           method = method)
 
 
 
