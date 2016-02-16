@@ -35,6 +35,15 @@ def line_extract(X, Y, point, theta, npoints = 10):
 
     return x, y
     
+def meshgrid_res(d1, d2, spatial_resolution):
+    d1_points = np.ceil(spatial_resolution * (np.max(d1) - np.min(d1)))
+    d2_points = np.ceil(spatial_resolution * (np.max(d2) - np.min(d2)))
+    d1_ = np.linspace(np.min(d1), np.max(d1), d1_points)
+    d2_ = np.linspace(np.min(d2), np.max(d2), d2_points)
+    D1, D2 = np.meshgrid(d1_, d2_)
+    return D1, D2
+    
+    
 def plot_complex(x, y, X, Y, Z, cmap = 'jet', lvls = 11, figsize = (10, 10)):
     f, ax = plt.subplots(figsize = figsize)
     cf_back = ax.contourf(X, Y, Z, lvls, cmap = cmap)
