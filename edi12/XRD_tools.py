@@ -130,7 +130,31 @@ class XRD_tools(XRD_scrape, XRD_plotting):
             np.savetxt(fname, (d1_e, d2_e, strain_ext), delimiter = ',')
         
         return d1_e, d2_e, strain_ext
+        
+    def plane_stress(self, angle = 0, q_idx = 0, E = 200*10**9, v = 0.3, 
+                     G = 79 * 10**9, detector = []):
+        """
+        pass
+        """
+        if detector != []:
+            det1 = detector
+            det2 = det1 + 11 if (det1 + 11) < 22 else (det1 - 11)
+            e_xx = self.strain[..., det1, q_idx]
+            e_yy = self.strain[..., det2, q_idx]
+        else:
+            angles = [angle, angle + np.pi/2]
+            e_xx = np.nan * self.strain[..., 0, 0]
+            e_yy = np.nan * self.strain[..., 0, 0]
+            for angle, strain_field in zip(angles, (e_xx, e_yy)):
+                for idx in np.ndindex(strain_field.shape):
+                    p = self.strain_param[idx][0]
+                    strain_field[idx] = cos_(angle, *p)
+        
+        sigma_xx = E * ((1 - v) * e_xx + v * e_yy)/ ((1 + v) * (1 - 2 * v))
+        sigma_yy = E * ((1 - v) * e_yy + v * e_xx)/ ((1 + v) * (1 - 2 * v))
             
+
+        return sigma_xx, sigma_yy          
     
     def strain_to_text(self, fname, q0_index = 0, angles = [0, np.pi/2], 
                        e_xy = [0], detectors = []):
