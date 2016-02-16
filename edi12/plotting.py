@@ -36,8 +36,11 @@ def line_extract(X, Y, point, theta, npoints = 10):
     return x, y
     
 def meshgrid_res(d1, d2, spatial_resolution):
-    d1_points = np.ceil(spatial_resolution * (np.max(d1) - np.min(d1)))
-    d2_points = np.ceil(spatial_resolution * (np.max(d2) - np.min(d2)))
+    """
+    Takes data points and remeshes at a defined spatial resolution.
+    """
+    d1_points = np.ceil((np.max(d1) - np.min(d1)) / spatial_resolution) + 1
+    d2_points = np.ceil((np.max(d2) - np.min(d2)) / spatial_resolution) + 1
     d1_ = np.linspace(np.min(d1), np.max(d1), d1_points)
     d2_ = np.linspace(np.min(d2), np.max(d2), d2_points)
     D1, D2 = np.meshgrid(d1_, d2_)
