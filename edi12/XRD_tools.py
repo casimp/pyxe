@@ -14,7 +14,6 @@ import h5py
 import numpy as np
 from scipy.interpolate import griddata
 
-from edi12.peak_fitting import *
 from edi12.plotting import line_extract
 from edi12.peak_fitting import cos_
 from edi12.XRD_scrape import XRD_scrape
@@ -53,17 +52,18 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         """
         Shifts centre point to user defined location. Not reflected in .nxs
         file unless saved.Accept offset for both 2D and 3D data sets (x, y, z).
+        Re-centring completed in the order in which data was acquired.
         """
-        pass
-        #co_ords = [self.ss2_x, self.ss2_y, self.ss2_z]
+        co_ords = [self.co_ords[x] for x in self.dims]
         
-        #for co_ord, offset in zip(co_ords, centre):
-        #    co_ord += offset
-            
-            
-    def extract_line_detector(self, detectors = [0, 11], q_idx = 0, line_angle = 0, 
-                     pnt = (0,0), npts = 100, method = 'linear', data_type = 'strain', 
-                     save = False, shear = False, E = 200 * 10 **9, v = 0.3, G = 79 * 10 **9):
+        for co_ord, offset in zip(co_ords, centre):
+            co_ord += offset
+        
+           
+    def extract_line_detector(self, detectors = [0, 11], q_idx = 0, pnt = (0,0),
+                              line_angle = 0, npts = 100, method = 'linear', 
+                              data_type = 'strain', shear = False, save = False, 
+                              E = 200 * 10 **9, v = 0.3, G = 79 * 10 **9):
         """
         Extracts line profile through 2D strain field.
         
@@ -107,9 +107,10 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         
         return d1_e, d2_e, data_ext
 
-    def extract_line_angle(self, az_angles = [0, np.pi/2], q_idx = 0, line_angle = 0, 
-                     pnt = (0,0), npts = 100, method = 'linear', save = False, 
-                     shear = False, data_type = 'strain', E = 200 * 10 **9, v = 0.3, G = 79 * 10 **9):
+    def extract_line_angle(self, az_angles = [0, np.pi/2], q_idx = 0,  pnt = (0,0),
+                           line_angle = 0, npts = 100, method = 'linear', 
+                           data_type = 'strain', shear = False, save = False, 
+                           E = 200 * 10 **9, v = 0.3, G = 79 * 10 **9):
         """
         Extracts line profile through 2D strain field.
         
@@ -141,7 +142,7 @@ class XRD_tools(XRD_scrape, XRD_plotting):
                 if data_type == 'strain':
                     data[idx] = e_xx if not shear else e_xy
                 elif data_type == 'stress':
-                    sigma_xx = E * ((1 - v) * e_xx + v*e_yy) / ((1 + v) * (1 - 2*v))
+                    sigma_xx = E * ((1-v)*e_xx + v*e_yy) / ((1+v)*(1-2*v))
                     data[idx] = sigma_xx if not shear else e_xy * G
 
             not_nan = ~np.isnan(data)
@@ -154,13 +155,13 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         
         if save != False:
             fname = save if isinstance(save, str) else self.filename[:-4] + '.txt'
-            np.savetxt(fname, (d1_e, d2_e, strain_ext), delimiter = ',')
+            np.savetxt(fname, (d1_e, d2_e, data_ext), delimiter = ',')
         
         return d1_e, d2_e, data_ext                         
                          
                          
-    def extract_stress(self, angle = 0, detector = [], q_idx = 0, E = 200*10**9, v = 0.3, 
-                     G = 79 * 10**9, save = False):
+    def extract_stress(self, angle = 0, detector = [], q_idx = 0, 
+                       E = 200*10**9, v = 0.3, G = 79 * 10**9, save = False):
         """
         Uses a plane strain assumption, with the strain the unmeasured plane
         approximating to zero. Incorrect when this is not the case.
@@ -184,7 +185,7 @@ class XRD_tools(XRD_scrape, XRD_plotting):
             
         return sigma_xx, sigma_yy          
     
-    def strain_to_text(self, fname, q0_index = 0, angles = [0, np.pi/2], 
+    def strain_to_text(self, fname, q_idx = 0, angles = [0, np.pi/2], 
                        e_xy = [0], detectors = []):
         """
         Saves key strain to text file. Not yet implemented in 3D.
@@ -212,7 +213,7 @@ class XRD_tools(XRD_scrape, XRD_plotting):
                     data_array += (strain_field.flatten(), )
         else:
             for detector in detectors:
-                data_array += (self.strain[..., detector, q].flatten(), )
+                data_array += (self.strain[..., detector, q_idx].flatten(), )
         
         if e_xy != False:
             
@@ -220,7 +221,7 @@ class XRD_tools(XRD_scrape, XRD_plotting):
                 strain_field = np.nan * self.strain[..., 0, 0]
         
                 for idx in np.ndindex(strain_field.shape):
-                    p = self.strain_param[idx][q0_index]
+                    p = self.strain_param[idx][q_idx]
                     e_xy = -np.sin(2 * (p[1] + angle) ) * p[0]
                     strain_field[idx] = e_xy
                 
