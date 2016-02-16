@@ -53,6 +53,7 @@ def masked_merge(unmerged_data, mask_array = None):
     strain = []; strain_err = [];
     peaks = []; peaks_err = []
     ss2_x = []; ss2_y = []; ss2_z = []    
+    strain_param = []
     
     
     for data, mask in zip(unmerged_data, mask_array):
@@ -62,20 +63,21 @@ def masked_merge(unmerged_data, mask_array = None):
         peaks.append(data.peaks[mask].reshape(shape))
         peaks_err.append(data.peaks_err[mask].reshape(shape))
 
-        ss2_x.append(data.ss2_x[mask].flatten())
-        ss2_y.append(data.ss2_y[mask].flatten())  
-        try:
-            ss2_z.append(data.ss2_z[mask].flatten())
-        except (AttributeError, TypeError):
-            pass
+        for ss2, posn in zip((ss2_x, ss2_y, ss2_z), 
+                             (data.ss2_x, data.ss2_y, data.ss2_z)):
+            try:        
+                ss2.append(posn[mask].flatten())
+            except (AttributeError, TypeError):
+                pass
+        shape2 = (data.strain_param[..., 0, 0][mask].size, ) + data.strain_param.shape[-2:]
+        strain_param.append(data.strain_param[mask].reshape(shape2))
+
     
-    merged_data = (np.vstack(strain), np.vstack(strain_err),np.vstack(peaks), 
-                   np.vstack(peaks_err), np.concatenate(ss2_x), np.concatenate(ss2_y))
+    merged_data = (np.vstack(strain), np.vstack(strain_err), np.vstack(strain_param), np.vstack(peaks), 
+                   np.vstack(peaks_err))
                   
-    if ss2_z != []:
-        merged_data += (np.concatenate(ss2_z), )
-    else:
-        merged_data += (None, )
+    for ss2 in [ss2_x, ss2_y, ss2_z]:
+        merged_data += (np.concatenate(ss2), ) if ss2 !=[] else (None, )
 
     return merged_data    
     
