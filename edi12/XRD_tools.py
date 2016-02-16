@@ -96,10 +96,8 @@ class XRD_tools(XRD_scrape, XRD_plotting):
                     if e_xy == False:
                         strain_field[idx] = cos_(angle, *p)
                     else:
-                        e_1, e_2 = (p[2] + p[0]), (p[2] - p[0])
-                        theta = p[1] + angle
-                        tau_xy = -np.sin(2 * theta ) * (e_1 - e_2)/2
-                        strain_field[idx] = tau_xy
+                        e_xy = -np.sin(2 * (p[1] + angle)) * p[0]
+                        strain_field[idx] = e_xy
                     
                 not_nan = ~np.isnan(strain_field)
                 try:
@@ -131,10 +129,11 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         
         return d1_e, d2_e, strain_ext
         
-    def plane_stress(self, angle = 0, q_idx = 0, E = 200*10**9, v = 0.3, 
-                     G = 79 * 10**9, detector = []):
+    def extract_stress(self, angle = 0, q_idx = 0, E = 200*10**9, v = 0.3, 
+                     G = 79 * 10**9, detector = [], save = False):
         """
-        pass
+        Uses a plane strain assumption, with the strain the unmeasured plane
+        approximating to zero. Incorrect when this is not the case.
         """
         if detector != []:
             det1 = detector
@@ -153,7 +152,6 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         sigma_xx = E * ((1 - v) * e_xx + v * e_yy)/ ((1 + v) * (1 - 2 * v))
         sigma_yy = E * ((1 - v) * e_yy + v * e_xx)/ ((1 + v) * (1 - 2 * v))
             
-
         return sigma_xx, sigma_yy          
     
     def strain_to_text(self, fname, q0_index = 0, angles = [0, np.pi/2], 
@@ -177,7 +175,7 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         if detectors == []:
             for angle in angles:
                 strain_field = np.nan * self.strain[..., 0, 0]
-### PROBLEM?       
+ 
                 for idx in np.ndindex(strain_field.shape):
                     p = self.strain_param[idx][0]
                     strain_field[idx] = cos_(angle, *p)
@@ -193,12 +191,8 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         
                 for idx in np.ndindex(strain_field.shape):
                     p = self.strain_param[idx][q0_index]
-        
-                    e_1, e_2 = (p[2] + p[0]), (p[2] - p[0])              
-                            
-                    theta = p[1] + angle
-                    tau_xy = -np.sin(2 * theta ) * (e_1 - e_2)/2
-                    strain_field[idx] = tau_xy
+                    e_xy = -np.sin(2 * (p[1] + angle) ) * p[0]
+                    strain_field[idx] = e_xy
                 
                 data_array += (strain_field.flatten(), )
                 
