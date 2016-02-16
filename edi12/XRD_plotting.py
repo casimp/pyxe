@@ -40,8 +40,8 @@ class XRD_plotting():
             q = group['edxd_q'][detector]
             if point == ():
                 point = (0, ) * len(self.dims)
-            assert len(self.dims) == len(point), 'must define point with correct '\
-                                     'number of dimensions.'
+            error = 'Must define point with correct number of dimensions.'
+            assert len(self.dims) == len(point), error
             I = group['data'][point][detector]
 
             plt.plot(q, I)
@@ -150,7 +150,7 @@ class XRD_plotting():
         plt.plot(x[axis], data, '-*')
 
 
-    def plot_detector(self, detector = 0, q_idx = 0, cmap = 'RdBu_r', res = 10, 
+    def plot_detector(self, detector = 0, q_idx = 0, cmap = 'RdBu_r', res = 0.1, 
                       lvls = 11, figsize = (10, 10), plotting = plot_complex, 
                       line = False, pnt = (0,0), line_angle = 0, npts = 100, 
                       method = 'linear', line_props = 'w--', mark = None, 
@@ -204,7 +204,7 @@ class XRD_plotting():
 
 
     def plot_angle(self, angle = 0, shear = False, q_idx = 0, cmap = 'RdBu_r',  
-              res = 10, lvls = 11, figsize = (10, 10), plotting = plot_complex, 
+              res = 0.1, lvls = 11, figsize = (10, 10), plotting = plot_complex, 
               line = False, pnt = (0,0), line_angle = 0, npts = 100, 
               method = 'linear', line_props = 'w--', mark = None, 
               data_type = 'strain', E = 200 * 10 **9, v = 0.3, G = 79 * 10**9):
@@ -242,12 +242,12 @@ class XRD_plotting():
             if data_type == 'strain':
                 data[idx] = e_xx if not shear else e_xy
             elif data_type == 'stress':
-                sigma_xx = E * ((1 - v) * e_xx + v*e_yy) / ((1 + v) * (1 - 2*v))
+                sigma_xx = E * ((1 -v) * e_xx + v*e_yy) / ((1 + v) * (1 - 2*v))
                 data[idx] = sigma_xx if not shear else e_xy * G
                     
         if data.ndim != 2:
             D1, D2 = meshgrid_res(d1, d2, spatial_resolution = res)
-            Z = griddata((d1.flatten(), d2.flatten()), data.flatten(), (D1, D2))
+            Z = griddata((d1.flatten(),d2.flatten()), data.flatten(), (D1, D2))
         else:
             D1, D2, Z = d1, d2, data
             
@@ -259,7 +259,7 @@ class XRD_plotting():
             ax.plot(line[0], line[1], line_props, linewidth = 2)
             self.plot_line(az_angles = [angle], q_idx = q_idx, shear = shear,
                           line_angle = line_angle, pnt = pnt, npts = npts, 
-                          method = method, data_type = data_type, E = E, v = v)
+                          method = method, data_type = data_type, E = E, v = v, G = G)
 
 
 
