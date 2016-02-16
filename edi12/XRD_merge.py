@@ -12,8 +12,8 @@ from __future__ import unicode_literals
 
 import numpy as np
 
-from edi12.XRD_analysis import *
-from edi12.merge_tools import *
+from edi12.XRD_tools import XRD_tools
+from edi12.merge_tools import find_limits, mask_generator, masked_merge
 
 
 class XRD_merge(XRD_tools):
@@ -50,7 +50,6 @@ class XRD_merge(XRD_tools):
         else:
             priority = order
 
-        print(priority)
         priority_set, inds = np.unique(priority, return_inverse=True)    
         data_mask = [self.data[inds == 0],  [None] * len(self.data[inds == 0])]
         
@@ -72,32 +71,14 @@ class XRD_merge(XRD_tools):
             data_mask[1] += [mask_generator(data, limits, padding) 
                              for data in data_for_masking]
 
-        self.strain, self.strain_err, self.peaks, self.peaks_err, self.ss2_x, \
-        self.ss2_y, self.ss2_z = masked_merge(data_mask[0], data_mask[1])
+        
+        self.strain, self.strain_err, self.strain_param, self.peaks, \
+        self.peaks_err, self.ss2_x, self.ss2_y, self.ss2_z = \
+        masked_merge(data_mask[0], data_mask[1])
         self.co_ords = {b'ss2_x': self.ss2_x,b'ss2_y': self.ss2_y, 
                         b'self_z': self.ss2_z} 
         self.slit_size = None
-        self.strain_fit()
-        
-    def strain_fit(self):
-        """
-        Fits a sin function to the 
-        ***** Should ONLY Need this here - not in tools!
-        """
-        data_shape = self.strain.shape
-        self.strain_param = np.nan * np.ones(data_shape[:-2] + \
-                            (data_shape[-1], ) + (3, ))
-        for idx in np.ndindex(data_shape[:-2] + (data_shape[-1],)):
-            data = self.strain[idx[:-1]][:-1][..., idx[-1]]
-            not_nan = ~np.isnan(data)
-            angle = np.linspace(0, np.pi, 23)
-            p0 = [np.nanmean(data), 3*np.nanstd(data)/(2**0.5), 0]
-            try:
-                a, b = curve_fit(cos_, angle[not_nan], data[not_nan], p0)
-                self.strain_param[idx] = a
-            except (TypeError, RuntimeError):
-                print('Type or runtime error...')
-        
+
 
     def __exit__(self, exc_type, exc_value, traceback):
         pass
