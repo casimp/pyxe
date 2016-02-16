@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from scipy.interpolate import griddata
 from edi12.peak_fitting import cos_
-from edi12.plotting import plot_complex
+from edi12.plotting import plot_complex, meshgrid_res, line_extract
 
 
 class XRD_plotting():
@@ -136,6 +136,7 @@ class XRD_plotting():
         zero = ((pnt[0] - d1_min)**2 + (pnt[1] - d2_min)**2)**0.5
         scalar_ext = ((d1 - d1_min)**2 + (d2 - d2_min)**2)**0.5 - zero
         
+        plt.figure()
         if axis == 'd1':
             plt.plot(d1, strain, '-*')
         elif axis == 'd2':
@@ -148,7 +149,8 @@ class XRD_plotting():
     def plot_detector(self, detector = 0, q_idx = 0, cmap = 'RdBu_r', res = 10, 
                  lvls = 11, figsize = (10, 10), plotting = plot_complex, 
                  line = False, pnt = (0,0), line_angle = 0, npts = 100, 
-                 method = 'linear', line_props = 'w--', mark = None, stress = False):
+                 method = 'linear', line_props = 'w--', mark = None, data_type = 'strain',
+                 E = 200 * 10**9, v = 0.3):
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -172,48 +174,35 @@ class XRD_plotting():
         assert len(self.dims) == 2, 'plotting method only compatible with \
                                      2d data sets'
                                      
-        d1, d2 = [self.co_ords[x] for x in self.dims]  
-
-        if stress == True:
-            pass
+        d1, d2 = [self.co_ords[x] for x in self.dims] 
         
-        if self.strain[..., 0, 0].ndim != 2:
-            # Data point spacing based on resolution
-            d1_points = np.ceil(res * (np.max(d1) - np.min(d1)))
-            d2_points = np.ceil(res * (np.max(d2) - np.min(d2)))
-            # Data point location
-            d1_ = np.linspace(np.min(d1), np.max(d1), d1_points)
-            d2_ = np.linspace(np.min(d2), np.max(d2), d2_points)
-            D1, D2 = np.meshgrid(d1_, d2_)
-            Z = griddata((d1.flatten(), d2.flatten()), 
-                          self.strain[..., detector, q_idx].flatten(), (D1, D2))
+        if data_type == 'strain':
+            data = self.strain[..., detector, q_idx]
+        elif data_type == 'stress':
+            data = self.extract_stress(E = E, v = v, detector = detector)[0]
+        
+        if data.ndim != 2:
+            D1, D2 = meshgrid_res(d1, d2, res)
+            Z = griddata((d1.flatten(), d2.flatten()),data.flatten(), (D1, D2))
         else:
-            D1, D2 = d1, d2
-            Z = self.strain[..., detector, q_idx]
+            D1, D2, Z = d1, d2, data
+            
         f, ax = plotting(d1, d2, D1, D2, Z, cmap, lvls, figsize)
 
         if line == True:
-            data = self.extract_line([], q_idx = q_idx, line_angle = line_angle, 
-                                pnt = pnt, npts = npts,  method = method, 
-                                detectors = [detector], save = False)   
-            d1, d2, strain = data
-            print(d1, d2)
-            
-           
-            ax.plot(d1, d2, line_props, linewidth = 2)
-            plt.figure()
+            line = line_extract(D1, D2, pnt, line_angle, npts)   
+            ax.plot(line[0], line[1], line_props, linewidth = 2)
             self.plot_line(az_angles = [], q_idx = q_idx, 
                            line_angle = line_angle, pnt = pnt, npts = npts, 
                            method = method, detectors = [detector])
-            #if mark != None:
-             #   ax.plot(self.line_centre[0], self.line_centre[1], mark)
 
 
 
     def plot_angle(self, angle = 0, shear = False, q_idx = 0, cmap = 'RdBu_r',  
               res = 10, lvls = 11, figsize = (10, 10), plotting = plot_complex, 
               line = False, pnt = (0,0), line_angle = 0, npts = 100, 
-              method = 'linear', line_props = 'w--', mark = None):
+              method = 'linear', line_props = 'w--', mark = None, data_type = 'strain',
+              E = 200 * 10 **9, v = 0.3, G = 79 * 10**9):
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -240,41 +229,29 @@ class XRD_plotting():
                                      2d data sets'
                                      
         d1, d2 = [self.co_ords[x] for x in self.dims]   
-        strain_field = np.nan * self.strain[..., 0, 0]
-        for idx in np.ndindex(strain_field.shape):
-            p = self.strain_param[idx][0]
-            if shear == True:
-                e_1, e_2 = (p[2] + p[0]), (p[2] - p[0])    
-                theta = p[1]
-                tau_xy = -np.sin(2 * theta + angle) * (e_1 - e_2)/2
-                strain_field[idx] = tau_xy
-            else:
-                strain_field[idx] = cos_(angle, *p)
         
-        # Testing whether it is merged (and therefore flattened) data
-        if self.strain[..., 0, 0].ndim != 2:
-            # Data point spacing based on resolution
-            d1_points = np.ceil(res * (np.max(d1) - np.min(d1)))
-            d2_points = np.ceil(res * (np.max(d2) - np.min(d2)))
-            # Data point location
-            d1_ = np.linspace(np.min(d1), np.max(d1), d1_points)
-            d2_ = np.linspace(np.min(d2), np.max(d2), d2_points)
-            D1, D2 = np.meshgrid(d1_, d2_)
-            Z = griddata((d1.flatten(), d2.flatten()), 
-                         strain_field.flatten(), (D1, D2))
+        data = np.nan * self.strain[..., 0, 0]
+        for idx in np.ndindex(data.shape):
+            p = self.strain_param[idx][0]
+            e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)
+            e_xy = -np.sin(2 * (p[1] + angle)) * p[0]     
+            if data_type == 'strain':
+                data[idx] = e_xx if not shear else e_xy
+            elif data_type == 'stress':
+                sigma_xx = E * ((1 - v) * e_xx + v*e_yy) / ((1 + v) * (1 - 2*v))
+                data[idx] = sigma_xx if not shear else e_xy * G
+                    
+        if data.ndim != 2:
+            D1, D2 = meshgrid_res(d1, d2, spatial_resolution = res)
+            Z = griddata((d1.flatten(), d2.flatten()), data.flatten(), (D1, D2))
         else:
-            D1, D2 = d1, d2
-            Z = strain_field
+            D1, D2, Z = d1, d2, data
             
         f, ax = plotting(d1, d2, D1, D2, Z, cmap, lvls, figsize)
         
         if line == True:
-            d1, d2, strain = self.extract_line([angle], q_idx = q_idx, 
-                                  line_angle = line_angle, pnt = pnt,
-                                  npts = npts,  method = method, save = False)   
-
-            ax.plot(d1, d2, line_props, linewidth = 2)
-            plt.figure()
+            line = line_extract(D1, D2, pnt, line_angle, npts)   
+            ax.plot(line[0], line[1], line_props, linewidth = 2)
             self.plot_line(az_angles = [angle], q_idx = q_idx, 
                            line_angle = line_angle, pnt = pnt, npts = npts, 
                            method = method)
