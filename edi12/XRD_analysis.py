@@ -12,11 +12,12 @@ from __future__ import unicode_literals
 
 import h5py
 import re
-
-from edi12.fitting_optimization import *
-from edi12.peak_fitting import *
 import shutil
-from edi12.peak_fitting import cos_
+import numpy as np
+from scipy.optimize import curve_fit
+
+from edi12.fitting_optimization import array_fit
+from edi12.peak_fitting import cos_, gaussian
 from edi12.XRD_tools import XRD_tools
 
 
