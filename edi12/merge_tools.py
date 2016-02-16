@@ -32,7 +32,8 @@ def mask_generator(data, limits, padding = 0):
     
     >> mask_generator((x1, y1), [[xmin, xmax], [ymin, ymax]], 0.05)
     """
-    co_ords = (data.ss2_x, data.ss2_y, data.ss2_z)
+    #co_ords = (data.ss2_x, data.ss2_y, data.ss2_z)
+    co_ords = [data.co_ords[x] for x in data.dims]
         
     mask = np.zeros(np.shape(co_ords[0]), dtype = bool)    
     

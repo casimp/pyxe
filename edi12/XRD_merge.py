@@ -15,7 +15,6 @@ import numpy as np
 from edi12.XRD_tools import XRD_tools
 from edi12.merge_tools import find_limits, mask_generator, masked_merge
 
-
 class XRD_merge(XRD_tools):
     """
     Tool to merge mutliple XRD data sets - inherits tools for XRD_tools.
@@ -37,7 +36,6 @@ class XRD_merge(XRD_tools):
         self.q0 = self.data[0].q0
         self.peak_windows = self.data[0].peak_windows
         
-        # Check that you are merging similar data
         for i in self.data:
             error = 'Trying to merge incompatible data (e.g. 2D with 3D)'
             assert self.data[0].dims == i.dims, error
@@ -54,29 +52,21 @@ class XRD_merge(XRD_tools):
         data_mask = [self.data[inds == 0],  [None] * len(self.data[inds == 0])]
         
         for idx, _ in enumerate(priority_set[1:]):
-            idx += 1
-            generate_mask_from = self.data[inds < idx]
-            data_for_masking = self.data[inds == idx]
-            
-            x_lim = find_limits([i.ss2_x for i in generate_mask_from])
-            y_lim = find_limits([i.ss2_y for i in generate_mask_from])
-            
-            if generate_mask_from[0].ss2_z == None:
-                limits = [x_lim, y_lim]
-            else:
-                z_lim = find_limits([i.ss2_z for i in generate_mask_from])
-                limits = [x_lim, y_lim, z_lim]
+            mask_gen = self.data[inds < idx + 1]
+            mask_data = self.data[inds == idx + 1]
+            limits = []
+            for dim in mask_gen[0].dims:
+                limits.append(find_limits([i.co_ords[dim] for i in mask_gen]))
 
-            data_mask[0] = np.append(data_mask[0], data_for_masking)
+            data_mask[0] = np.append(data_mask[0], mask_data)
             data_mask[1] += [mask_generator(data, limits, padding) 
-                             for data in data_for_masking]
+                             for data in mask_data]
 
-        
+        merged_data = masked_merge(data_mask[0], data_mask[1])
         self.strain, self.strain_err, self.strain_param, self.peaks, \
-        self.peaks_err, self.ss2_x, self.ss2_y, self.ss2_z = \
-        masked_merge(data_mask[0], data_mask[1])
-        self.co_ords = {b'ss2_x': self.ss2_x,b'ss2_y': self.ss2_y, 
-                        b'self_z': self.ss2_z} 
+        self.peaks_err, self.ss2_x, self.ss2_y, self.ss2_z = merged_data
+        self.co_ords = {b'ss2_x': self.ss2_x, b'ss2_y': self.ss2_y, 
+                        b'ss2_z': self.ss2_z} 
         self.slit_size = None
 
 
