@@ -61,9 +61,55 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         #    co_ord += offset
             
             
-    def extract_line(self, az_angles = [0, np.pi/2], q_idx = 0, line_angle = 0, 
-                     pnt = (0,0), npts = 100, method = 'linear', 
-                     detectors = [], save = False, e_xy = False):
+    def extract_line_detector(self, detectors = [0, 11], q_idx = 0, line_angle = 0, 
+                     pnt = (0,0), npts = 100, method = 'linear', data_type = 'strain', 
+                     save = False, shear = False, E = 200 * 10 **9, v = 0.3, G = 79 * 10 **9):
+        """
+        Extracts line profile through 2D strain field.
+        
+        # detectors:  Define detectors to take strain from (rather than 
+                      calculating from full detector array).
+        # q_idx:      Specify lattice parameter/peak to save data from. 
+        # line_angle: Angle across array to extract strain from
+        # pnt:        Centre point for data extraction  
+        # npts:       Number of points (default = 100) to extract along line
+        # method:     Interpolation mehod (default = 'linear')
+        # save:       Save - replace False with filename to save
+        """
+        error = 'Extract_line method only compatible with 2d data sets.'
+        assert len(self.dims) == 2, error
+        
+        d1, d2 = [self.co_ords[x] for x in self.dims]        
+        d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npts)
+        
+        detectors = [detectors] if isinstance(detectors, 
+                    (int, float, np.float64)) else detectors
+                    
+        data_ext = np.nan * np.ones((len(d1_e), len(detectors)))
+        
+        for idx, detector in enumerate(detectors):
+            
+            if data_type == 'strain':
+                data = self.strain[..., detector, q_idx]
+            elif data_type == 'stress':
+                data = self.extract_stress(E = E, v = v, detector = detector)[0]                
+            not_nan = ~np.isnan(data)
+            try:
+                data_line = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
+                                      (d1_e, d2_e), method = method)
+            except ValueError:
+                pass
+            data_ext[:, idx] = data_line
+        
+        if save != False:
+            fname = save if isinstance(save, str) else self.filename[:-4] + '.txt'
+            np.savetxt(fname, (d1_e, d2_e, data_ext), delimiter = ',')
+        
+        return d1_e, d2_e, data_ext
+
+    def extract_line_angle(self, az_angles = [0, np.pi/2], q_idx = 0, line_angle = 0, 
+                     pnt = (0,0), npts = 100, method = 'linear', save = False, 
+                     shear = False, data_type = 'strain', E = 200 * 10 **9, v = 0.3, G = 79 * 10 **9):
         """
         Extracts line profile through 2D strain field.
         
@@ -74,8 +120,6 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         # pnt:        Centre point for data extraction  
         # npts:       Number of points (default = 100) to extract along line
         # method:     Interpolation mehod (default = 'linear')
-        # detectors:  Define detectors to take strain from (rather than 
-                      calculating from full detector array).
         # save:       Save - replace False with filename to save
         # e_xy:       Extract data from shear map rather than strain map.
         """
@@ -84,53 +128,39 @@ class XRD_tools(XRD_scrape, XRD_plotting):
         
         d1, d2 = [self.co_ords[x] for x in self.dims]        
         d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npts)
+
+        data_ext = np.nan * np.ones((len(d1_e), len(az_angles)))
         
-        if detectors == []:
-            strain_ext = np.nan * np.ones((len(d1_e), len(az_angles)))
+        for angle_idx, angle in enumerate(az_angles):
             
-            for angle_idx, angle in enumerate(az_angles):
-                strain_field = np.nan * self.strain[..., 0, 0]
-            
-                for idx in np.ndindex(strain_field.shape):
-                    p = self.strain_param[idx][0]
-                    if e_xy == False:
-                        strain_field[idx] = cos_(angle, *p)
-                    else:
-                        e_xy = -np.sin(2 * (p[1] + angle)) * p[0]
-                        strain_field[idx] = e_xy
-                    
-                not_nan = ~np.isnan(strain_field)
-                try:
-                    strain_line = griddata((d1[not_nan], d2[not_nan]), 
-                                           strain_field[not_nan], 
-                                           (d1_e, d2_e), method = method)
-                except ValueError:
-                    pass
-                strain_ext[:, angle_idx] = strain_line
-        else:
-            error = 'Cannot run extract from e_xy if detectors are specified.'
-            assert e_xy == False, error
-            detectors = [detectors] if isinstance(detectors, 
-                        (int, float, np.float64)) else detectors
-            strain_ext = np.nan * np.ones((len(d1_e), len(detectors)))
-            for idx, detector in enumerate(detectors):
-                not_nan = ~np.isnan(self.strain[..., detector, q_idx])
-                try:
-                    strain_line = griddata((d1[not_nan], d2[not_nan]), 
-                                    self.strain[..., detector, q_idx][not_nan], 
-                                    (d1_e, d2_e), method = method)
-                except ValueError:
-                    pass
-                strain_ext[:, idx] = strain_line
+            data = np.nan * self.strain[..., 0, 0]
+            for idx in np.ndindex(data.shape):
+                p = self.strain_param[idx][0]
+                e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)
+                e_xy = -np.sin(2 * (p[1] + angle)) * p[0]     
+                if data_type == 'strain':
+                    data[idx] = e_xx if not shear else e_xy
+                elif data_type == 'stress':
+                    sigma_xx = E * ((1 - v) * e_xx + v*e_yy) / ((1 + v) * (1 - 2*v))
+                    data[idx] = sigma_xx if not shear else e_xy * G
+
+            not_nan = ~np.isnan(data)
+            try:
+                data_line = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
+                                      (d1_e, d2_e), method = method)
+            except ValueError:
+                pass
+            data_ext[:, angle_idx] = data_line
         
         if save != False:
             fname = save if isinstance(save, str) else self.filename[:-4] + '.txt'
             np.savetxt(fname, (d1_e, d2_e, strain_ext), delimiter = ',')
         
-        return d1_e, d2_e, strain_ext
-        
-    def extract_stress(self, angle = 0, q_idx = 0, E = 200*10**9, v = 0.3, 
-                     G = 79 * 10**9, detector = [], save = False):
+        return d1_e, d2_e, data_ext                         
+                         
+                         
+    def extract_stress(self, angle = 0, detector = [], q_idx = 0, E = 200*10**9, v = 0.3, 
+                     G = 79 * 10**9, save = False):
         """
         Uses a plane strain assumption, with the strain the unmeasured plane
         approximating to zero. Incorrect when this is not the case.
