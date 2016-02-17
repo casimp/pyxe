@@ -16,13 +16,13 @@ import sys
 from edi12.peak_fitting import gaussian, lorentzian, psuedo_voigt
 
 
-def p0_approx(data, peak_window, func = gaussian):
+def p0_approx(data, peak_window, func = 'gaussian'):
     """
     Approximates p0 for curve fitting.
     Now estimates stdev.
     """
     x, y = data 
-    
+
     if x[0] > x[1]:
         x = x[::-1]
         y = y[::-1]
@@ -37,21 +37,25 @@ def p0_approx(data, peak_window, func = gaussian):
         stdev = 0.1
     p0 = [min(I_), max(I_) - min(I_), x_[max_index], stdev]
     
-    if func == psuedo_voigt:
+    if func == 'psuedo_voigt':
         p0.append(0.5)
 
     return p0
 
 
-def peak_fit(data, window, p0 = [], func = gaussian):
+def peak_fit(data, window, p0 = [], func = 'gaussian'):
     """
     Takes a function (guassian/lorentzian) and information about the peak 
     and calculates the peak location and standard deviation. 
     """
+    func_dict = {'gaussian': gaussian, 'lorentzian': lorentzian, 
+                 'psuedo_voigt': psuedo_voigt}
+    func = func_dict[func.lower()]
+    
     if data[0][0] > data[0][-1]:
         data[0] = data[0][::-1]
         data[1] = data[1][::-1]
- 
+        
     if p0 == []:
         p0 = p0_approx(data, window, func)
         
@@ -66,7 +70,7 @@ def peak_fit(data, window, p0 = [], func = gaussian):
     
     
 def window_optimize(folder, fnum, q0, delta_q = 0.01, steps = 100, 
-                    detector = 11):
+                    detector = 11, func = 'gaussian'):
           
         
     fname = '%d.nxs' % fnum
@@ -87,7 +91,7 @@ def window_optimize(folder, fnum, q0, delta_q = 0.01, steps = 100,
         p0 = p0_approx(data, window)
         
         try:
-            peak, stdev = peak_fit(data, window, p0, gaussian)[0]
+            peak, stdev = peak_fit(data, window, p0, 'gaussian')[0]
             errors[idx] = stdev
             
         except RuntimeError:
@@ -99,8 +103,7 @@ def window_optimize(folder, fnum, q0, delta_q = 0.01, steps = 100,
     return windows, errors
 
 
-                
-def array_fit(q_array, I_array, peak_window, func, error_limit = 1 * 10 **-4, 
+def array_fit(q_array, I_array, peak_window, func = 'gaussian', error_limit = 10 **-4, 
               output = 'verbose', unused_detectors = [23]):
         
     peaks = np.zeros(I_array.shape[:-1]) * np.nan
@@ -163,7 +166,7 @@ def array_fit(q_array, I_array, peak_window, func, error_limit = 1 * 10 **-4,
     return(peaks, stdevs)
     
 
-def q0_analysis(fname, q0_approx, window = 0.25, func = gaussian):
+def q0_analysis(fname, q0_approx, window = 0.25, func = 'gaussian'):
     
     f = h5py.File(fname, 'r')
     group = f['entry1']['EDXD_elements']
