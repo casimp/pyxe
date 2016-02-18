@@ -228,31 +228,8 @@ class XRD_tools(XRD_scrape, XRD_plotting):
                 data_array += (strain_field.flatten(), )
                 
         np.savetxt(fname, np.vstack(data_array).T)
-            
-    
-    def save_to_nxs(self, fname):
-        """
-        Saves all data back into an expanded .nxs file. Contains all original 
-        data plus q0, peak locations and strain.
-        
-        # fname:      File name/location
-        
-        ** Potentially needs revising - only useful for merged data **
-        """
 
-        with h5py.File(fname, 'w') as f:
-            data_ids = ('dims', 'slit_size', 'peaks', 'peaks_err', 'strain', 
-                        'strain_err', 'strain_param', 'ss2_x', 'ss2_y',  
-                        'ss2_z', 'q0', 'peak_windows', 'theta', 'strain_theta')
-            data_array = (self.dims, self.slit_size, self.peaks, 
-                          self.peaks_err, self.strain, self.strain_err, 
-                          self.strain_param, self.ss2_x, self.ss2_y, 
-                          self.ss2_z, self.q0, self.peak_windows)
-                
-            for data_id, data in zip(data_ids, data_array):     
-                base_tree = 'entry1/EDXD_elements/%s'
-                f.create_dataset(base_tree % data_id, data = data)   
-                
+
     def __exit__(self, exc_type, exc_value, traceback):
         self.f.close()
         
