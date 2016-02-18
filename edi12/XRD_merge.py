@@ -11,6 +11,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import numpy as np
+import h5py
 
 from edi12.XRD_tools import XRD_tools
 from edi12.merge_tools import find_limits, mask_generator, masked_merge
@@ -67,9 +68,30 @@ class XRD_merge(XRD_tools):
         self.peaks_err, self.ss2_x, self.ss2_y, self.ss2_z = merged_data
         self.co_ords = {b'ss2_x': self.ss2_x, b'ss2_y': self.ss2_y, 
                         b'ss2_z': self.ss2_z} 
-        self.slit_size = None
+        self.slit_size = []
+        
+        
+    def save_to_nxs(self, fname):
+        """
+        Saves all data back into an expanded .nxs file. Contains all original 
+        data plus q0, peak locations and strain.
+        
+        # fname:      File name/location
+        
+        ** Potentially needs revising - only useful for merged data **
+        """
 
+        with h5py.File(fname, 'w') as f:
+            data_ids = ('dims', 'slit_size', 'peaks', 'peaks_err', 'strain', 
+                        'strain_err', 'strain_param', 'ss2_x', 'ss2_y',  
+                        'ss2_z', 'q0', 'peak_windows', 'theta', 'strain_theta')
+            data_array = (self.dims, self.slit_size, self.peaks, 
+                          self.peaks_err, self.strain, self.strain_err, 
+                          self.strain_param, self.ss2_x, self.ss2_y, 
+                          self.ss2_z, self.q0, self.peak_windows)
+                
+            for data_id, data in zip(data_ids, data_array):     
+                base_tree = 'entry1/EDXD_elements/%s'
+                f.create_dataset(base_tree % data_id, data = data)   
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        pass
  
