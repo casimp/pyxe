@@ -17,7 +17,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 from edi12.fitting_optimization import array_fit
-from edi12.peak_fitting import cos_, gaussian
+from edi12.peak_fitting import cos_
 from edi12.XRD_tools import XRD_tools
 
 
@@ -28,7 +28,7 @@ class XRD_analysis(XRD_tools):
     associated error. 
     """
    
-    def __init__(self, file, q0, window, func = gaussian, 
+    def __init__(self, file, q0, window, func = 'gaussian', 
                  error_limit = 1 * 10 ** -4, output = 'simple'):
         """
         Extract and manipulate all pertinent data from the .nxs file. Takes 
@@ -37,7 +37,10 @@ class XRD_analysis(XRD_tools):
         super(XRD_tools, self).__init__(file)
         scan_command = self.f['entry1/scan_command'][:]
         self.dims = re.findall(b'ss2_\w+', scan_command)
-        self.slit_size = self.f['entry1/before_scan/s4/s4_xs'][0]
+        try:        
+            self.slit_size = self.f['entry1/before_scan/s4/s4_xs'][0]
+        except KeyError:
+            self.slit_size = []              
         group = self.f['entry1/EDXD_elements']
         q, I = group['edxd_q'], group['data']
         
