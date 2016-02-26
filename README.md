@@ -1,5 +1,5 @@
-EDI12: Energy Dispersive X-ray Diffraction (EDXD) Analysis Package
-==================================================================
+EDI12: X-ray Diffraction Strain Analysis Package
+================================================
 
 What is ED12?
 -------------
@@ -23,12 +23,40 @@ edi12 is built on Python’s scientific stack (numpy, scipy, matplotlib). Additi
 
 The new mono analysis module relies on pyFAI, which is a software package developed at the ESRF, designed to reduce SAXS, WAXS and XRPD images recorded by area detectors to 1D plots or 2D patterns (known as caking or azimuthal regrouping). PyFAI functionality under python 3 is limited and how this will be best integrated into the EDI12 workflow is still under consideration.
 
--	pyFAI
--	fabIO
+-	Python: version 2.7.11
+-	pyFAI: version 0.11.0
+-	fabIO: version 0.3.0
+
+Installation
+------------
+
+Installing edi12 is easily done using pip<sup>1</sup>. Assuming it is installed, just run the following from the command-line:
+
+::
+
+```
+pip install edi12
+```
+
+This command will download the latest version of edi12 from the Python Package Index and install it to your system.
+
+Alternatively, you can install from the distribution using the setup.py script. The source is stored in the GitHub repo, which can be browsed at:
+
+-	https://github.com/casimp/edi12
+
+Simply download and unpack, then navigate to the download directory and run the following from the command-line:
+
+::
+
+```
+python setup.py install
+```
+
+<sup>1</sup> The package is still in a pre-release state and has not yet been pushed to PyPI. Installation must be completed directly from the GitHub repo.
 
 Documentation
 -------------
 
-Documentation is hosted by readthedocs. Note that it is still a work in progress(!) and more than a little rough around the edges. It does, however provide some background infromation and installation details:
+Documentation is hosted by readthedocs. Although still incomplete they do, however, provide some background information and installation details:
 
 http://edi12.readthedocs.org/en/latest/
