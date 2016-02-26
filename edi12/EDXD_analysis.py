@@ -21,7 +21,7 @@ from edi12.peak_fitting import cos_
 from edi12.strain_tools import strain_tools
 
 
-class EDXD_analysis(strain_tools):
+class EDXD(strain_tools):
     """
     Takes an un-processed .nxs file from the I12 EDXD detector and fits curves
     to all specified peaks for each detector. Calculates strain and details

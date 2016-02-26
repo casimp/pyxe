@@ -16,7 +16,7 @@ import h5py
 from edi12.strain_tools import strain_tools
 from edi12.merge_tools import find_limits, mask_generator, masked_merge
 
-class strain_merge(strain_tools):
+class Merge(strain_tools):
     """
     Tool to merge mutliple XRD data sets - inherits tools for XRD_tools.
     """

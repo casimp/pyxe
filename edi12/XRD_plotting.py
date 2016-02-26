@@ -130,6 +130,12 @@ class XRD_plotting():
                       point specified in the extract_line command.
         """
         
+        if len(self.dims) == 1:
+            d1 = [self.co_ords[x] for x in self.dims][0]
+            for i in detectors:
+                plt.plot(d1, self.strain[..., i, q_idx], '-*')
+            return
+        
         if detectors == []:
             line_method = self.extract_line_angle
             ext = az_angles

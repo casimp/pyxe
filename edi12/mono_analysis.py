@@ -17,8 +17,12 @@ import numpy as np
 import pyFAI
 import h5py
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
 from edi12.fitting_optimization import array_fit
+from edi12.strain_tools import strain_tools
+from edi12.peak_fitting import cos_
+
 
 
 def exclusion(file_list, exclusion_list):
@@ -29,19 +33,24 @@ def exclusion(file_list, exclusion_list):
     return fnames
     
 def dim_fill(data):
+    print(data)
 
     co_ords = []
     dims = []
-    for axis, dim in zip(range(3), ['ss2_x', 'ss2_y', 'ss2_z']):
+    
+    if data.ndim == 1:
+        return [data, None, None], [b'ss2_x']
+    for axis, dim in zip(range(3), [b'ss2_x', b'ss2_y', b'ss2_z']):
         try:
             co_ords.append(data[:, axis])
             dims.append(dim)
         except IndexError:
             co_ords.append(None)
+    print(co_ords)
     return co_ords, dims
 
 
-class Mono_analysis():
+class Area(strain_tools):
     """
     Takes an un-processed .nxs file from the I12 EDXD detector and fits curves
     to all specified peaks for each detector. Calculates strain and details
@@ -103,9 +112,10 @@ class Mono_analysis():
         
         for fidx, fname in enumerate(fnames):
             img = fabio.open(os.path.join(folder, fname)).data
-            I, q, phi = ai.integrate2d(img, npt_rad = npt_rad, npt_azim = npt_azim, azimuth_range = azimuth_range, unit='q_A^-1')
-            
-            q = np.repeat(q[None, :], npt_azim, axis = 0)
+            I, q_, phi = ai.integrate2d(img, npt_rad = npt_rad, npt_azim = npt_azim, azimuth_range = azimuth_range, unit='q_A^-1')
+            # Not acceptable!            
+            self.phi = phi
+            q = np.repeat(q_[None, :], npt_azim, axis = 0)
             for i in range(npt_azim):            
                 plt.plot(q[i], I[i])
             plt.xlim([2.5, 5])
@@ -140,31 +150,49 @@ class Mono_analysis():
                 base_tree = 'entry1/EDXD_elements/%s'
                 f.create_dataset(base_tree % data_id, data = data)
 
-            
+
+    def strain_fit(self, error_limit):
+        """
+        Fits a sinusoidal curve to the strain information from each detector. 
+        """
+        data_shape = self.strain.shape
+        self.strain_param = np.nan * np.ones(data_shape[:-2] + \
+                            (data_shape[-1], ) + (3, ))
+        for idx in np.ndindex(data_shape[:-2] + (data_shape[-1],)):
+            print(idx[:-1])
+            data = self.strain[idx[:-1]][..., idx[-1]]
+            print(data)
+            not_nan = ~np.isnan(data)
+            angle = self.phi * np.pi / 180
+            if angle[not_nan].size > 2:
+                # Estimate curve parameters
+                p0 = [np.nanmean(data), 3*np.nanstd(data)/(2**0.5), 0]
+                try:
+                    a, b = curve_fit(cos_, angle[not_nan], data[not_nan], p0)
+                    perr_ = np.diag(b)
+                    perr = np.sqrt(perr_[0] + perr_[2])
+                    if perr < 2 * error_limit:              
+                        self.strain_param[idx] = a
+                except (TypeError, RuntimeError):
+                    print('Unable to fit peak.')
+            else:
+                print('Insufficient data to attempt curve_fit.')
+                
+                
 
 poni = (741.577, 1053.137, 1027.562, 0.153, 41.314, 200, 200, 1.631371*10**-11)
 base_folder = 'N:/Work Data/ee11080/Test15_CNTI6/'
 
 bidge_holder = []
-for i in [0, 602, 610, 751, 753]:
+for i in [0]:
     folder= base_folder + str(i)
     pos_file = folder + '/positions.csv'
-    bidge = Mono_analysis(folder, pos_file, poni, 3.505, 0.25, 
+    bidge = Area(folder, pos_file, poni, 2.5286991970803694, 0.25, 
                           pos_delimiter = ',', exclude = ['dark'], output = 'simple', 
                           error_limit = 5 * 10 ** -4, azimuth_range = [-160, -20],
                           npt_azim = 8)
                           
     bidge_holder.append(bidge)
-#2.5286991970803694
-print('hi')
-plt.figure(figsize = (12,6))
-
-for bidge in bidge_holder:
-    plt.plot(bidge.ss2_x[:-1], bidge.strain[:-1, 4], '*-')
-    
-#plt.xlim([0, 5.0])
-#plt.ylim([-0.0005, 0.001])
-plt.legend([0, 602, 610, 751, 753], loc = 4)
 
 
 
