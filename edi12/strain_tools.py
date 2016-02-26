@@ -14,20 +14,20 @@ from __future__ import unicode_literals
 import numpy as np
 from scipy.interpolate import griddata
 
-from edi12.plotting import line_extract
-from edi12.peak_fitting import cos_
-from edi12.XRD_scrape import XRD_scrape
-from edi12.XRD_plotting import XRD_plotting
+from pyxe.plotting import line_extract
+from pyxe.peak_fitting import cos_
+from pyxe.scrape import Scrape
+from pyxe.strain_plotting import StrainPlotting
 
 
-class strain_tools(XRD_scrape, XRD_plotting):
+class StrainTools(Scrape, StrainPlotting):
     """
     Takes post-processed .nxs file from the I12 EDXD detector. File should have
     been created with the XRD_analysis tool and contain detector specific peaks 
     and associated strain.
     """
     def __init__(self, file):
-        super(strain_tools, self).__init__(file)
+        super(StrainTools, self).__init__(file)
         group = self.f['entry1']['EDXD_elements']
         try:        
             self.strain = group['strain'][:]

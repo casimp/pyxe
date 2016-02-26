@@ -13,8 +13,8 @@ from __future__ import unicode_literals
 import numpy as np
 import h5py
 
-from edi12.strain_tools import strain_tools
-from edi12.merge_tools import find_limits, mask_generator, masked_merge
+from pyxe.strain_tools import strain_tools
+from pyxe.merge_tools import find_limits, mask_generator, masked_merge
 
 class Merge(strain_tools):
     """

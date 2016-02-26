@@ -16,12 +16,12 @@ import shutil
 import numpy as np
 from scipy.optimize import curve_fit
 
-from edi12.fitting_optimization import array_fit
-from edi12.peak_fitting import cos_
-from edi12.strain_tools import strain_tools
+from pyxe.fitting_optimization import array_fit
+from pyxe.fitting_functions import cos_
+from pyxe.strain_tools import strain_tools
 
 
-class EDXD(strain_tools):
+class EDI12(strain_tools):
     """
     Takes an un-processed .nxs file from the I12 EDXD detector and fits curves
     to all specified peaks for each detector. Calculates strain and details

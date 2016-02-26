@@ -27,7 +27,7 @@ def dimension_fill(data, dim_ID):
     return dimension_data
 
 
-class XRD_scrape():
+class Scrape():
     """
     Basic scraping constructor class for XRD tools and analysis.
     """

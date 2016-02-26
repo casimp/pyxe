@@ -5,7 +5,7 @@ Created on Mon Nov 30 13:38:59 2015
 @author: casim
 """
 
-from edi12.EDXD_analysis import EDXD
-from edi12.mono_analysis import Area
-from edi12.strain_tools import strain_tools
-from edi12.strain_merge import Merge
+from pyxe.edi12_analysis import EDI12
+from pyxe.area_analysis import Area
+from pyxe.strain_tools import strain_tools
+from pyxe.merge import Merge

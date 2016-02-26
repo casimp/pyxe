@@ -5,19 +5,13 @@ except ImportError:
 
 
 setup(
-    name='edi12',
-    version='0.5.0',
+    name='pyxe',
+    version='0.5.1',
     author='C. Simpson',
     author_email='c.a.simpson01@gmail.com',
-    packages=['edi12'],
-    url='http://pypi.python.org/pypi/edi12/',
+    packages=['pyxe'],
+    url='http://pypi.python.org/pypi/pyxe/',
     license='LICENSE.txt',
-    description='Analysis of data produced on the I12 beam line. Notably allowing for the calculation of strain and stress.',
+    description='XRD strain analysis package. Efficient analysis and visulisation of diffraction data.',
     long_description=open('README.md').read(),
-#    install_requires=[
-#        "numpy",
-#        "scipy",
-#        "matplotlib",
-#        "h5py"
-#    ],
 )

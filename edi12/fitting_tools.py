@@ -13,7 +13,7 @@ from scipy.optimize import curve_fit
 import numpy as np
 import h5py
 import sys
-from edi12.peak_fitting import gaussian, lorentzian, psuedo_voigt
+from pyxe.fitting_functions import gaussian, lorentzian, psuedo_voigt
 
 
 def p0_approx(data, peak_window, func = 'gaussian'):

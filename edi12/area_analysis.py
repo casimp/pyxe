@@ -19,9 +19,10 @@ import h5py
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-from edi12.fitting_optimization import array_fit
-from edi12.strain_tools import strain_tools
-from edi12.peak_fitting import cos_
+from pyxe.fitting_optimization import array_fit
+from pyxe.fitting_functions import cos_
+from pyxe.strain_tools import strain_tools
+
 
 
 
