@@ -18,10 +18,10 @@ from scipy.optimize import curve_fit
 
 from edi12.fitting_optimization import array_fit
 from edi12.peak_fitting import cos_
-from edi12.XRD_tools import XRD_tools
+from edi12.strain_tools import strain_tools
 
 
-class XRD_analysis(XRD_tools):
+class EDXD_analysis(strain_tools):
     """
     Takes an un-processed .nxs file from the I12 EDXD detector and fits curves
     to all specified peaks for each detector. Calculates strain and details
@@ -34,7 +34,7 @@ class XRD_analysis(XRD_tools):
         Extract and manipulate all pertinent data from the .nxs file. Takes 
         either one or multiple (list) q0s.
         """
-        super(XRD_tools, self).__init__(file)
+        super(strain_tools, self).__init__(file)
         scan_command = self.f['entry1/scan_command'][:]
         self.dims = re.findall(b'ss2_\w+', scan_command)
         try:        
@@ -46,12 +46,12 @@ class XRD_analysis(XRD_tools):
         
         # Convert int or float to list
         self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
-        self.peak_windows = [[q - window/2, q + window/2] for q in self.q0]
+        self.peak_windows = [[q_ - window/2, q_ + window/2] for q_ in self.q0]
         
         # Accept detector specific q0 2d-array
         if len(np.shape(self.q0)) == 2:
             q0_av = np.nanmean(self.q0, 0)
-            self.peak_windows = [[q - window/2, q + window/2] for q in q0_av]
+            self.peak_windows = [[q_ - window/2, q_ +window/2] for q_ in q0_av]
  
         # Iterate across q0 values and fit peaks for all detectors
         array_shape = I.shape[:-1] + (np.shape(self.q0)[-1],)

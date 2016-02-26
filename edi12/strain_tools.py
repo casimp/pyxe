@@ -10,7 +10,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import h5py
+#import h5py
 import numpy as np
 from scipy.interpolate import griddata
 
@@ -20,14 +20,14 @@ from edi12.XRD_scrape import XRD_scrape
 from edi12.XRD_plotting import XRD_plotting
 
 
-class XRD_tools(XRD_scrape, XRD_plotting):
+class strain_tools(XRD_scrape, XRD_plotting):
     """
     Takes post-processed .nxs file from the I12 EDXD detector. File should have
     been created with the XRD_analysis tool and contain detector specific peaks 
     and associated strain.
     """
     def __init__(self, file):
-        super(XRD_tools, self).__init__(file)
+        super(strain_tools, self).__init__(file)
         group = self.f['entry1']['EDXD_elements']
         try:        
             self.strain = group['strain'][:]

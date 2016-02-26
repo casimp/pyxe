@@ -13,10 +13,10 @@ from __future__ import unicode_literals
 import numpy as np
 import h5py
 
-from edi12.XRD_tools import XRD_tools
+from edi12.strain_tools import strain_tools
 from edi12.merge_tools import find_limits, mask_generator, masked_merge
 
-class XRD_merge(XRD_tools):
+class strain_merge(strain_tools):
     """
     Tool to merge mutliple XRD data sets - inherits tools for XRD_tools.
     """
@@ -43,9 +43,9 @@ class XRD_merge(XRD_tools):
         self.dims = self.data[0].dims
         
         if order == 'slit':
-            priority = [data.slit_size for data in self.data]
+            priority = [data_.slit_size for data_ in self.data]
         elif order == 'simple':
-            priority = [0 for data in self.data]
+            priority = [0 for data_ in self.data]
         else:
             priority = order
 
@@ -61,7 +61,7 @@ class XRD_merge(XRD_tools):
 
             data_mask[0] = np.append(data_mask[0], mask_data)
             data_mask[1] += [mask_generator(data, limits, padding) 
-                             for data in mask_data]
+                             for data_ in mask_data]
 
         merged_data = masked_merge(data_mask[0], data_mask[1])
         self.strain, self.strain_err, self.strain_param, self.peaks, \
