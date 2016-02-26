@@ -1,12 +1,12 @@
-try: 
-    from setuptools import setup 
-except ImportError: 
+try:
+    from setuptools import setup
+except ImportError:
     from distutils.core import setup
 
 
 setup(
     name='edi12',
-    version='0.2.0',
+    version='0.5.0',
     author='C. Simpson',
     author_email='c.a.simpson01@gmail.com',
     packages=['edi12'],
