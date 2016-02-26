@@ -21,7 +21,7 @@ edi12 is built on Python’s scientific stack (numpy, scipy, matplotlib). Additi
 -	matplotlib: version 1.5
 -	h5py: version 2.5.0
 
-The new mono analysis module relies on pyFAI, which is a software package developed at the ESRF, designed to reduce SAXS, WAXS and XRPD images recorded by area detectors to 1D plots or 2D patterns (known as caking or azimuthal regrouping). PyFAI functionality under python 3 is limited and how this will be best integrated into the EDI12 workflow is still under consideration.
+The new mono analysis module relies on pyFAI, which is a software package developed at the ESRF, designed to reduce SAXS, WAXS and XRPD images recorded by area detectors to 1D plots or 2D patterns (known as caking or azimuthal regrouping). PyFAI functionality under python 3 is limited and how this will be best integrated into the EDI12 workflow is still under consideration. Testing has so far been completed using:
 
 -	Python: version 2.7.11
 -	pyFAI: version 0.11.0
@@ -31,8 +31,6 @@ Installation
 ------------
 
 Installing edi12 is easily done using pip<sup>1</sup>. Assuming it is installed, just run the following from the command-line:
-
-::
 
 ```
 pip install edi12
@@ -45,8 +43,6 @@ Alternatively, you can install from the distribution using the setup.py script. 
 -	https://github.com/casimp/edi12
 
 Simply download and unpack, then navigate to the download directory and run the following from the command-line:
-
-::
 
 ```
 python setup.py install
