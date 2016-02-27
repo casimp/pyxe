@@ -69,37 +69,39 @@ def peak_fit(data, window, p0 = [], func = 'gaussian'):
     return [coeff[2], perr[2]], coeff
     
     
-def window_optimize(folder, fnum, q0, delta_q = 0.01, steps = 100, 
-                    detector = 11, func = 'gaussian'):
+def winwidth_optimize(fname, q0, delta_q = 0.01, steps = 100, 
+                     detectors = [0, 5, 11], point = (), func = 'gaussian'):
           
-        
-    fname = '%d.nxs' % fnum
-    f = h5py.File(folder + fname, 'r')
+    f = h5py.File(fname, 'r')
     group = f['entry1']['EDXD_elements']
+    ndims = group['data'][..., 0, 0].ndim
 
-    windows = np.zeros(steps)    
-    errors = np.zeros(steps)    
+    if point == ():
+        point = (0, ) * ndims
+        
+    error = 'Must define point with correct number of dimensions.'
+    assert ndims == len(point), error
+    assert isinstance(point, tuple), 'Defined point must be a tuple'  
     
-    for idx, i in enumerate(range(1, steps + 1)):
-        
-        window = [q0 - delta_q * i, q0 + delta_q * i]
-        print(window)
-        
-        x, y, = 0, 0
-        
-        data = (group['edxd_q'][detector], group['data'][x, y, detector])
-        p0 = p0_approx(data, window)
-        
-        try:
-            peak, stdev = peak_fit(data, window, p0, 'gaussian')[0]
-            errors[idx] = stdev
+    windows = np.zeros((steps, len(detectors)))    
+    errors = np.zeros((steps, len(detectors)))
+    
+    for didx, detector in enumerate(detectors):    
+    
+        for idx, i in enumerate(range(1, steps + 1)):
             
-        except RuntimeError:
-            print('Peak not found at index (%d, %d)' % (x, y))
-            errors[idx] = np.nan
+            window = [q0 - delta_q * i, q0 + delta_q * i]
+            data = (group['edxd_q'][detector], group['data'][point][detector])
+            p0 = p0_approx(data, window)
             
-        windows[idx] = delta_q * i    
-        
+            try:
+                peak, stdev = peak_fit(data, window, p0, 'gaussian')[0]
+                errors[idx, didx] = stdev
+            except RuntimeError:
+                errors[idx, didx] = np.nan
+                
+            windows[idx, didx] = delta_q * i    
+
     return windows, errors
 
 
