@@ -19,9 +19,32 @@ from scipy.optimize import curve_fit
 from pyxe.fitting_tools import array_fit
 from pyxe.fitting_functions import cos_
 from pyxe.strain_tools import StrainTools
+from pyxe.plotting import StrainPlotting
 
 
-class EDI12(StrainTools):
+def dimension_fill(data, dim_ID):
+    """
+    Extracts correct spatial array from hdf5 file. Returns None is the
+    dimension doesn't exist.
+    
+    # data:       Raw data (hdf5 format)   
+    # dim_ID:     Dimension ID (ss_x, ss2_y or ss2_z)
+    """
+    try:
+        dimension_data = data['entry1/EDXD_elements/' + dim_ID][:]
+    except KeyError:
+        dimension_data = None
+    return dimension_data
+
+def scrape_slits(data):
+    try:        
+        slit_size = data['entry1/before_scan/s4/s4_xs'][0]
+    except KeyError:
+        slit_size = []   
+    return slit_size
+
+
+class EDI12(StrainTools, StrainPlotting):
     """
     Takes an un-processed .nxs file from the I12 EDXD detector and fits curves
     to all specified peaks for each detector. Calculates strain and details
@@ -34,25 +57,25 @@ class EDI12(StrainTools):
         Extract and manipulate all pertinent data from the .nxs file. Takes 
         either one or multiple (list) q0s.
         """
-        super(StrainTools, self).__init__(file)
+        self.filename = file
+        self.f = h5py.File(file, 'r') 
+        self.ss2_x = dimension_fill(self.f, 'ss2_x')   
+        self.ss2_y = dimension_fill(self.f, 'ss2_y')
+        self.ss2_z = dimension_fill(self.f, 'ss2_z')
+        self.co_ords = {b'ss2_x': self.ss2_x,b'ss2_y': self.ss2_y, 
+                        b'self_z': self.ss2_z} 
+        self.slit_size = scrape_slits(self.f)   
+                        
         scan_command = self.f['entry1/scan_command'][:]
-        # Has this [0] broken py3 comp?
         self.dims = re.findall(b'ss2_\w+', scan_command[0])
-        try:        
-            self.slit_size = self.f['entry1/before_scan/s4/s4_xs'][0]
-        except KeyError:
-            self.slit_size = []              
-        group = self.f['entry1/EDXD_elements']
-        q, I = group['edxd_q'], group['data']
-        
-        # Convert int or float to list
         self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
-        self.peak_windows = [[q_ - window/2, q_ + window/2] for q_ in self.q0]
-        
-        # Accept detector specific q0 2d-array
+        self.peak_windows = [[q_ - window/2, q_ + window/2] for q_ in self.q0]               
         if len(np.shape(self.q0)) == 2:
             q0_av = np.nanmean(self.q0, 0)
             self.peak_windows = [[q_ - window/2, q_ +window/2] for q_ in q0_av]
+            
+        group = self.f['entry1/EDXD_elements']
+        q, I = group['edxd_q'], group['data']
  
         # Iterate across q0 values and fit peaks for all detectors
         array_shape = I.shape[:-1] + (np.shape(self.q0)[-1],)
