@@ -16,12 +16,12 @@ import shutil
 import numpy as np
 from scipy.optimize import curve_fit
 
-from pyxe.fitting_optimization import array_fit
+from pyxe.fitting_tools import array_fit
 from pyxe.fitting_functions import cos_
-from pyxe.strain_tools import strain_tools
+from pyxe.strain_tools import StrainTools
 
 
-class EDI12(strain_tools):
+class EDI12(StrainTools):
     """
     Takes an un-processed .nxs file from the I12 EDXD detector and fits curves
     to all specified peaks for each detector. Calculates strain and details
@@ -34,9 +34,10 @@ class EDI12(strain_tools):
         Extract and manipulate all pertinent data from the .nxs file. Takes 
         either one or multiple (list) q0s.
         """
-        super(strain_tools, self).__init__(file)
+        super(StrainTools, self).__init__(file)
         scan_command = self.f['entry1/scan_command'][:]
-        self.dims = re.findall(b'ss2_\w+', scan_command)
+        # Has this [0] broken py3 comp?
+        self.dims = re.findall(b'ss2_\w+', scan_command[0])
         try:        
             self.slit_size = self.f['entry1/before_scan/s4/s4_xs'][0]
         except KeyError:

@@ -15,14 +15,14 @@ from pyxe.plotting import StrainPlotting
 from pyxe.strain_tools import StrainTools
 
 
-class Reload(Scrape, StrainTools, StrainPlotting):
+class Reload(StrainTools, StrainPlotting):
     """
     Takes post-processed .nxs file from the I12 EDXD detector. File should have
     been created with the XRD_analysis tool and contain detector specific peaks 
     and associated strain.
     """
     def __init__(self, file):
-        super(StrainTools, self).__init__(file)
+        super(Reload, self).__init__(file)
         group = self.f['entry1']['EDXD_elements']
         try:        
             self.strain = group['strain'][:]

@@ -14,10 +14,10 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from scipy.interpolate import griddata
 from pyxe.fitting_functions import cos_
-from pyxe.plotting import plot_complex, meshgrid_res, line_extract
+from pyxe.plotting_tools import plot_complex, meshgrid_res, line_extract
 
 
-class StrainPlotting():
+class StrainPlotting(object):
     """
     Takes post-processed .nxs file from the I12 EDXD detector. File should have
     been created with the XRD_analysis tool and contain detector specific peaks 
@@ -138,7 +138,7 @@ class StrainPlotting():
                 for i in detectors:
                     plt.plot(d1, self.strain[..., i, q_idx], '-*')
             else:
-                    
+                pass
             return
         
         if detectors == []:

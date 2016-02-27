@@ -108,6 +108,7 @@ def array_fit(q_array, I_array, peak_window, func = 'gaussian', error_limit = 10
         
     peaks = np.zeros(I_array.shape[:-1]) * np.nan
     stdevs = np.zeros(I_array.shape[:-1]) * np.nan
+    print(q_array)
     detectors = [i for i in range(q_array.shape[0])]
     try:
         for detector in unused_detectors:
@@ -176,7 +177,7 @@ def q0_analysis(fname, q0_approx, window = 0.25, func = 'gaussian'):
     if q_type == int or q_type == float or q_type == np.float64:
         q0_approx = [q0_approx]    
     
-    peak_windows = np.array([[q - window/2, q + window/2] for q in q0_approx])
+    peak_windows = np.array([[q_ - window/2, q_ + window/2] for q_ in q0_approx])
     
     # Create empty arrays to store peaks and their stdevs 
     array_shape = I.shape[:-1] + (len(q0_approx),)

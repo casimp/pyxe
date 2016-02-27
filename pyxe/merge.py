@@ -13,10 +13,10 @@ from __future__ import unicode_literals
 import numpy as np
 import h5py
 
-from pyxe.strain_tools import strain_tools
+from pyxe.strain_tools import StrainTools
 from pyxe.merge_tools import find_limits, mask_generator, masked_merge
 
-class Merge(strain_tools):
+class Merge(StrainTools):
     """
     Tool to merge mutliple XRD data sets - inherits tools for XRD_tools.
     """
@@ -77,21 +77,17 @@ class Merge(strain_tools):
         data plus q0, peak locations and strain.
         
         # fname:      File name/location
-        
-        ** Potentially needs revising - only useful for merged data **
         """
 
         with h5py.File(fname, 'w') as f:
-            data_ids = ('dims', 'slit_size', 'peaks', 'peaks_err', 'strain', 
-                        'strain_err', 'strain_param', 'ss2_x', 'ss2_y',  
-                        'ss2_z', 'q0', 'peak_windows', 'theta', 'strain_theta')
-            data_array = (self.dims, self.slit_size, self.peaks, 
-                          self.peaks_err, self.strain, self.strain_err, 
-                          self.strain_param, self.ss2_x, self.ss2_y, 
-                          self.ss2_z, self.q0, self.peak_windows)
-                
-            for data_id, data in zip(data_ids, data_array):     
+            data_ids = ('dims', 'slit_size', 'q0','peak_windows', 'peaks',  
+                        'peaks_err', 'strain', 'strain_err', 'strain_param')
+            data_array = (self.dims, self.slit_size, self.q0,  
+                          self.peak_windows, self.peaks, self.peaks_err,  
+                          self.strain, self.strain_err, self.strain_param)
+            
+            for data_id, data in zip(data_ids, data_array):
                 base_tree = 'entry1/EDXD_elements/%s'
-                f.create_dataset(base_tree % data_id, data = data)   
+                f.create_dataset(base_tree % data_id, data = data)
 
  

@@ -15,9 +15,9 @@ import numpy as np
 from scipy.interpolate import griddata
 
 from pyxe.plotting import line_extract
-from pyxe.peak_fitting import cos_
+from pyxe.fitting_functions import cos_
 from pyxe.scrape import Scrape
-from pyxe.strain_plotting import StrainPlotting
+from pyxe.plotting import StrainPlotting
 
 
 class StrainTools(Scrape, StrainPlotting):
