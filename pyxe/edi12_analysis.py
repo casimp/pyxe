@@ -66,8 +66,8 @@ class EDI12(StrainTools, StrainPlotting):
                         b'self_z': self.ss2_z} 
         self.slit_size = scrape_slits(self.f)   
                         
-        scan_command = self.f['entry1/scan_command'][:]
-        self.dims = re.findall(b'ss2_\w+', scan_command[0])
+        scan_command = self.f['entry1/scan_command'][0]
+        self.dims = re.findall(b'ss2_\w+', scan_command)
         self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
         self.peak_windows = [[q_ - window/2, q_ + window/2] for q_ in self.q0]               
         if len(np.shape(self.q0)) == 2:
@@ -91,6 +91,7 @@ class EDI12(StrainTools, StrainPlotting):
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
         self.strain_fit(error_limit)
+        self.phi = np.linspace(-np.pi/2, np.pi/2, 23)
 
     def strain_fit(self, error_limit):
         """
@@ -131,14 +132,15 @@ class EDI12(StrainTools, StrainPlotting):
             fname = '%s_md.nxs' % self.filename[:-4]
         
         shutil.copy(self.filename, fname)
+        data_ids = ('phi', 'dims', 'slit_size', 'q0','peak_windows', 'peaks',  
+                    'peaks_err', 'strain', 'strain_err', 'strain_param')
+        data_array = (self.phi, self.dims, self.slit_size, self.q0,  
+                      self.peak_windows, self.peaks, self.peaks_err,  
+                      self.strain, self.strain_err, self.strain_param)
         with h5py.File(fname, 'r+') as f:
-            data_ids = ('dims', 'slit_size', 'q0','peak_windows', 'peaks',  
-                        'peaks_err', 'strain', 'strain_err', 'strain_param')
-            data_array = (self.dims, self.slit_size, self.q0,  
-                          self.peak_windows, self.peaks, self.peaks_err,  
-                          self.strain, self.strain_err, self.strain_param)
             
             for data_id, data in zip(data_ids, data_array):
+                print(data_id)
                 base_tree = 'entry1/EDXD_elements/%s'
                 f.create_dataset(base_tree % data_id, data = data)
                 

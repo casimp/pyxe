@@ -34,6 +34,7 @@ class Merge(StrainTools):
                       the same length as the data tuple.
         """
         self.data = np.array(data)
+        self.phi = self.data[0].phi
         self.q0 = self.data[0].q0
         self.peak_windows = self.data[0].peak_windows
         
@@ -81,12 +82,15 @@ class Merge(StrainTools):
 
         with h5py.File(fname, 'w') as f:
             data_ids = ('dims', 'slit_size', 'q0','peak_windows', 'peaks',  
-                        'peaks_err', 'strain', 'strain_err', 'strain_param')
+                        'peaks_err', 'strain', 'strain_err', 'strain_param') \
+                        + tuple([dim.decode('utf8') for dim in self.dims])
             data_array = (self.dims, self.slit_size, self.q0,  
                           self.peak_windows, self.peaks, self.peaks_err,  
-                          self.strain, self.strain_err, self.strain_param)
+                          self.strain, self.strain_err, self.strain_param) \
+                          + tuple([self.co_ords[x] for x in self.dims])
             
             for data_id, data in zip(data_ids, data_array):
+                print(data_id)
                 base_tree = 'entry1/EDXD_elements/%s'
                 f.create_dataset(base_tree % data_id, data = data)
 

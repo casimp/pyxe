@@ -115,7 +115,7 @@ class Area(strain_tools):
             img = fabio.open(os.path.join(folder, fname)).data
             I, q_, phi = ai.integrate2d(img, npt_rad = npt_rad, npt_azim = npt_azim, azimuth_range = azimuth_range, unit='q_A^-1')
             # Not acceptable!            
-            self.phi = phi
+            self.phi = phi * np.pi / 180
             q = np.repeat(q_[None, :], npt_azim, axis = 0)
             for i in range(npt_azim):            
                 plt.plot(q[i], I[i])
@@ -141,9 +141,9 @@ class Area(strain_tools):
         fname = '_md.nxs'
         
         with h5py.File(fname, 'w') as f:
-            data_ids = ('dims', 'slit_size', 'q0','peak_windows', 'peaks',  
+            data_ids = ('phi', 'dims', 'slit_size', 'q0','peak_windows', 'peaks',  
                         'peaks_err', 'strain', 'strain_err', 'strain_param')
-            data_array = (self.dims, self.slit_size, self.q0,  
+            data_array = (self.phi, self.dims, self.slit_size, self.q0,  
                           self.peak_windows, self.peaks, self.peaks_err,  
                           self.strain, self.strain_err, self.strain_param)
             

@@ -53,6 +53,7 @@ class Reload(StrainTools, StrainPlotting):
             raise
 
         self.dims = group['dims'][:]
+        self.phi = group['phi'][:]
         self.q0 = group['q0'][:]
         self.peak_windows = group['peak_windows'][:]
         self.peaks = group['peaks'][:]
