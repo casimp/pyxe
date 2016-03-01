@@ -52,7 +52,7 @@ class Reload(StrainTools, StrainPlotting):
                        'Run XRD_analysis tool.')
             raise
 
-        self.dims = group['dims'][:]
+        self.dims = list(group['dims'][:])
         self.phi = group['phi'][:]
         self.q0 = group['q0'][:]
         self.peak_windows = group['peak_windows'][:]
@@ -61,7 +61,6 @@ class Reload(StrainTools, StrainPlotting):
         self.strain_err = group['strain_err'][:]
         self.strain_param = group['strain_param'][:]
         
-
         self.ss2_x = dimension_fill(self.f, 'ss2_x')   
         self.ss2_y = dimension_fill(self.f, 'ss2_y')
         self.ss2_z = dimension_fill(self.f, 'ss2_z')
