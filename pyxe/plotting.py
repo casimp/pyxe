@@ -133,32 +133,34 @@ class StrainPlotting(object):
         assert len(self.dims) <= 2, error      
         
         if len(self.dims) == 1:
-            d1 = [self.co_ords[x] for x in self.dims][0]
-            if detectors == []:            
+            d1 = self.co_ords[self.dims[0]]
+            if detectors != []:            
                 for i in detectors:
                     plt.plot(d1, self.strain[..., i, q_idx], '-*')
             else:
-                pass
-            return
+                d1, data = self.extract_line_angle(az_angles)
+                for idx, angle in enumerate(az_angles):
+                    plt.plot(d1, data[:, idx], '-*')
         
-        if detectors == []:
-            line_method = self.extract_line_angle
-            ext = az_angles
         else:
-            line_method = self.extract_line_detector
-            ext = detectors
+            if detectors == []:
+                line_method = self.extract_line_angle
+                ext = az_angles
+            else:
+                line_method = self.extract_line_detector
+                ext = detectors
+                
+            d1, d2, data = line_method(ext, q_idx = q_idx, line_angle = line_angle, 
+                            pnt = pnt, npts = npts, method = method, shear = shear,
+                            data_type = data_type, E = E, v = v, G = G)  
+                                    
+            d1_min, d2_min = np.min(d1), np.min(d2)            
+            zero = ((pnt[0] - d1_min)**2 + (pnt[1] - d2_min)**2)**0.5
+            scalar_ext = ((d1 - d1_min)**2 + (d2 - d2_min)**2)**0.5 - zero
             
-        d1, d2, data = line_method(ext, q_idx = q_idx, line_angle = line_angle, 
-                        pnt = pnt, npts = npts, method = method, shear = shear,
-                        data_type = data_type, E = E, v = v, G = G)  
-                                
-        d1_min, d2_min = np.min(d1), np.min(d2)            
-        zero = ((pnt[0] - d1_min)**2 + (pnt[1] - d2_min)**2)**0.5
-        scalar_ext = ((d1 - d1_min)**2 + (d2 - d2_min)**2)**0.5 - zero
-        
-        
-        x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
-        plt.plot(x[axis], data, '-*')
+            
+            x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
+            plt.plot(x[axis], data, '-*')
 
 
     def plot_detector(self, detector = 0, q_idx = 0, cmap = 'RdBu_r', res = 0.1, 

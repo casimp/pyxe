@@ -17,7 +17,6 @@ from scipy.interpolate import griddata
 from pyxe.plotting import line_extract
 from pyxe.fitting_functions import cos_
 
-
 class StrainTools(object):
     """
     Takes post-processed .nxs file from the I12 EDXD detector. File should have
@@ -105,13 +104,17 @@ class StrainTools(object):
         # save:       Save - replace False with filename to save
         # e_xy:       Extract data from shear map rather than strain map.
         """
-        error = 'Extract_line method only compatible with 2d data sets.'
-        assert len(self.dims) == 2, error
+        error = 'Extract_line method only compatible with 1D/2D data sets.'
+        assert len(self.dims) <= 2, error
         
-        d1, d2 = [self.co_ords[x] for x in self.dims]        
-        d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npts)
+        if len(self.dims) == 1:
+            d1 = self.co_ords[self.dims[0]]
+            data_ext = np.nan * np.ones((len(d1), len(az_angles)))
 
-        data_ext = np.nan * np.ones((len(d1_e), len(az_angles)))
+        else:
+            d1, d2 = [self.co_ords[x] for x in self.dims]        
+            d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npts)
+            data_ext = np.nan * np.ones((len(d1_e), len(az_angles)))
         
         for angle_idx, angle in enumerate(az_angles):
             
@@ -127,18 +130,23 @@ class StrainTools(object):
                     data[idx] = sigma_xx if not shear else e_xy * G
 
             not_nan = ~np.isnan(data)
-            try:
-                data_line = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
-                                      (d1_e, d2_e), method = method)
-            except ValueError:
-                pass
-            data_ext[:, angle_idx] = data_line
-        
+            
+            if len(self.dims) == 2:
+                try:
+                    data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
+                                          (d1_e, d2_e), method = method)
+                except ValueError:
+                    pass
+            data_ext[:, angle_idx] = data
+                
         if save != False:
             fname = save if isinstance(save, str) else self.filename[:-4] + '.txt'
             np.savetxt(fname, (d1_e, d2_e, data_ext), delimiter = ',')
         
-        return d1_e, d2_e, data_ext                         
+        if len(self.dims) == 1:
+            return d1[not_nan], data_ext[not_nan]
+        else:
+            return d1_e, d2_e, data_ext                      
                          
                          
     def extract_stress(self, angle = 0, detector = [], q_idx = 0, 
@@ -210,7 +218,8 @@ class StrainTools(object):
                 
         np.savetxt(fname, np.vstack(data_array).T)
 
-
+               
+                
     def __exit__(self, exc_type, exc_value, traceback):
         self.f.close()
         
