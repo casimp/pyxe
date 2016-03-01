@@ -140,7 +140,6 @@ class EDI12(StrainTools, StrainPlotting):
         with h5py.File(fname, 'r+') as f:
             
             for data_id, data in zip(data_ids, data_array):
-                print(data_id)
                 base_tree = 'entry1/EDXD_elements/%s'
                 f.create_dataset(base_tree % data_id, data = data)
                 

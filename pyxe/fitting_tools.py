@@ -110,7 +110,7 @@ def array_fit(q_array, I_array, peak_window, func = 'gaussian', error_limit = 10
         
     peaks = np.zeros(I_array.shape[:-1]) * np.nan
     stdevs = np.zeros(I_array.shape[:-1]) * np.nan
-    print(q_array)
+    
     detectors = [i for i in range(q_array.shape[0])]
     try:
         for detector in unused_detectors:
@@ -149,7 +149,7 @@ def array_fit(q_array, I_array, peak_window, func = 'gaussian', error_limit = 10
                 stdevs[index] = np.nan
                 run_error += 1
                 
-            if output != 'verbose':
+            if output == 'simple':
                 sys.stdout.write("\rProgress: [{0:20s}] {1:.0f}%".format('#' * 
                 int(20*(idx + 1) / len(detectors)), 100*((idx + 1)/len(detectors))))
                 sys.stdout.flush()
@@ -161,7 +161,8 @@ def array_fit(q_array, I_array, peak_window, func = 'gaussian', error_limit = 10
         total_err_exceed += err_exceed
         total_run_error += run_error 
          
-    print('\nTotal points: %i (23 detectors x %i positions)'
+    if output != 'none':
+        print('\nTotal points: %i (23 detectors x %i positions)'
           '\nPeak not found in %i position/detector combintions'
           '\nError limit exceeded (or pcov not estimated) %i times' % 
           (23*peaks.size/24, peaks.size/24, total_run_error, total_err_exceed))                  
