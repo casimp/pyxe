@@ -19,9 +19,10 @@ import h5py
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-from pyxe.fitting_optimization import array_fit
+from pyxe.fitting_tools import array_fit
 from pyxe.fitting_functions import cos_
-from pyxe.strain_tools import strain_tools
+from pyxe.strain_tools import StrainTools
+from pyxe.plotting import StrainPlotting
 
 
 
@@ -51,7 +52,7 @@ def dim_fill(data):
     return co_ords, dims
 
 
-class Area(strain_tools):
+class Area(StrainTools, StrainPlotting):
     """
     Takes an un-processed .nxs file from the I12 EDXD detector and fits curves
     to all specified peaks for each detector. Calculates strain and details
@@ -59,7 +60,7 @@ class Area(strain_tools):
     """
    
     def __init__(self, folder, pos_file, det_params, q0, window, 
-                 func = 'gaussian', error_limit = 1 * 10 ** -4, output = 'simple',
+                 func = 'gaussian', error_limit = 10 ** -4, output = 'simple',
                  pos_delimiter = ',', exclude = [], npt_rad = 1024, npt_azim = 36, 
                  azimuth_range = [-175, 185]):
         """
@@ -115,41 +116,20 @@ class Area(strain_tools):
             img = fabio.open(os.path.join(folder, fname)).data
             I, q_, phi = ai.integrate2d(img, npt_rad = npt_rad, npt_azim = npt_azim, azimuth_range = azimuth_range, unit='q_A^-1')
             # Not acceptable!            
-            self.phi = phi * np.pi / 180
+            
             q = np.repeat(q_[None, :], npt_azim, axis = 0)
             for i in range(npt_azim):            
                 plt.plot(q[i], I[i])
-            plt.xlim([2.5, 5])
+            plt.xlim([1.5, 6])
 
             for idx, window in enumerate(self.peak_windows):
                 fit_data = array_fit(q, I, window, func, error_limit, output, unused_detectors = [])
                 self.peaks[fidx, ..., idx], self.peaks_err[fidx, ..., idx] = fit_data
-                
+        self.phi = phi * np.pi / 180        
         self.slit_size = []
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
-        
-        
-    def save_to_nxs(self, fname):
-        """
-        Saves all data back into an expanded .nxs file. Contains all original 
-        data plus q0, peak locations and strain.
-        
-        # fname:      File name/location - default is to save to parent 
-                      directory (*_md.nxs) 
-        """
-        fname = '_md.nxs'
-        
-        with h5py.File(fname, 'w') as f:
-            data_ids = ('phi', 'dims', 'slit_size', 'q0','peak_windows', 'peaks',  
-                        'peaks_err', 'strain', 'strain_err', 'strain_param')
-            data_array = (self.phi, self.dims, self.slit_size, self.q0,  
-                          self.peak_windows, self.peaks, self.peaks_err,  
-                          self.strain, self.strain_err, self.strain_param)
-            
-            for data_id, data in zip(data_ids, data_array):
-                base_tree = 'entry1/EDXD_elements/%s'
-                f.create_dataset(base_tree % data_id, data = data)
+        self.strain_fit(error_limit)
 
 
     def strain_fit(self, error_limit):
@@ -160,42 +140,52 @@ class Area(strain_tools):
         self.strain_param = np.nan * np.ones(data_shape[:-2] + \
                             (data_shape[-1], ) + (3, ))
         for idx in np.ndindex(data_shape[:-2] + (data_shape[-1],)):
-            print(idx[:-1])
+            
             data = self.strain[idx[:-1]][..., idx[-1]]
-            print(data)
             not_nan = ~np.isnan(data)
-            angle = self.phi * np.pi / 180
-            if angle[not_nan].size > 2:
+            
+            if self.phi[not_nan].size > 2:
                 # Estimate curve parameters
                 p0 = [np.nanmean(data), 3*np.nanstd(data)/(2**0.5), 0]
                 try:
-                    a, b = curve_fit(cos_, angle[not_nan], data[not_nan], p0)
+                    a, b = curve_fit(cos_, self.phi[not_nan], data[not_nan], p0)
                     perr_ = np.diag(b)
                     perr = np.sqrt(perr_[0] + perr_[2])
                     if perr < 2 * error_limit:              
                         self.strain_param[idx] = a
                 except (TypeError, RuntimeError):
-                    print('Unable to fit peak.')
+                    print('Unable to fit curve to data.')
             else:
-                print('Insufficient data to attempt curve_fit.')
+                print('Insufficient data to attempt curve_fit.')        
+        
+    def save_to_nxs(self, fname):
+        """
+        Saves all data back into an expanded .nxs file. Contains all original 
+        data plus q0, peak locations and strain.
+        
+        # fname:      File name/location - default is to save to parent 
+                      directory (*_md.nxs) 
+        """
+        fname = fname + '_md.nxs'
+        
+        with h5py.File(fname, 'w') as f:
+            data_ids = ('dims', 'phi', 'slit_size', 'q0','peak_windows', 'peaks',  
+                        'peaks_err', 'strain', 'strain_err', 'strain_param') \
+                        + tuple([dim.decode('utf8') for dim in self.dims])
+            data_array = (self.dims, self.phi, self.slit_size, self.q0,  
+                          self.peak_windows, self.peaks, self.peaks_err,  
+                          self.strain, self.strain_err, self.strain_param) \
+                          + tuple([self.co_ords[x] for x in self.dims])
+            
+            for data_id, data in zip(data_ids, data_array):
+                base_tree = 'entry1/EDXD_elements/%s'
+                f.create_dataset(base_tree % data_id, data = data)
                 
+
+
+
                 
-
-poni = (741.577, 1053.137, 1027.562, 0.153, 41.314, 200, 200, 1.631371*10**-11)
-base_folder = 'N:/Work Data/ee11080/Test15_CNTI6/'
-
-bidge_holder = []
-for i in [0]:
-    folder= base_folder + str(i)
-    pos_file = folder + '/positions.csv'
-    bidge = Area(folder, pos_file, poni, 2.5286991970803694, 0.25, 
-                          pos_delimiter = ',', exclude = ['dark'], output = 'simple', 
-                          error_limit = 5 * 10 ** -4, azimuth_range = [-160, -20],
-                          npt_azim = 8)
-                          
-    bidge_holder.append(bidge)
-
-
+            
 
 class MonoTestCase(unittest.TestCase):
     """
