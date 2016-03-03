@@ -55,6 +55,7 @@ def masked_merge(unmerged_data, mask_array = None):
     peaks = []; peaks_err = []
     ss2_x = []; ss2_y = []; ss2_z = []    
     strain_param = []
+    I = []
     
     
     for data, mask in zip(unmerged_data, mask_array):
@@ -63,6 +64,8 @@ def masked_merge(unmerged_data, mask_array = None):
         strain_err.append(data.strain_err[mask].reshape(shape))
         peaks.append(data.peaks[mask].reshape(shape))
         peaks_err.append(data.peaks_err[mask].reshape(shape))
+        
+        
 
         for ss2, posn in zip((ss2_x, ss2_y, ss2_z), 
                              (data.ss2_x, data.ss2_y, data.ss2_z)):
@@ -72,10 +75,13 @@ def masked_merge(unmerged_data, mask_array = None):
                 pass
         shape2 = (data.strain_param[..., 0, 0][mask].size, ) + data.strain_param.shape[-2:]
         strain_param.append(data.strain_param[mask].reshape(shape2))
+        
+        shape3 = (data.I[..., 0, 0][mask].size, ) + data.I.shape[-2:]
+        I.append(data.I[mask].reshape(shape3))
 
     
-    merged_data = (np.vstack(strain), np.vstack(strain_err), np.vstack(strain_param), np.vstack(peaks), 
-                   np.vstack(peaks_err))
+    merged_data = (np.vstack(I), np.vstack(strain), np.vstack(strain_err), 
+                   np.vstack(strain_param), np.vstack(peaks), np.vstack(peaks_err))
                   
     for ss2 in [ss2_x, ss2_y, ss2_z]:
         merged_data += (np.concatenate(ss2), ) if ss2 !=[] else (None, )

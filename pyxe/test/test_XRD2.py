@@ -6,6 +6,7 @@ Created on Tue Mar  1 13:44:50 2016
 """
 
 from pyxe.area_analysis import Area
+from pyxe.reload import Reload
 
 azimuth_range = [-180, 0]
 npt_azim = 23
@@ -13,6 +14,7 @@ npt_azim = 23
 
 poni = (741.577, 1053.137, 1027.562, 0.153, 41.314, 200, 200, 1.631371*10**-11)
 base_folder = 'N:/Work Data/ee11080/Test15_CNTI6/'
+#base_folder = '/Users/Chris/Dropbox/Python/Tata/testimages/'
 
 q0_est = 2.528
 win_width = 0.23
@@ -26,3 +28,4 @@ bidge = Area(folder, pos_file, poni, q0_est, win_width,
 
 bidge.strain_fit(10**-3)    
 bidge.save_to_nxs('hi3')
+data2 = Reload('hi3_md.nxs')

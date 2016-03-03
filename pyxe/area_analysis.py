@@ -111,11 +111,12 @@ class Area(StrainTools, StrainPlotting):
         self.peaks_err = np.nan * np.ones(array_shape)
 
         # consider saving all profiles?        
-        
+        shape_I = (positions.shape[0], npt_azim, npt_rad)
+        self.I = np.nan * np.ones((shape_I))
         for fidx, fname in enumerate(fnames):
             img = fabio.open(os.path.join(folder, fname)).data
             I, q_, phi = ai.integrate2d(img, npt_rad = npt_rad, npt_azim = npt_azim, azimuth_range = azimuth_range, unit='q_A^-1')
-            # Not acceptable!            
+            self.I[fidx] = I         
             
             q = np.repeat(q_[None, :], npt_azim, axis = 0)
             for i in range(npt_azim):            
@@ -125,6 +126,7 @@ class Area(StrainTools, StrainPlotting):
             for idx, window in enumerate(self.peak_windows):
                 fit_data = array_fit(q, I, window, func, error_limit, output, unused_detectors = [])
                 self.peaks[fidx, ..., idx], self.peaks_err[fidx, ..., idx] = fit_data
+        self.q = q
         self.phi = phi * np.pi / 180        
         self.slit_size = []
         self.strain = (self.q0 - self.peaks)/ self.q0
@@ -169,12 +171,14 @@ class Area(StrainTools, StrainPlotting):
         fname = fname + '_md.nxs'
         
         with h5py.File(fname, 'w') as f:
-            data_ids = ('dims', 'phi', 'slit_size', 'q0','peak_windows', 'peaks',  
-                        'peaks_err', 'strain', 'strain_err', 'strain_param') \
+            data_ids = ('dims', 'phi', 'slit_size', 'q0','peak_windows', 
+                        'peaks', 'peaks_err', 'strain', 'strain_err', 
+                        'strain_param', 'q', 'data') \
                         + tuple([dim.decode('utf8') for dim in self.dims])
             data_array = (self.dims, self.phi, self.slit_size, self.q0,  
                           self.peak_windows, self.peaks, self.peaks_err,  
-                          self.strain, self.strain_err, self.strain_param) \
+                          self.strain, self.strain_err, self.strain_param, 
+                          self.q, self.I) \
                           + tuple([self.co_ords[x] for x in self.dims])
             
             for data_id, data in zip(data_ids, data_array):

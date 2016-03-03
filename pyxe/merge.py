@@ -64,11 +64,13 @@ class Merge(StrainTools, StrainPlotting):
                              for data_ in mask_data]
 
         merged_data = masked_merge(data_mask[0], data_mask[1])
-        self.strain, self.strain_err, self.strain_param, self.peaks, \
+        self.q = self.data[0].q
+        self.I, self.strain, self.strain_err, self.strain_param, self.peaks, \
         self.peaks_err, self.ss2_x, self.ss2_y, self.ss2_z = merged_data
         self.co_ords = {b'ss2_x': self.ss2_x, b'ss2_y': self.ss2_y, 
                         b'ss2_z': self.ss2_z} 
         self.slit_size = []
+
         
         
     def save_to_nxs(self, fname):
@@ -81,11 +83,11 @@ class Merge(StrainTools, StrainPlotting):
 
         with h5py.File(fname, 'w') as f:
             data_ids = ('phi', 'dims', 'slit_size', 'q0','peak_windows', 'peaks',  
-                        'peaks_err', 'strain', 'strain_err', 'strain_param') \
+                        'peaks_err', 'strain', 'strain_err', 'strain_param', 'q', 'data') \
                         + tuple([dim.decode('utf8') for dim in self.dims])
             data_array = (self.phi, self.dims, self.slit_size, self.q0,  
                           self.peak_windows, self.peaks, self.peaks_err,  
-                          self.strain, self.strain_err, self.strain_param) \
+                          self.strain, self.strain_err, self.strain_param, self.q, self.I) \
                           + tuple([self.co_ords[x] for x in self.dims])
             
             for data_id, data in zip(data_ids, data_array):

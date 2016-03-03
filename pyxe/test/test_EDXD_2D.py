@@ -25,19 +25,19 @@ def test_EDXD_2D():
     """
     data_store = []
 
-    with EDI12('50418.nxs', [3.1, 4.4], 0.25) as data1: 
-        data1.save_to_nxs('50418_md.nxs')
+    with EDI12(r'50418.nxs', [3.1, 4.4], 0.25) as data1: 
+        data1.save_to_nxs(r'50418_md.nxs')
         data_store.append(data1)
     
-    with Reload('50418_md.nxs') as data_reload:
+    with Reload(r'50418_md.nxs') as data_reload:
         data_store.append(data_reload)
         
-    with EDI12('50414.nxs', [3.1, 4.4], 0.25) as data2:
+    with EDI12(r'50414.nxs', [3.1, 4.4], 0.25) as data2:
         merge = Merge([data_reload, data2], order = [0,1], name = 'merge')
         data_store.append(merge)
-        merge.save_to_nxs('merge.nxs')
+        merge.save_to_nxs(r'merge.nxs')
     
-    with Reload('merge.nxs') as merge_reload:
+    with Reload(r'merge.nxs') as merge_reload:
         data_store.append(merge_reload)
     
 
@@ -54,8 +54,8 @@ def test_EDXD_2D():
                              data_type = 'stress', shear = True)
 
     
-    os.remove('merge.nxs')
-    os.remove('50418_md.nxs')
+    os.remove(r'/test/merge.nxs')
+    os.remove(r'/test/50418_md.nxs')
     
 if __name__ == '__main__':
     test_EDXD_2D()

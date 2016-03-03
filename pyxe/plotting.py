@@ -35,14 +35,15 @@ class StrainPlotting(object):
         # point:      Define point (index) from which to extract q v I plot.
                       First point in array chosen if not (default) specified.
         """
+        if point == ():
+            point = (0, ) * len(self.strain[..., 0, 0].shape)        
+        
         try:
-            group = self.f['entry1']['EDXD_elements']
-            q = group['edxd_q'][detector]
+            q = self.q[detector]
+            
             if point == ():
-                point = (0, ) * len(self.dims)
-            error = 'Must define point with correct number of dimensions.'
-            assert len(self.dims) == len(point), error
-            I = group['data'][point][detector]
+                point = (0, ) * len(self.strain[..., 0, 0].shape)        
+            I = self.I[point][detector]
 
             plt.plot(q, I)
         except (NameError, AttributeError):
@@ -67,15 +68,19 @@ class StrainPlotting(object):
         
         plt.figure(figsize = figsize)
         p = self.strain_param[point][q_idx]
-        theta = np.linspace(0, np.pi, 23)
-        plt.plot(theta, self.strain[point][..., q_idx][:-1], 'k*')
-        theta_2 = np.linspace(0, np.pi, 1000)
+        theta = self.phi
+        # Data from edi12 has extra, unused detector (filled with nan) 
+        try:
+            plt.plot(theta, self.strain[point][..., q_idx], 'k*')
+        except ValueError:
+            plt.plot(theta, self.strain[point][..., q_idx][:-1], 'k*')
+        theta_2 = np.linspace(self.phi[0], self.phi[-1], 1000)
         plt.plot(theta_2, cos_(theta_2, *p), 'k-')
-        plt.xlabel('Detector angle (rad)')
+        plt.xlabel('Azimuthal angle (rad)')
         plt.ylabel('Strain')
             
             
-    def plot_mohrs(self, point = (), q_idx = 0, angle = 0, figsize = (7, 5)):
+    def plot_mohrs(self, point = (), q_idx = 0, angle = -np.pi, figsize = (7, 5)):
         """
         Use fitted in-plane styrain tensor to plot Mohr's circle. 
         *Not implemented for merged files.*
@@ -120,7 +125,7 @@ class StrainPlotting(object):
         plt.ylabel('Shear strain')
 
 
-    def plot_line(self, az_angles = [0, np.pi/2], detectors = [], q_idx = 0, 
+    def plot_line(self, az_angles = [-np.pi, -np.pi/2], detectors = [], q_idx = 0, 
                   line_angle = 0, pnt = (0, 0), npts = 100, axis = 'scalar', 
                   method = 'linear', data_type = 'strain', shear = False, 
                   E = 200 * 10**9, v = 0.3, G = 79 * 10 **9):
@@ -193,8 +198,8 @@ class StrainPlotting(object):
         # line_props: Define line properties (default = 'w-')
         # mark:       Mark properties for centre point of line (default = None)
         """
-        assert len(self.dims) == 2, 'plotting method only compatible with \
-                                     2d data sets'
+        error = 'Plotting method only compatible with 2D data sets'
+        assert len(self.dims) == 2, error
                                      
         d1, d2 = [self.co_ords[x] for x in self.dims] 
         
@@ -247,8 +252,8 @@ class StrainPlotting(object):
         # mark:       Mark properties for centre point of line (default = None)
         """
 
-        assert len(self.dims) == 2, 'plotting method only compatible with \
-                                     2d data sets'
+        error = 'Plotting method only compatible with 2D data sets'
+        assert len(self.dims) == 2, error
                                      
         d1, d2 = [self.co_ords[x] for x in self.dims]   
         
@@ -277,7 +282,8 @@ class StrainPlotting(object):
             ax.plot(line[0], line[1], line_props, linewidth = 2)
             self.plot_line(az_angles = [angle], q_idx = q_idx, shear = shear,
                           line_angle = line_angle, pnt = pnt, npts = npts, 
-                          method = method, data_type = data_type, E = E, v = v, G = G)
+                          method = method, data_type = data_type, 
+                          E = E, v = v, G = G)
 
 
 

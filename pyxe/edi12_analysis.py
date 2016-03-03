@@ -76,6 +76,8 @@ class EDI12(StrainTools, StrainPlotting):
             
         group = self.f['entry1/EDXD_elements']
         q, I = group['edxd_q'], group['data']
+        self.q = q[:]
+        self.I = I[:]#really?
  
         # Iterate across q0 values and fit peaks for all detectors
         array_shape = I.shape[:-1] + (np.shape(self.q0)[-1],)
@@ -91,7 +93,7 @@ class EDI12(StrainTools, StrainPlotting):
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
         self.strain_fit(error_limit)
-        self.phi = np.linspace(-np.pi/2, np.pi/2, 23)
+        self.phi = np.linspace(-np.pi, 0, 23)
 
     def strain_fit(self, error_limit):
         """
@@ -103,7 +105,7 @@ class EDI12(StrainTools, StrainPlotting):
         for idx in np.ndindex(data_shape[:-2] + (data_shape[-1],)):
             data = self.strain[idx[:-1]][:-1][..., idx[-1]]
             not_nan = ~np.isnan(data)
-            angle = np.linspace(0, np.pi, 23)
+            angle = self.phi
             if angle[not_nan].size > 2:
                 # Estimate curve parameters
                 p0 = [np.nanmean(data), 3*np.nanstd(data)/(2**0.5), 0]
@@ -133,10 +135,10 @@ class EDI12(StrainTools, StrainPlotting):
         
         shutil.copy(self.filename, fname)
         data_ids = ('phi', 'dims', 'slit_size', 'q0','peak_windows', 'peaks',  
-                    'peaks_err', 'strain', 'strain_err', 'strain_param')
+                    'peaks_err', 'strain', 'strain_err', 'strain_param', 'q')
         data_array = (self.phi, self.dims, self.slit_size, self.q0,  
                       self.peak_windows, self.peaks, self.peaks_err,  
-                      self.strain, self.strain_err, self.strain_param)
+                      self.strain, self.strain_err, self.strain_param, self.q)
         with h5py.File(fname, 'r+') as f:
             
             for data_id, data in zip(data_ids, data_array):
