@@ -60,10 +60,10 @@ class StrainPlotting(object):
         # figsize:    Figure dimensions
         """
         if point == ():
-            point = (0, ) * len(self.dims)
+            point = (0, ) * len(self.strain[..., 0, 0].shape)
 
-        assert len(self.dims) == len(point), 'must define point with correct '\
-                                             'number of dimensions.'
+        #assert len(self.dims) == len(point), 'must define point with correct '\
+        #                                     'number of dimensions.'
         
         plt.figure(figsize = figsize)
         p = self.strain_param[point][q_idx]
@@ -75,7 +75,7 @@ class StrainPlotting(object):
         plt.ylabel('Strain')
             
             
-    def plot_mohrs(self, point = (0), q_idx = 0, angle = 0, figsize = (7, 5)):
+    def plot_mohrs(self, point = (), q_idx = 0, angle = 0, figsize = (7, 5)):
         """
         Use fitted in-plane styrain tensor to plot Mohr's circle. 
         *Not implemented for merged files.*
@@ -86,7 +86,10 @@ class StrainPlotting(object):
         # angle:      Angle to highlight on circle (inc + 90deg).
         # figsize:    Figure dimensions
         """
-        p = self.strain_param[point][q_idx][0] ### test change
+        if point == ():
+            point = (0, ) * len(self.strain[..., 0, 0].shape)
+            
+        p = self.strain_param[point][q_idx] ### test change
         R = p[0]
         theta = p[1] + angle
 
@@ -104,15 +107,17 @@ class StrainPlotting(object):
         plt.xlim([p[2] - abs(2 * R), p[2] + abs(2 * R)])
         plt.plot([e_1, e_2], [0, 0], 'ko', markersize = 3)
         
-        plt.plot(e_xx, e_xy, 'ko', label = r'$(\epsilon_{xx}$, $\e_{xy})$')
-        plt.plot(e_yy, -e_xy, 'wo', label = r'$(\epsilon_{yy}$, $-\e_{xy})$')
+        plt.plot(e_xx, e_xy, 'ko', label = r'$(\epsilon_{xx}$, $\epsilon_{xy})$')
+        plt.plot(e_yy, -e_xy, 'wo', label = r'$(\epsilon_{yy}$, $-\epsilon_{xy})$')
         
         plt.legend(numpoints=1, frameon = False, handletextpad = 0.2)
         plt.plot([e_xx, e_yy], [e_xy, -e_xy], 'k-.')
         ax.annotate('  %s' % r'$\epsilon_{1}$', xy=(e_1, 0), 
-                    textcoords='offset points')
+                    textcoords='offset points', xytext=(e_1, 0))
         ax.annotate('  %s' % r'$\epsilon_{2}$', xy=(e_2, 0), 
-                    textcoords='offset points')
+                    textcoords='offset points', xytext=(e_2, 0))
+        plt.xlabel('Normal strain')
+        plt.ylabel('Shear strain')
 
 
     def plot_line(self, az_angles = [0, np.pi/2], detectors = [], q_idx = 0, 
