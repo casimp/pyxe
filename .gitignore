@@ -1,6 +1,7 @@
 # Python files
 *.pyc
 *.ipynb
+.pypirc
 
 #Docs
 /docs/_*
