@@ -1,8 +1,9 @@
 Background
 ==========
 
-The following section provides a broad and basic overview of the key information and concepts used in the construction of the edi12 package. These details are by no means comprehensive. A comprehensive introduction to the topic can be found in the Synchrotron X-ray Diffraction (P. J. Withers) chapter of Practical Residual Stress Measurements by G. S. Shajer [1].
+The following section provides a broad and basic overview of the key information and concepts used in the construction of the pyXe package. These details are by no means comprehensive. A comprehensive introduction to the topic can be found in the Synchrotron X-ray Diffraction (P. J. Withers) chapter of Practical Residual Stress Measurements by G. S. Shajer [1].
 
+The package was originally developed for use with the I12:JEEP beamline and their EDXD detector. The following section details some information regarding their setup.
 
 I12 and EDXD
 ------------
