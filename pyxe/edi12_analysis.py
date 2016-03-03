@@ -78,6 +78,7 @@ class EDI12(StrainTools, StrainPlotting):
         q, I = group['edxd_q'], group['data']
         self.q = q[:]
         self.I = I[:]#really?
+        self.phi = np.linspace(-np.pi, 0, 23)
  
         # Iterate across q0 values and fit peaks for all detectors
         array_shape = I.shape[:-1] + (np.shape(self.q0)[-1],)
@@ -93,7 +94,7 @@ class EDI12(StrainTools, StrainPlotting):
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
         self.strain_fit(error_limit)
-        self.phi = np.linspace(-np.pi, 0, 23)
+        
 
     def strain_fit(self, error_limit):
         """

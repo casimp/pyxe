@@ -1,5 +1,5 @@
 import unittest
-from edi12.plotting import line_extract, meshgrid_res, plot_complex
+from pyxe.plotting import line_extract, meshgrid_res, plot_complex
 
 import numpy as np
 import matplotlib.pyplot as plt

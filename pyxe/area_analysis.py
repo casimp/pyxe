@@ -185,11 +185,7 @@ class Area(StrainTools, StrainPlotting):
                 base_tree = 'entry1/EDXD_elements/%s'
                 f.create_dataset(base_tree % data_id, data = data)
                 
-
-
-
-                
-            
+         
 
 class MonoTestCase(unittest.TestCase):
     """

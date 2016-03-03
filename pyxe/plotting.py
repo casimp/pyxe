@@ -27,7 +27,7 @@ class StrainPlotting(object):
         pass
 
         
-    def plot_intensity(self, detector = 0, point = ()):
+    def plot_intensity(self, detector = 0, point = (), figsize = (7, 5)):
         """
         Plots q v intensity. *Not implemented for merged files.*
         
@@ -37,18 +37,14 @@ class StrainPlotting(object):
         """
         if point == ():
             point = (0, ) * len(self.strain[..., 0, 0].shape)        
-        
-        try:
-            q = self.q[detector]
-            
-            if point == ():
-                point = (0, ) * len(self.strain[..., 0, 0].shape)        
-            I = self.I[point][detector]
 
-            plt.plot(q, I)
-        except (NameError, AttributeError):
-            print("Can't plot spectrum on merged data.")
-            
+        q = self.q[detector]
+        I = self.I[point][detector]
+        plt.figure(figsize = figsize)
+        plt.plot(q, I, 'k-')
+        plt.xlabel('q (rad)')
+        plt.ylabel('Intensity')
+
             
     def plot_fitted(self, point = (), q_idx = 0, figsize = (7, 5)):
         """
@@ -63,9 +59,7 @@ class StrainPlotting(object):
         if point == ():
             point = (0, ) * len(self.strain[..., 0, 0].shape)
 
-        #assert len(self.dims) == len(point), 'must define point with correct '\
-        #                                     'number of dimensions.'
-        
+
         plt.figure(figsize = figsize)
         p = self.strain_param[point][q_idx]
         theta = self.phi
@@ -164,13 +158,16 @@ class StrainPlotting(object):
                             pnt = pnt, npts = npts, method = method, shear = shear,
                             data_type = data_type, E = E, v = v, G = G)  
                                     
-            d1_min, d2_min = np.min(d1), np.min(d2)            
-            zero = ((pnt[0] - d1_min)**2 + (pnt[1] - d2_min)**2)**0.5
-            scalar_ext = ((d1 - d1_min)**2 + (d2 - d2_min)**2)**0.5 - zero
+            if d1[0] > d1[-1]:
+                d1, d2, data = d1[::-1], d2[::-1], data[::-1]
+                
+            zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
+            scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
+
             
             
             x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
-            plt.plot(x[axis], data, '-*')
+            plt.plot(x[axis], data, '-x')
 
 
     def plot_detector(self, detector = 0, q_idx = 0, cmap = 'RdBu_r', res = 0.1, 

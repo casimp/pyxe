@@ -52,10 +52,16 @@ def test_EDXD_2D():
     data_store[3].plot_angle(figsize = (6, 6), q_idx = 1, line = True, 
                              pnt = (-2.6, 0), line_angle = np.pi/4, 
                              data_type = 'stress', shear = True)
+                             
+    for i in [1, 3]:
+        
+        data_store[i].plot_intensity()
+        data_store[i].plot_fitted()
+        data_store[i].plot_mohrs()
 
     
-    os.remove(r'/test/merge.nxs')
-    os.remove(r'/test/50418_md.nxs')
+    os.remove(r'merge.nxs')
+    os.remove(r'50418_md.nxs')
     
 if __name__ == '__main__':
     test_EDXD_2D()

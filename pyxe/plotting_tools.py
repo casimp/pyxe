@@ -27,6 +27,9 @@ def line_extract(X, Y, point, theta, npoints = 10):
         c = point[1] - m * point[0]
         
         y_lim = [m * np.min(X) + c, m * np.max(X) + c]
+        
+        assert min(y_lim) < np.max(Y), "Line does not intersect data."
+        assert max(y_lim) > np.min(Y), "Line does not intersect data."
         y_min = np.min(Y) if min(y_lim) < np.min(Y) else min(y_lim)
         y_max = np.max(Y) if max(y_lim) > np.max(Y) else max(y_lim)
             
