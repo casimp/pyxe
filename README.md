@@ -15,17 +15,20 @@ Requirements
 
 PyXe is built on Python’s scientific stack (numpy, scipy, matplotlib). Additionally, the h5py package is required for the manipulation and management of the NeXus data files. Testing and development were carried out using the Anaconda (v 2.5.0) package manager, which built with the following versions:
 
--	Python: version 3.5.1
+-	Python: version 2.7.11 and 3.5.1
 -	numpy: version 1.10.4
 -	scipy: version 0.17
 -	matplotlib: version 1.5
 -	h5py: version 2.5.0
 
-The new mono analysis module relies on pyFAI, which is a software package developed at the ESRF, designed to reduce SAXS, WAXS and XRPD images recorded by area detectors to 1D plots or 2D patterns (known as caking or azimuthal regrouping). PyFAI functionality under python 3 is limited and how this will be best integrated into the pyXe workflow is still under consideration. Testing has so far been completed using:
+The new area detector analysis module relies on pyFAI, which is a software package developed at the ESRF, designed to reduce SAXS, WAXS and XRPD images recorded by area detectors to 1D plots or 2D patterns (known as caking or azimuthal regrouping). Testing has so far been completed using:
 
--	Python: version 2.7.11
 -	pyFAI: version 0.11.0
 -	fabIO: version 0.3.0
+
+PyFAI for Python 3.x must currently be built from source. This requires a C compiler - details can be found at:
+
+https://github.com/kif/pyFAI
 
 Installation
 ------------
@@ -40,7 +43,7 @@ This command will download the latest version of pyXe from the Python Package In
 
 Alternatively, you can install from the distribution using the setup.py script. The source is stored in the GitHub repo, which can be browsed at:
 
--	https://github.com/casimp/pyxe
+https://github.com/casimp/pyxe
 
 Simply download and unpack, then navigate to the download directory and run the following from the command-line:
 
@@ -53,4 +56,4 @@ Documentation
 
 Documentation is hosted by readthedocs. Although still incomplete they do, however, provide some background information and installation details:
 
-http://edi12.readthedocs.org/en/latest/
+http://pyxe.readthedocs.org/en/latest/
