@@ -6,7 +6,7 @@ What is pyXe?
 
 PyXe is a package developed to address bottlenecks in the diffraction-strain analysis workflow. It is vital that X-ray diffraction data acquired during synchrotron beamtimes is analysed in as close to real time as is possible. This allows for a tight feedback loop and ensures that decisions regarding acquisition and experimental parameters are optimized.
 
-The pyXe package therefore aims to allow for the efficient analysis and visualization of diffraction data acquired from these large scale facilities. It achieves this through the extraction of strain from individual peak fitting (i.e. not a Reitveld type refinement). Peak fitting routines can be run over 1D, 2D and 3D data sets. Peaks and strain are extracted as a function of azimuthal position (either detector position or caking angle). The resultant strain data is then further interrogated to facilitate the calculation of principal and shear strains. Analysed data is stored in the hdf5 file format and can be easily reloaded and visualised.
+The pyXe package therefore aims to allow for the efficient analysis and visualization of diffraction data acquired from these large scale facilities. It achieves this through the extraction of strain from individual peaks (i.e. not a Reitveld type refinement). Peak fitting routines can be run over 1D, 2D and 3D data sets. Peaks and strain are extracted as a function of azimuthal position (either detector position or caking angle). The resultant strain data is then further interrogated to facilitate the calculation of principal and shear strains. Analysed data is stored in the hdf5 file format and can be easily reloaded and visualised.
 
 This package was originally designed to work with energy dispersive X-ray diffraction data (EDXD) stored in the NeXus format acquired on the I12:JEEP beamline at the Diamond Light Source, UK. As of version 0.5 pyXe has begun to transition away from looking purely at energy dispersive diffraction on the I12 beamline. The introduction of the mono_analysis module is the starting point of a generalisation of the package to tackle the single peak strain analysis from both energy dispersive and monochromatic X-ray sources.
 
@@ -30,13 +30,13 @@ The new mono analysis module relies on pyFAI, which is a software package develo
 Installation
 ------------
 
-Installing pyXε is easily done using pip<sup>1</sup>. Assuming it is installed, just run the following from the command-line:
+Installing pyXe is easily done using pip. Assuming it is installed, just run the following from the command-line:
 
 ```
 pip install pyxe
 ```
 
-This command will download the latest version of pyXε from the Python Package Index and install it to your system.
+This command will download the latest version of pyXe from the Python Package Index and install it to your system.
 
 Alternatively, you can install from the distribution using the setup.py script. The source is stored in the GitHub repo, which can be browsed at:
 
@@ -47,8 +47,6 @@ Simply download and unpack, then navigate to the download directory and run the 
 ```
 python setup.py install
 ```
-
-<sup>1</sup> The package is still in a pre-release state and has not yet been pushed to PyPI. Installation must be completed directly from the GitHub repo.
 
 Documentation
 -------------

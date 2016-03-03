@@ -5,6 +5,7 @@
 
 #Docs
 /docs/_*
+description
 
 # Distribution / packaging
 bin/
