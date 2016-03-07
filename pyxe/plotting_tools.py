@@ -50,14 +50,15 @@ def meshgrid_res(d1, d2, spatial_resolution):
     return D1, D2
     
     
-def plot_complex(x, y, X, Y, Z, cmap = 'jet', lvls = 11, figsize = (10, 10)):
+def plot_complex(x, y, X, Y, Z, lvls = 11, figsize = (10, 10), **kwargs):
     f, ax = plt.subplots(figsize = figsize)
-    cf_back = ax.contourf(X, Y, Z, lvls, cmap = cmap)
+    cf_back = ax.contourf(X, Y, Z, lvls, **kwargs)
+    ax.contour(X, Y, Z, levels = [0], colors=('k',),linestyles=('--',),linewidths=(3,))
     if type(lvls) != int:
         lvls_ = np.linspace(np.min(lvls), np.max(lvls), 192)
-        ax.contourf(X, Y, Z, lvls_, cmap = cmap)
+        ax.contourf(X, Y, Z, lvls_, **kwargs)
     else:
-        ax.contourf(X, Y, Z, 192, cmap = cmap)
+        ax.contourf(X, Y, Z, 192, **kwargs)
     c = ax.contour(X, Y, Z, lvls, colors = '0' , alpha=0.625)
     ax.plot(x, y, '+', color = '0.1' , alpha = 0.75, 
             markersize = 5, linestyle = 'None')

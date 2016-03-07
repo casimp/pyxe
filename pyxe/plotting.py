@@ -170,11 +170,11 @@ class StrainPlotting(object):
             plt.plot(x[axis], data, '-x')
 
 
-    def plot_detector(self, detector = 0, q_idx = 0, cmap = 'RdBu_r', res = 0.1, 
-                      lvls = 11, figsize = (10, 10), plotting = plot_complex, 
-                      line = False, pnt = (0,0), line_angle = 0, npts = 100, 
-                      method = 'linear', line_props = 'w--', mark = None, 
-                      data_type = 'strain', E = 200 * 10**9, v = 0.3):
+    def plot_detector(self, detector = 0, q_idx = 0, stress = False,   
+                      E = 200 * 10**9, v = 0.3,  
+                      res = 0.1, lvls = 11, figsize = (10, 10),                     
+                      line = False, pnt = (0,0), line_angle = 0, line_props = 'w-', 
+                      plotting = plot_complex, **kwargs):
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -200,9 +200,9 @@ class StrainPlotting(object):
                                      
         d1, d2 = [self.co_ords[x] for x in self.dims] 
         
-        if data_type == 'strain':
+        if not stress:
             data = self.strain[..., detector, q_idx]
-        elif data_type == 'stress':
+        else:
             data = self.extract_stress(E = E, v = v, detector = detector)[0]
         
         if data.ndim != 2:
@@ -211,23 +211,22 @@ class StrainPlotting(object):
         else:
             D1, D2, Z = d1, d2, data
             
-        f, ax = plotting(d1, d2, D1, D2, Z, cmap, lvls, figsize)
+        f, ax = plotting(d1, d2, D1, D2, Z, lvls, figsize, **kwargs)
 
         if line == True:
             plt.figure()
-            line = line_extract(D1, D2, pnt, line_angle, npts)   
+            line = line_extract(D1, D2, pnt, line_angle, 100)   
             ax.plot(line[0], line[1], line_props, linewidth = 2)
-            self.plot_line(detectors = [detector], q_idx = q_idx, 
-                          line_angle = line_angle, pnt = pnt, npts = npts, 
-                          method = method, data_type = data_type, E = E, v = v)
+        
+        return ax
 
 
 
-    def plot_angle(self, angle = 0, shear = False, q_idx = 0, cmap = 'RdBu_r',  
-              res = 0.1, lvls = 11, figsize = (10, 10), plotting = plot_complex, 
-              line = False, pnt = (0,0), line_angle = 0, npts = 100, 
-              method = 'linear', line_props = 'w--', mark = None, 
-              data_type = 'strain', E = 200 * 10 **9, v = 0.3, G = 79 * 10**9):
+    def plot_angle(self, angle = 0, q_idx = 0, stress = False, shear = False,   
+                   E = 200 * 10**9, v = 0.3,   G = 79 * 10**9,
+                   res = 0.1, lvls = 11, figsize = (10, 10), 
+                   line = False, pnt = (0,0), line_angle = 0, line_props = 'w-', 
+                   plotting = plot_complex, **kwargs):
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -259,9 +258,9 @@ class StrainPlotting(object):
             p = self.strain_param[idx][0]
             e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)
             e_xy = -np.sin(2 * (p[1] + angle)) * p[0]     
-            if data_type == 'strain':
+            if not stress:
                 data[idx] = e_xx if not shear else e_xy
-            elif data_type == 'stress':
+            else:
                 sigma_xx = E * ((1 -v) * e_xx + v*e_yy) / ((1 + v) * (1 - 2*v))
                 data[idx] = sigma_xx if not shear else e_xy * G
                     
@@ -271,16 +270,12 @@ class StrainPlotting(object):
         else:
             D1, D2, Z = d1, d2, data
             
-        f, ax = plotting(d1, d2, D1, D2, Z, cmap, lvls, figsize)
+        f, ax = plotting(d1, d2, D1, D2, Z, lvls, figsize, **kwargs)
         
         if line == True:
             plt.figure()
-            line = line_extract(D1, D2, pnt, line_angle, npts)   
+            line = line_extract(D1, D2, pnt, line_angle, 100)   
             ax.plot(line[0], line[1], line_props, linewidth = 2)
-            self.plot_line(az_angles = [angle], q_idx = q_idx, shear = shear,
-                          line_angle = line_angle, pnt = pnt, npts = npts, 
-                          method = method, data_type = data_type, 
-                          E = E, v = v, G = G)
 
-
+        return ax
 
