@@ -32,14 +32,15 @@ def p0_approx(data, peak_window, func = 'gaussian'):
     I_ = y[peak_ind[0]:peak_ind[1]]
     max_index = np.argmax(I_)
     HM = min(I_) + (max(I_) - min(I_)) / 2
+    
     stdev = x_[max_index + np.argmin(I_[max_index:] > HM)] - x_[max_index]
     if stdev <= 0:
         stdev = 0.1
     p0 = [min(I_), max(I_) - min(I_), x_[max_index], stdev]
     
+    
     if func == 'psuedo_voigt':
         p0.append(0.5)
-
     return p0
 
 
@@ -50,6 +51,7 @@ def peak_fit(data, window, p0 = [], func = 'gaussian'):
     """
     func_dict = {'gaussian': gaussian, 'lorentzian': lorentzian, 
                  'psuedo_voigt': psuedo_voigt}
+    func_name = func
     func = func_dict[func.lower()]
     
     if data[0][0] > data[0][-1]:
@@ -57,7 +59,7 @@ def peak_fit(data, window, p0 = [], func = 'gaussian'):
         data[1] = data[1][::-1]
         
     if p0 == []:
-        p0 = p0_approx(data, window, func)
+        p0 = p0_approx(data, window, func_name)
         
     peak_ind = np.searchsorted(data[0], window)
     x_ = data[0][peak_ind[0]:peak_ind[1]]
