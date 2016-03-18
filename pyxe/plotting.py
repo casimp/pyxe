@@ -170,11 +170,11 @@ class StrainPlotting(object):
             plt.plot(x[axis], data, '-x')
 
 
-    def plot_detector(self, detector = 0, q_idx = 0, stress = False,   
+    def plot_detector(self, detector = 0, q_idx = 0, stress = False, err = False,  
                       E = 200 * 10**9, v = 0.3,  
                       res = 0.1, lvls = 11, figsize = (10, 10),                     
                       line = False, pnt = (0,0), line_angle = 0, line_props = 'w-', 
-                      plotting = plot_complex, **kwargs):
+                      plotting = plot_complex, ax = False, cbar = True, **kwargs):
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -200,10 +200,12 @@ class StrainPlotting(object):
                                      
         d1, d2 = [self.co_ords[x] for x in self.dims] 
         
-        if not stress:
-            data = self.strain[..., detector, q_idx]
-        else:
+        if err:
+            data = 1 - self.strain_err[..., detector, q_idx]
+        elif stress:
             data = self.extract_stress(E = E, v = v, detector = detector)[0]
+        else:    
+            data = self.strain[..., detector, q_idx]
         
         if data.ndim != 2:
             D1, D2 = meshgrid_res(d1, d2, res)
@@ -211,14 +213,14 @@ class StrainPlotting(object):
         else:
             D1, D2, Z = d1, d2, data
             
-        f, ax = plotting(d1, d2, D1, D2, Z, lvls, figsize, **kwargs)
+        ax_ = plotting(d1, d2, D1, D2, Z, lvls = lvls, figsize = figsize, ax = ax, cbar = cbar, **kwargs)
 
         if line == True:
             plt.figure()
             line = line_extract(D1, D2, pnt, line_angle, 100)   
             ax.plot(line[0], line[1], line_props, linewidth = 2)
         
-        return ax
+        return ax_
 
 
 
@@ -226,7 +228,7 @@ class StrainPlotting(object):
                    E = 200 * 10**9, v = 0.3,   G = 79 * 10**9,
                    res = 0.1, lvls = 11, figsize = (10, 10), 
                    line = False, pnt = (0,0), line_angle = 0, line_props = 'w-', 
-                   plotting = plot_complex, **kwargs):
+                      plotting = plot_complex, ax = False, cbar = True, **kwargs):
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -270,12 +272,12 @@ class StrainPlotting(object):
         else:
             D1, D2, Z = d1, d2, data
             
-        f, ax = plotting(d1, d2, D1, D2, Z, lvls, figsize, **kwargs)
+        ax_ = plotting(d1, d2, D1, D2, Z, lvls = lvls, figsize = figsize, ax = ax, cbar = cbar, **kwargs)
         
         if line == True:
             plt.figure()
             line = line_extract(D1, D2, pnt, line_angle, 100)   
             ax.plot(line[0], line[1], line_props, linewidth = 2)
 
-        return ax
+        return ax_
 

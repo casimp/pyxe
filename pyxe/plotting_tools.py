@@ -50,8 +50,12 @@ def meshgrid_res(d1, d2, spatial_resolution):
     return D1, D2
     
     
-def plot_complex(x, y, X, Y, Z, lvls = 11, figsize = (10, 10), **kwargs):
-    f, ax = plt.subplots(figsize = figsize)
+def plot_complex(x, y, X, Y, Z, lvls = 11, figsize = (10, 10), ax = False, cbar = True, **kwargs):
+    
+    if not ax:
+        fig = plt.figure(figsize = figsize)
+        ax = fig.add_subplot(111)
+
     cf_back = ax.contourf(X, Y, Z, lvls, **kwargs)
     ax.contour(X, Y, Z, levels = [0], colors=('k',),linestyles=('--',),linewidths=(3,))
     if type(lvls) != int:
@@ -63,11 +67,14 @@ def plot_complex(x, y, X, Y, Z, lvls = 11, figsize = (10, 10), **kwargs):
     ax.plot(x, y, '+', color = '0.1' , alpha = 0.75, 
             markersize = 5, linestyle = 'None')
     ax.set_aspect('equal'); ax.autoscale(tight=True)
+
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", "3%", pad="3%")
-    cbar = plt.colorbar(cf_back, cax = cax)
-    cbar.add_lines(c)
-    return f, ax
+    
+    if cbar:  
+        cax = divider.append_axes("right", "3%", pad="3%")
+        cbar = plt.colorbar(cf_back, cax = cax)
+        cbar.add_lines(c)
+    return ax
     
 def plot_simple(x, y, X, Y, Z, cmap = 'RdBu_r', lvls = 11):
     f, ax = plt.subplots()
