@@ -28,7 +28,7 @@ class StrainTools(object):
         return self
 
         
-    def recentre(self, centre):
+    def recentre(self, centre, reverse = []):
         """
         Shifts centre point to user defined location. Not reflected in .nxs
         file unless saved.Accept offset for both 2D and 3D data sets (x, y, z).
@@ -37,7 +37,11 @@ class StrainTools(object):
         co_ords = [self.co_ords[x] for x in self.dims]
         
         for co_ord, offset in zip(co_ords, centre):
-            co_ord += offset
+            co_ord -= offset
+            
+        reverse = [reverse] if isinstance(reverse, int) else reverse
+        for i in reverse:
+            self.co_ords[self.dims[i]] = -self.co_ords[self.dims[i]]
         
            
     def extract_line_detector(self, detectors = [0, 11], q_idx = 0, pnt = (0,0),
@@ -106,6 +110,7 @@ class StrainTools(object):
         """
         error = 'Extract_line method only compatible with 1D/2D data sets.'
         assert len(self.dims) <= 2, error
+        
         
         if len(self.dims) == 1:
             d1 = self.co_ords[self.dims[0]]
