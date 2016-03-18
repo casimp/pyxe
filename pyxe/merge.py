@@ -21,7 +21,7 @@ class Merge(StrainTools, StrainPlotting):
     """
     Tool to merge mutliple XRD data sets - inherits tools for XRD_tools.
     """
-    def __init__(self, data, name, order = 'slit', padding = 0.1):
+    def __init__(self, data, name, order = 'simple', padding = 0.1):
         """
         Merge data, specifying mering method/order
         
@@ -44,7 +44,8 @@ class Merge(StrainTools, StrainPlotting):
             assert self.data[0].dims == i.dims, error
         self.dims = self.data[0].dims
         
-        if isinstance(order, list):
+        if isinstance(order, (list, np.ndarray)):
+            print(order)
             priority = order
         else:
             priority = [0 for data_ in self.data]
@@ -92,6 +93,9 @@ class Merge(StrainTools, StrainPlotting):
             
             for data_id, data in zip(data_ids, data_array):
                 base_tree = 'entry1/EDXD_elements/%s'
-                f.create_dataset(base_tree % data_id, data = data)
+                if data_id == 'data':
+                    f.create_dataset(base_tree % data_id, data = data, compression = 'gzip')
+                else:
+                    f.create_dataset(base_tree % data_id, data = data)
 
  
