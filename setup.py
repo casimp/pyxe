@@ -15,7 +15,7 @@ setup(
     license='LICENSE.txt',
     description='XRD strain analysis package. Efficient analysis and visulisation of diffraction data.',
     keywords = ['XRD', 'EDXD', 'x-ray', 'diffraction', 'strain', 'synchrotron'],
-    long_description=open('description').read(),
+#    long_description=open('description').read(),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: MIT License",
