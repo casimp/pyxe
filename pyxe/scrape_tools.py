@@ -9,7 +9,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from pyxe.area_analysis import Area
 import re
 import os
 import pandas as pd
