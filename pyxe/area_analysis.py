@@ -62,7 +62,7 @@ class Area(StrainTools, StrainPlotting):
     def __init__(self, folder, pos_data, det_params, q0, window, f_ext = '.edf', 
                  mirror = True, func = 'gaussian', error_limit = 2 * 10 ** -4, output = 'simple',
                  pos_file_delimiter = ',', exclude = [], npt_rad = 1024, npt_azim = 36, 
-                 azimuth_range = [-175, 185]):
+                 azimuth_range = [-180, 180]):
         """
         
         # det_params: Accepts a file location for a .poni parameter file 
@@ -165,6 +165,7 @@ class Area(StrainTools, StrainPlotting):
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
         self.strain_fit(error_limit)
+
 
 
     def strain_fit(self, error_limit):
