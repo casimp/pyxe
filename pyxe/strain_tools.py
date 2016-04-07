@@ -29,9 +29,28 @@ def az90(phi, idx):
     raise ValueError('No cake segment found perpendicular to given index.', 
                      'Number of cake segments must be divisable by 4.')
                      
-def line_dec(func):
-    pass
-    #positions, data, pnt, line_angle, method = func()
+def line_ext(positions, data, pnt, npnts, line_angle, method):
+    """
+    Not yet working function to take line from data
+    """#### Not working but almost!
+    if len(positions) == 1:
+        d1 = positions[0]
+        d1_e = d1
+    else:
+        d1, d2 = positions        
+        d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npnts)
+    
+    not_nan = ~np.isnan(data)
+    print(not_nan.shape, data.shape, d1.shape, d2.shape, d1_e.shape, d2_e.shape)
+    if len(positions) == 2:
+        try:
+            data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
+                                  (d1_e, d2_e), method = method)
+            return d1_e, d2_e, data
+        except ValueError:
+            pass
+    else:
+        return d1[not_nan], data[not_nan]
 
 
 class StrainTools(object):
@@ -114,6 +133,104 @@ class StrainTools(object):
         self.strain[np.array(isin)] = np.nan
         
            
+
+    def extract_slice(self, phi = 0, detector = [], q_idx = 0,
+                          stress = False, shear = False):
+            """
+            Extract slice of strain or stress.
+            """                  
+            if detector != []:
+                error = "Can't calculate shear from single detector/cake slice"
+                assert shear == False, error
+                e_xx = self.strain[..., detector, q_idx]
+                if stress:
+                    e_yy = self.strain[..., az90(self.phi, detector), q_idx]
+            else:
+                angles = [phi, phi + np.pi/2, phi]
+                strains = [np.nan * self.strain[..., 0, 0] for i in range(3)]
+                for e_idx, (angle, strain) in enumerate(zip(angles, strains)):
+                    for idx in np.ndindex(strain.shape):
+                        p = self.strain_param[idx][0]
+                        if e_idx == 2:
+                            strain[idx] = -np.sin(2 * (p[1] + angle) ) * p[0]
+                        else:
+                            strain[idx] = cos_(angle, *p)
+                e_xx, e_yy, e_xy = strains
+            if stress:
+                data = self.sig_eqn(e_xx, e_yy) if not shear else e_xy * self.G
+            else:
+                data = e_xx if not shear else e_xy
+            
+            return data      
+    
+    def extract_line(self, phi = 0, detector = [], q_idx = 0,  pnt = (0,0),
+                     line_angle = 0, npnts = 100, method = 'linear', 
+                     stress = False, shear = False):
+        """
+        Extracts line profile through 2D strain field.
+        
+        # phi:        Define angle (in rad) from which to calculate strain. 
+                      Default - 0.
+        # detector:   Define detector to see strain/stress from cake not 
+                      full ring.
+        # q_idx:      Specify lattice parameter/peak to save data from. 
+        # line_angle: Angle across array to extract strain from
+        # pnt:        Centre point for data extraction  
+        # npts:       Number of points (default = 100) to extract along line
+        # method:     Interpolation mehod (default = 'linear')
+        # shear:      Extract shear.
+        """
+        error = 'Extract_line method only compatible with 1D/2D data sets.'
+        assert len(self.dims) <= 2, error
+        
+        positions = [self.co_ords[x] for x in self.dims]
+        data = self.extract_slice(phi = phi, detector = detector, 
+                                  stress = stress, shear = shear)
+        print(data.shape)
+        return line_ext(positions, data, pnt, npnts, line_angle, method)
+    
+    
+    def save_to_text(self, fname, angles = [0, np.pi/2], detectors = [],
+                     q_idx = 0, strain = True, shear = True, stress = False):
+        """
+        Saves key strain to text file. Not yet implemented in 3D.
+        
+        # fname:      File name/location to save data to.
+        # q_idx:      Specify lattice parameter/peak to save data from. 
+        # angles:     Define angles (in rad) from which to calculate strain. 
+                      Default - [0, pi/2].
+        # detectors:  Define detectors to take strain from (rather than 
+                      calculating from full detector array).
+        # shear:      Option to save shear strain data extracted at angles 
+                      (default = [0]).
+        """                
+        
+        data_array = ()
+        for i in self.dims:
+            data_array += (self.co_ords[i], )
+            
+        order = strain, strain and shear, stress, stress and shear
+        stress = False, False, True, True
+        shear = False, True, False, True
+        
+        if detectors != []:
+            for detector in detectors:
+                for i, xx, xy  in zip(order, stress, shear):
+                    if i:
+                        data = self.extract_slice(detector = detector, 
+                                    q_idx = q_idx, stress = xx, shear = xy)
+                        data_array += (data.flatten(), )
+        else:
+            for phi in angles:
+                for i, xx, xy  in zip(order, stress, shear):
+                    if i:
+                        data = self.extract_slice(phi, q_idx = q_idx, 
+                                                  stress = xx, shear = xy)
+                        data_array += (data.flatten(), )
+
+        np.savetxt(fname, np.vstack(data_array).T, delimiter=',')
+
+
     def extract_line_detector(self, detectors = [0, 11], q_idx = 0, pnt = (0,0),
                               line_angle = 0, npts = 100, method = 'linear', 
                               stress = False, shear = False, save = False):
@@ -226,133 +343,6 @@ class StrainTools(object):
             return d1_e, d2_e, data_ext                      
                          
                          
-    def extract_slice(self, phi = 0, detector = [], q_idx = 0,
-                          stress = False, shear = False):
-            """
-    
-            """                  
-            if detector != []:
-                error = "Can't calculate shear from single detector/cake slice"
-                assert shear == False, error
-                e_xx = self.strain[..., detector, q_idx]
-                if stress:
-                    e_yy = self.strain[..., az90(self.phi, detector), q_idx]
-            else:
-                angles = [phi, phi + np.pi/2, phi]
-                e_xx = np.nan * self.strain[..., 0, 0]
-                e_yy = np.nan * self.strain[..., 0, 0]
-                e_xy = np.nan * self.strain[..., 0, 0]
-                strains = (e_xx, e_yy, e_xy)
-                for e_idx, (angle, strain) in enumerate(zip(angles, strains)):
-                    for idx in np.ndindex(strain.shape):
-                        p = self.strain_param[idx][0]
-                        if e_idx == 2:
-                            strain[idx] = -np.sin(2 * (p[1] + angle) ) * p[0]
-                        else:
-                            strain[idx] = cos_(angle, *p)
-            
-            if stress:
-                data = self.sig_eqn(e_xx, e_yy) if not shear else e_xy * self.G
-            else:
-                data = e_xx if not shear else e_xy
-            
-            return data      
-    
-    @line_dec        
-    def extract_line(self, phi = 0, detector = None, q_idx = 0,  pnt = (0,0),
-                     line_angle = 0, npnts = 100, method = 'linear', 
-                     stress = False, shear = False):
-        """
-        Extracts line profile through 2D strain field.
-        
-        # phi:        Define angle (in rad) from which to calculate strain. 
-                      Default - 0.
-        # detector:   Define detector to see strain/stress from cake not 
-                      full ring.
-        # q_idx:      Specify lattice parameter/peak to save data from. 
-        # line_angle: Angle across array to extract strain from
-        # pnt:        Centre point for data extraction  
-        # npts:       Number of points (default = 100) to extract along line
-        # method:     Interpolation mehod (default = 'linear')
-        # shear:      Extract shear.
-        """
-        error = 'Extract_line method only compatible with 1D/2D data sets.'
-        assert len(self.dims) <= 2, error
-        
-        positions = [self.co_ords[x] for x in self.dims]
-        data = self.extract_slice(phi = phi, detector = detector, 
-                                  stress = stress, shear = shear)
-        
-        return positions, data, pnt, npnts, line_angle, method    
-    
-    
-    def angle_to_text(self, fname, angles = [0, np.pi/2], q_idx = 0, 
-                      strain = True, shear = True, stress = False):
-        """
-        Saves key strain to text file. Not yet implemented in 3D.
-        
-        # fname:      File name/location to save data to.
-        # q_idx:      Specify lattice parameter/peak to save data from. 
-        # angles:     Define angles (in rad) from which to calculate strain. 
-                      Default - [0, pi/2].
-        # detectors:  Define detectors to take strain from (rather than 
-                      calculating from full detector array).
-        # shear:      Option to save shear strain data extracted at angles 
-                      (default = [0]).
-        """                
-        
-        data_array = ()
-        for i in self.dims:
-            data_array += (self.co_ords[i], )
-            
-        data_cols = (strain + stress) * (1 + shear)
-        data_shape = (data_cols,) + self.strain[...,0, 0].shape
-        sig_idx = 2 if shear else 1
-        
-        for angle in angles:
-            data = np.nan * np.ones(data_shape)
-            for idx in np.ndindex(data.shape[1:]):
-                p = self.strain_param[idx][q_idx]
-                e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)  
-                e_xy = -np.sin(2 * (p[1] + angle) ) * p[0]                  
-                
-                if strain:
-                    data[0, idx] = e_xx
-                    if shear:
-                        data[1, idx] = e_xy
-                if stress:
-                    data[sig_idx, idx] = self.sig_eqn(e_xx, e_yy)
-                    if shear:
-                        data[sig_idx + 1, idx] = e_xy * self.G
-                        
-            data_array += (data.reshape(data.shape[0], data[0].size), )
-
-        np.savetxt(fname, np.vstack(data_array).T, delimiter=',')
-
-
-    def cake_to_text(self, fname, detectors = [0], q_idx = 0, 
-                      strain = True, stress = False):
-        """
-        Saves key strain to text file. Not yet implemented in 3D.
-        
-        # fname:      File name/location to save data to.
-        # q_idx:      Specify lattice parameter/peak to save data from. 
-        # detectors:  Define detectors to take strain from (rather than 
-                      calculating from full detector array).
-        """                
-        data_array = ()
-        for i in self.dims:
-            data_array += (self.co_ords[i], )
-
-        if strain:
-            for detector in detectors:
-                data_array += (self.strain[..., detector, q_idx].flatten(), )
-        
-        if stress:
-            pass
-                
-        np.savetxt(fname, np.vstack(data_array).T)
-               
                 
     def __exit__(self, exc_type, exc_value, traceback):
         self.f.close()
