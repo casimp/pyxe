@@ -74,7 +74,7 @@ class StrainPlotting(object):
         plt.ylabel('Strain')
             
             
-    def plot_mohrs(self, point = (), q_idx = 0, angle = -np.pi, figsize = (7, 5)):
+    def plot_mohrs(self, point = (), q_idx=0, angle=-np.pi, figsize = (7, 5)):
         """
         Use fitted in-plane styrain tensor to plot Mohr's circle. 
         *Not implemented for merged files.*
@@ -106,8 +106,8 @@ class StrainPlotting(object):
         plt.xlim([p[2] - abs(2 * R), p[2] + abs(2 * R)])
         plt.plot([e_1, e_2], [0, 0], 'ko', markersize = 3)
         
-        plt.plot(e_xx, e_xy, 'ko', label = r'$(\epsilon_{xx}$, $\epsilon_{xy})$')
-        plt.plot(e_yy, -e_xy, 'wo', label = r'$(\epsilon_{yy}$, $-\epsilon_{xy})$')
+        plt.plot(e_xx, e_xy, 'ko',label=r'$(\epsilon_{xx}$, $\epsilon_{xy})$')
+        plt.plot(e_yy,-e_xy, 'wo',label=r'$(\epsilon_{yy}$, $-\epsilon_{xy})$')
         
         plt.legend(numpoints=1, frameon = False, handletextpad = 0.2)
         plt.plot([e_xx, e_yy], [e_xy, -e_xy], 'k-.')
@@ -119,13 +119,12 @@ class StrainPlotting(object):
         plt.ylabel('Shear strain')
 
 
-    def plot_line(self, az_angles = [-np.pi, -np.pi/2], detectors = [], q_idx = 0, 
-                  line_angle = 0, pnt = (0, 0), npts = 100, axis = 'scalar', 
-                  method = 'linear', data_type = 'strain', shear = False, 
-                  E = 200 * 10**9, v = 0.3, G = 79 * 10 **9):
+    def plot_line(self, phi = 0, detector = [], q_idx = 0, 
+                  line_angle = 0, pnt = (0, 0), npnts = 100, axis = 'scalar', 
+                  method = 'linear', stress = False, shear = False):
         """
-        Plots a line profile through a 2D strain field - extract_line method
-        must be run first. *Not yet implemented in 3D.*
+        Plots a line profile through a 1D/2D strain field - extract_line 
+        method must be run first. *Not yet implemented in 3D.*
                 
         # detector:   0 based indexing - 0 (default) to 23 - detector 23 empty.       
         # q0_index:   Specify lattice parameter/peak to display.   
@@ -137,26 +136,13 @@ class StrainPlotting(object):
         assert len(self.dims) <= 2, error      
         
         if len(self.dims) == 1:
-            d1 = self.co_ords[self.dims[0]]
-            if detectors != []:            
-                for i in detectors:
-                    plt.plot(d1, self.strain[..., i, q_idx], '-*')
-            else:
-                d1, data = self.extract_line_angle(az_angles)
-                for idx, angle in enumerate(az_angles):
-                    plt.plot(d1, data[:, idx], '-*')
+            d1, data = self.extract_line(phi, detector, q_idx, pnt, 
+                                    line_angle, npnts, method, stress, shear)
+            plt.plot(d1, data, '-*')
         
         else:
-            if detectors == []:
-                line_method = self.extract_line_angle
-                ext = az_angles
-            else:
-                line_method = self.extract_line_detector
-                ext = detectors
-                
-            d1, d2, data = line_method(ext, q_idx = q_idx, line_angle = line_angle, 
-                            pnt = pnt, npts = npts, method = method, shear = shear,
-                            data_type = data_type, E = E, v = v, G = G)  
+            d1, d2, data = self.extract_line(phi, detector, q_idx, pnt, 
+                                    line_angle, npnts, method, stress, shear)
                                     
             if d1[0] > d1[-1]:
                 d1, d2, data = d1[::-1], d2[::-1], data[::-1]
@@ -164,17 +150,14 @@ class StrainPlotting(object):
             zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
             scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
 
-            
-            
             x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
             plt.plot(x[axis], data, '-x')
 
 
-    def plot_detector(self, detector = 0, q_idx = 0, stress = False, err = False,  
-                      E = 200 * 10**9, v = 0.3,  
-                      res = 0.1, lvls = 11, figsize = (10, 10),                     
-                      line = False, pnt = (0,0), line_angle = 0, line_props = 'w-', 
-                      plotting = plot_complex, ax = False, cbar = True, **kwargs):
+    def plot_detector(self, detector = 0, q_idx = 0, stress = False, err=False,  
+                      res = 0.1, lvls = 11, figsize = (10, 10), line = False,                    
+                      pnt = (0,0), line_angle = 0, line_props = 'w-', 
+                      plotting = plot_complex, ax=False, cbar =True, **kwargs):
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -202,10 +185,9 @@ class StrainPlotting(object):
         
         if err:
             data = 1 - self.strain_err[..., detector, q_idx]
-        elif stress:
-            data = self.extract_stress(E = E, v = v, detector = detector)[0]
-        else:    
-            data = self.strain[..., detector, q_idx]
+        else:
+            data = self.extract_slice(detector = detector, q_idx = q_idx, 
+                                      stress = stress)
         
         if data.ndim != 2:
             D1, D2 = meshgrid_res(d1, d2, res)
@@ -213,7 +195,8 @@ class StrainPlotting(object):
         else:
             D1, D2, Z = d1, d2, data
             
-        ax_ = plotting(d1, d2, D1, D2, Z, lvls = lvls, figsize = figsize, ax = ax, cbar = cbar, **kwargs)
+        ax_ = plotting(d1, d2, D1, D2, Z, lvls = lvls, figsize = figsize, 
+                       ax = ax, cbar = cbar, **kwargs)
 
         if line == True:
             plt.figure()
@@ -224,11 +207,10 @@ class StrainPlotting(object):
 
 
 
-    def plot_angle(self, angle = 0, q_idx = 0, stress = False, shear = False,   
-                   E = 200 * 10**9, v = 0.3,   G = 79 * 10**9,
+    def plot_angle(self, phi = 0, q_idx = 0, stress = False, shear = False,   
                    res = 0.1, lvls = 11, figsize = (10, 10), 
-                   line = False, pnt = (0,0), line_angle = 0, line_props = 'w-', 
-                      plotting = plot_complex, ax = False, cbar = True, **kwargs):
+                   line = False, pnt = (0,0), line_angle=0, line_props = 'w-', 
+                   plotting = plot_complex, ax = False, cbar = True, **kwargs):
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -254,17 +236,7 @@ class StrainPlotting(object):
         assert len(self.dims) == 2, error
                                      
         d1, d2 = [self.co_ords[x] for x in self.dims]   
-        
-        data = np.nan * self.strain[..., 0, 0]
-        for idx in np.ndindex(data.shape):
-            p = self.strain_param[idx][0]
-            e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)
-            e_xy = -np.sin(2 * (p[1] + angle)) * p[0]     
-            if not stress:
-                data[idx] = e_xx if not shear else e_xy
-            else:
-                sigma_xx = E * ((1 -v) * e_xx + v*e_yy) / ((1 + v) * (1 - 2*v))
-                data[idx] = sigma_xx if not shear else e_xy * G
+        data = self.extract_slice(phi, q_idx=q_idx, stress=stress, shear=shear)
                     
         if data.ndim != 2:
             D1, D2 = meshgrid_res(d1, d2, spatial_resolution = res)
@@ -272,7 +244,8 @@ class StrainPlotting(object):
         else:
             D1, D2, Z = d1, d2, data
             
-        ax_ = plotting(d1, d2, D1, D2, Z, lvls = lvls, figsize = figsize, ax = ax, cbar = cbar, **kwargs)
+        ax_ = plotting(d1, d2, D1, D2, Z, lvls = lvls, figsize = figsize, 
+                       ax = ax, cbar = cbar, **kwargs)
         
         if line == True:
             plt.figure()

@@ -59,10 +59,10 @@ class Area(StrainTools, StrainPlotting):
     associated error. 
     """
    
-    def __init__(self, folder, pos_file, det_params, q0, window, 
-                 func = 'gaussian', error_limit = 10 ** -4, output = 'simple',
-                 pos_delimiter = ',', exclude = [], npt_rad = 1024, npt_azim = 36, 
-                 azimuth_range = [-175, 185]):
+    def __init__(self, folder, pos_data, det_params, q0, window, f_ext = '.edf', 
+                 mirror = True, func = 'gaussian', error_limit = 2 * 10 ** -4, output = 'simple',
+                 pos_file_delimiter = ',', exclude = [], npt_rad = 1024, npt_azim = 36, 
+                 azimuth_range = [-180, 180]):
         """
         
         # det_params: Accepts a file location for a .poni parameter file 
@@ -77,18 +77,32 @@ class Area(StrainTools, StrainPlotting):
         """
         error = 'Azimuthal range must be less than or equal to 360deg'
         assert abs(np.max(azimuth_range) - np.min(azimuth_range)) <= 360, error
-        if isinstance(det_params, str):
-            ai = pyFAI.AzimuthalIntegrator(det_params)
+        if isinstance(det_params, ("".__class__, u"".__class__)):
+            ai = pyFAI.load(det_params) ## CORRECT??
+            
         else:
             ai = pyFAI.AzimuthalIntegrator()
             ai.setFit2D(*det_params[:-1])
             ai.set_wavelength(det_params[-1])
         print(ai)
         
-        exclude.append(os.path.split(pos_file)[1])
-        fnames = exclusion(os.listdir(folder), exclude)
         
-        positions = np.loadtxt(pos_file, delimiter=pos_delimiter)
+        #exclude.append(os.path.split(pos_data)[1]) # Now search for actual files...
+        fnames = sorted([x for x in os.listdir(folder) if x[-len(f_ext):] == f_ext])
+        
+        print(len(fnames))
+        fnames = exclusion(fnames, exclude)
+        print(fnames)
+        error = ('Position data not supplied in correct format: \n'
+                 ' pos_data variable must be the (str) path to a csv file, '
+                 'a numpy array containing 1, 2 or 3d co-ordinates')
+        assert isinstance(pos_data, ("".__class__, u"".__class__, np.ndarray, tuple)), error
+        if isinstance(pos_data, ("".__class__, u"".__class__)):
+            positions = np.loadtxt(pos_data, delimiter = pos_file_delimiter)
+        else:
+            positions = pos_data
+        
+        print(fnames, positions)
         error = 'Number of positions not equal to number of files (pos = %s,' \
                 ' files = %s)' % (positions.shape[0], len(fnames))
         assert positions.shape[0] == len(fnames), error
@@ -119,19 +133,39 @@ class Area(StrainTools, StrainPlotting):
             self.I[fidx] = I         
             
             q = np.repeat(q_[None, :], npt_azim, axis = 0)
-            for i in range(npt_azim):            
-                plt.plot(q[i], I[i])
-            plt.xlim([1.5, 6])
+#            for i in range(npt_azim):            
+#                plt.plot(q[i], I[i])
+#            plt.xlim([1.5, 6])
 
             for idx, window in enumerate(self.peak_windows):
                 fit_data = array_fit(q, I, window, func, error_limit, output, unused_detectors = [])
                 self.peaks[fidx, ..., idx], self.peaks_err[fidx, ..., idx] = fit_data
         self.q = q
+        print(phi)        
         self.phi = phi * np.pi / 180        
+        
+        if mirror:
+            # has to be even number of slices but uneven number of boundaries.
+            angles = self.phi[:int(self.phi[:].shape[0]/2)]
+            #discard = self.phi[int(self.phi[:].shape[0]/2):]
+            peak_shape = self.peaks.shape
+            phi_len = int(peak_shape[-2]/2)
+            new_shape = (peak_shape[:-2] + (phi_len, ) + peak_shape[-1:]) 
+            print(new_shape)
+            mirror_peak = np.nan * np.zeros(new_shape)
+            mirror_err = np.nan * np.zeros(new_shape)
+            for i in range(phi_len):
+                mirror_peak[:, i] = (self.peaks[:, i] + self.peaks[:, i + new_shape[-2]]) / 2
+                mirror_err[:, i] = (self.peaks_err[:, i] + self.peaks_err[:, i + new_shape[-2]]) / 2
+            self.peaks = mirror_peak
+            self.phi = angles
+            self.peaks_err = mirror_err
+            
         self.slit_size = []
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
         self.strain_fit(error_limit)
+
 
 
     def strain_fit(self, error_limit):
@@ -183,7 +217,10 @@ class Area(StrainTools, StrainPlotting):
             
             for data_id, data in zip(data_ids, data_array):
                 base_tree = 'entry1/EDXD_elements/%s'
-                f.create_dataset(base_tree % data_id, data = data)
+                if data_id == 'data':
+                    f.create_dataset(base_tree % data_id, data = data, compression = 'gzip')
+                else:
+                    f.create_dataset(base_tree % data_id, data = data)
                 
          
 
