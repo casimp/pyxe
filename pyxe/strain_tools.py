@@ -27,6 +27,21 @@ class StrainTools(object):
     def __enter__(self):
         return self
 
+    def define_matprops(self, E = 200*10**9, v = 0.3, G = None, 
+                        stress_state = 'plane strain'):
+        """
+        Define material properties and sample stress state such that stress 
+        can be calculated.
+        """
+        
+        self.E = E
+        self.v = v
+        self.G = E / (2 * (1 + v)) if G == None else G
+        if stress_state != 'plane strain':   
+            self.sig_eqn = lambda e_xx, e_yy: (E/(1 - v**2)) * (e_xx + v*e_yy)
+        else:
+            self.sig_eqn = lambda e_xx, e_yy: E * ((1 - v) * e_xx + v * e_yy)/\
+                                                   ((1 + v) * (1 - 2 * v))
         
     def recentre(self, centre, reverse = []):
         """
@@ -46,8 +61,8 @@ class StrainTools(object):
     def rotate(self, order = [1, 0]):
         """
         Switches order of axes, which has the same effect as rotating the 
-        strain data. Order must be a list of the same number of dimensions
-        as the data.        
+        strain data. Order must be a list of a length equal to the number of 
+        dimensions of the data.        
         """
         self.dims = [self.dims[i] for i in order]
         
@@ -192,8 +207,53 @@ class StrainTools(object):
             
         return sigma_xx, sigma_yy          
     
-    def strain_to_text(self, fname, q_idx = 0, angles = [0, np.pi/2], 
-                       e_xy = [0], detectors = []):
+    def angle_to_text(self, fname, angles = [0, np.pi/2], q_idx = 0, 
+                      strain = True, shear = True, stress = False,
+                      plane_strain = True):
+        """
+        Saves key strain to text file. Not yet implemented in 3D.
+        
+        # fname:      File name/location to save data to.
+        # q0_index:   Specify lattice parameter/peak to save data from. 
+        # angles:     Define angles (in rad) from which to calculate strain. 
+                      Default - [0, pi/2].
+        # detectors:  Define detectors to take strain from (rather than 
+                      calculating from full detector array).
+        # e_xy:       Option to save shear strain data extracted at angles 
+                      (default = [0]).
+        """                
+        
+        data_array = ()
+        for i in self.dims:
+            data_array += (self.co_ords[i], )
+            
+        data_cols = (strain + stress) * (1 + shear)
+        data_shape = (data_cols,) + self.strain[...,0, 0].shape
+        sig_idx = 2 if shear else 1
+        
+        for angle in angles:
+            data = np.nan * np.ones(data_shape)
+            for idx in np.ndindex(data.shape[1:]):
+                p = self.strain_param[idx][q_idx]
+                e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)  
+                e_xy = -np.sin(2 * (p[1] + angle) ) * p[0]                  
+                
+                if strain:
+                    data[0, idx] = e_xx
+                    if shear:
+                        data[1, idx] = e_xy
+                if stress:
+                    data[sig_idx, idx] = self.sig_eqn(e_xx, e_yy)
+                    if shear:
+                        data[sig_idx + 1, idx] = e_xy * self.G
+                        
+            data_array += (data.reshape(data.shape[0], data[0].size), )
+
+        np.savetxt(fname, np.vstack(data_array).T, delimiter=',')
+
+
+    def cake_to_text(self, fname, detectors = [0], q_idx = 0, 
+                      strain = True, stress = False, E = 200*10**9, v = 0.3):
         """
         Saves key strain to text file. Not yet implemented in 3D.
         
@@ -210,32 +270,14 @@ class StrainTools(object):
         for i in self.dims:
             data_array += (self.co_ords[i], )
 
-        if detectors == []:
-            for angle in angles:
-                strain_field = np.nan * self.strain[..., 0, 0]
- 
-                for idx in np.ndindex(strain_field.shape):
-                    p = self.strain_param[idx][0]
-                    strain_field[idx] = cos_(angle, *p)
-                    data_array += (strain_field.flatten(), )
-        else:
+        if strain:
             for detector in detectors:
                 data_array += (self.strain[..., detector, q_idx].flatten(), )
         
-        if e_xy != False:
-            
-            for angle in e_xy:
-                strain_field = np.nan * self.strain[..., 0, 0]
-        
-                for idx in np.ndindex(strain_field.shape):
-                    p = self.strain_param[idx][q_idx]
-                    e_xy = -np.sin(2 * (p[1] + angle) ) * p[0]
-                    strain_field[idx] = e_xy
-                
-                data_array += (strain_field.flatten(), )
+        if stress:
+            pass
                 
         np.savetxt(fname, np.vstack(data_array).T)
-
                
                 
     def __exit__(self, exc_type, exc_value, traceback):
