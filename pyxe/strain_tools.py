@@ -28,17 +28,24 @@ class StrainTools(object):
         return self
 
     def define_matprops(self, E = 200*10**9, v = 0.3, G = None, 
-                        stress_state = 'plane strain'):
+                        state = 'plane strain'):
         """
         Define material properties and sample stress state such that stress 
-        can be calculated.
+        can be calculated. Default values are for a nominal steel in a plane 
+        strain stress state.
+        
+        # E:          Young's modulus (MPa)
+        # v:          Poissons ratio
+        # G:          Shear modulus - if not specified use E / (2 * (1 + v))
+        # state:      Stress state assumption used for stress calculation
+                      - 'plane strain' (default) or 'plane stress'.
         """
         
         self.E = E
         self.v = v
         self.G = E / (2 * (1 + v)) if G == None else G
         
-        if stress_state != 'plane strain':   
+        if state != 'plane strain':   
             self.sig_eqn = lambda e_xx, e_yy: (E/(1 - v**2)) * (e_xx + v*e_yy)
         else:
             self.sig_eqn = lambda e_xx, e_yy: E * ((1 - v) * e_xx + v * e_yy)/\
@@ -49,6 +56,9 @@ class StrainTools(object):
         Shifts centre point to user defined location. Not reflected in .nxs
         file unless saved.Accept offset for both 2D and 3D data sets (x, y, z).
         Re-centring completed in the order in which data was acquired.
+        
+        # centre:     New centre point
+        # reverse:    List of dimensions to reverse
         """
         co_ords = [self.co_ords[x] for x in self.dims]
         
@@ -63,9 +73,28 @@ class StrainTools(object):
         """
         Switches order of axes, which has the same effect as rotating the 
         strain data. Order must be a list of a length equal to the number of 
-        dimensions of the data.        
+        dimensions of the data. 
+        
+        # order:      New order for dimensions
         """
         self.dims = [self.dims[i] for i in order]
+        
+        
+    def mask(self, patch, radius):
+        """
+        Pass in matplotlib patch with which to mask area. 
+        Note that in 3D the patch is applied according to first 2 dims and
+        applied through stack.
+        
+        UNTESTED!!!!
+        
+        # patch:      Matplotlib patch object
+        # radius:     Extend or contract mask from object edge. 
+        """
+        pos = zip(*[self.co_ords[i] for i in self.dims[:2]])
+        isin = [patch.contains_point((x, y), radius = radius) for x, y in pos]
+        self.strain_param[np.array(isin)] = np.nan
+        self.strain[np.array(isin)] = np.nan
         
            
     def extract_line_detector(self, detectors = [0, 11], q_idx = 0, pnt = (0,0),
@@ -98,7 +127,7 @@ class StrainTools(object):
         for idx, detector in enumerate(detectors):
             
             if stress:
-                data = self.extract_stress(q_idx=q_idx, detector=detector)[0]   
+                data = self.extract_stress(detector=detector, q_idx=q_idx)[0]   
             else:
                 data = self.strain[..., detector, q_idx]
              
@@ -110,7 +139,7 @@ class StrainTools(object):
                 pass
             data_ext[:, idx] = data_line
         
-        if save != False:
+        if save:
             fname = save if isinstance(save, str) else self.filename[:-4] + '.txt'
             np.savetxt(fname, (d1_e, d2_e, data_ext), delimiter = ',')
         
@@ -163,13 +192,11 @@ class StrainTools(object):
             not_nan = ~np.isnan(data)
             if len(self.dims) == 2:
                 try:
-                    #print(d1[not_nan].shape, d1[not_nan].shape, data[not_nan].shape)
                     data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
                                           (d1_e, d2_e), method = method)
                     
                 except ValueError:
                     pass
-            #print(np.sum(~not_nan), np.sum(np.isnan(data)))
             data_ext[:, angle_idx] = data
                 
         if save:
@@ -211,7 +238,7 @@ class StrainTools(object):
         Saves key strain to text file. Not yet implemented in 3D.
         
         # fname:      File name/location to save data to.
-        # q0_index:   Specify lattice parameter/peak to save data from. 
+        # q_idx:      Specify lattice parameter/peak to save data from. 
         # angles:     Define angles (in rad) from which to calculate strain. 
                       Default - [0, pi/2].
         # detectors:  Define detectors to take strain from (rather than 
@@ -255,7 +282,7 @@ class StrainTools(object):
         Saves key strain to text file. Not yet implemented in 3D.
         
         # fname:      File name/location to save data to.
-        # q0_index:   Specify lattice parameter/peak to save data from. 
+        # q_idx:      Specify lattice parameter/peak to save data from. 
         # detectors:  Define detectors to take strain from (rather than 
                       calculating from full detector array).
         """                
