@@ -71,6 +71,33 @@ class Reload(StrainTools, StrainPlotting):
                         b'self_z': self.ss2_z} 
         
   
+    def save_to_nxs(self, fname):
+        """
+        Saves all data back into an expanded .nxs file. Contains all original 
+        data plus q0, peak locations and strain.
+        
+        # fname:      File name/location - default is to save to parent 
+                      directory (*_md.nxs) 
+        """
+        fname = fname + '_md.nxs'
+        
+        with h5py.File(fname, 'w') as f:
+            data_ids = ('dims', 'phi', 'slit_size', 'q0','peak_windows', 
+                        'peaks', 'peaks_err', 'strain', 'strain_err', 
+                        'strain_param', 'q', 'data') \
+                        + tuple([dim.decode('utf8') for dim in self.dims])
+            data_array = (self.dims, self.phi, self.slit_size, self.q0,  
+                          self.peak_windows, self.peaks, self.peaks_err,  
+                          self.strain, self.strain_err, self.strain_param, 
+                          self.q, self.I) \
+                          + tuple([self.co_ords[x] for x in self.dims])
+            
+            for data_id, data in zip(data_ids, data_array):
+                base_tree = 'entry1/EDXD_elements/%s'
+                if data_id == 'data':
+                    f.create_dataset(base_tree % data_id, data = data, compression = 'gzip')
+                else:
+                    f.create_dataset(base_tree % data_id, data = data)
 
 
 
