@@ -37,6 +37,7 @@ class StrainTools(object):
         self.E = E
         self.v = v
         self.G = E / (2 * (1 + v)) if G == None else G
+        
         if stress_state != 'plane strain':   
             self.sig_eqn = lambda e_xx, e_yy: (E/(1 - v**2)) * (e_xx + v*e_yy)
         else:
@@ -69,8 +70,7 @@ class StrainTools(object):
            
     def extract_line_detector(self, detectors = [0, 11], q_idx = 0, pnt = (0,0),
                               line_angle = 0, npts = 100, method = 'linear', 
-                              stress = False, shear = False, save = False, 
-                              E = 200 * 10 **9, v = 0.3, G = 79 * 10 **9):
+                              stress = False, shear = False, save = False):
         """
         Extracts line profile through 2D strain field.
         
@@ -83,6 +83,7 @@ class StrainTools(object):
         # method:     Interpolation mehod (default = 'linear')
         # save:       Save - replace False with filename to save
         """
+        
         error = 'Extract_line method only compatible with 2d data sets.'
         assert len(self.dims) == 2, error
         
@@ -97,7 +98,7 @@ class StrainTools(object):
         for idx, detector in enumerate(detectors):
             
             if stress:
-                data = self.extract_stress(q_idx = q_idx, E = E, v = v, detector = detector)[0]   
+                data = self.extract_stress(q_idx=q_idx, detector=detector)[0]   
             else:
                 data = self.strain[..., detector, q_idx]
              
@@ -117,8 +118,7 @@ class StrainTools(object):
 
     def extract_line_angle(self, az_angles = [0, np.pi/2], q_idx = 0,  pnt = (0,0),
                            line_angle = 0, npts = 100, method = 'linear', 
-                           stress = False, shear = False, save = False, 
-                           E = 200 * 10 **9, v = 0.3, G = 79 * 10 **9):
+                           stress = False, shear = False, save = False):
         """
         Extracts line profile through 2D strain field.
         
@@ -155,8 +155,8 @@ class StrainTools(object):
                 e_xy = -np.sin(2 * (p[1] + angle)) * p[0]    
                 
                 if stress:
-                    sigma_xx = E * ((1-v)*e_xx + v*e_yy) / ((1+v)*(1-2*v))
-                    data[idx] = sigma_xx if not shear else e_xy * G
+                    sigma_xx = self.sig_eqn(e_xx, e_yy)
+                    data[idx] = sigma_xx if not shear else e_xy * self.G
                 else:
                     data[idx] = e_xx if not shear else e_xy
                     
@@ -182,11 +182,12 @@ class StrainTools(object):
             return d1_e, d2_e, data_ext                      
                          
                          
-    def extract_stress(self, angle = 0, detector = [], q_idx = 0, 
-                       E = 200*10**9, v = 0.3, G = 79 * 10**9, save = False):
+    def extract_stress(self, angle = 0, detector = [], q_idx=0, save = False):
         """
         Uses a plane strain assumption, with the strain the unmeasured plane
         approximating to zero. Incorrect when this is not the case.
+        
+        NOT true now uses either plane strain or plane stress assumption.
         """
         if detector != []:
             det1 = detector
@@ -201,15 +202,11 @@ class StrainTools(object):
                 for idx in np.ndindex(strain_field.shape):
                     p = self.strain_param[idx][0]
                     strain_field[idx] = cos_(angle, *p)
-        
-        sigma_xx = E * ((1 - v) * e_xx + v * e_yy)/ ((1 + v) * (1 - 2 * v))
-        sigma_yy = E * ((1 - v) * e_yy + v * e_xx)/ ((1 + v) * (1 - 2 * v))
             
-        return sigma_xx, sigma_yy          
+        return self.sig_eqn(e_xx, e_yy), self.sig_eqn(e_yy, e_xx)          
     
     def angle_to_text(self, fname, angles = [0, np.pi/2], q_idx = 0, 
-                      strain = True, shear = True, stress = False,
-                      plane_strain = True):
+                      strain = True, shear = True, stress = False):
         """
         Saves key strain to text file. Not yet implemented in 3D.
         
@@ -253,18 +250,14 @@ class StrainTools(object):
 
 
     def cake_to_text(self, fname, detectors = [0], q_idx = 0, 
-                      strain = True, stress = False, E = 200*10**9, v = 0.3):
+                      strain = True, stress = False):
         """
         Saves key strain to text file. Not yet implemented in 3D.
         
         # fname:      File name/location to save data to.
         # q0_index:   Specify lattice parameter/peak to save data from. 
-        # angles:     Define angles (in rad) from which to calculate strain. 
-                      Default - [0, pi/2].
         # detectors:  Define detectors to take strain from (rather than 
                       calculating from full detector array).
-        # e_xy:       Option to save shear strain data extracted at angles 
-                      (default = [0]).
         """                
         data_array = ()
         for i in self.dims:
