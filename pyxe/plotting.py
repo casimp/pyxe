@@ -203,7 +203,7 @@ class StrainPlotting(object):
         if err:
             data = 1 - self.strain_err[..., detector, q_idx]
         elif stress:
-            data = self.extract_stress(E = E, v = v, detector = detector)[0]
+            data = self.extract_stress(q_idx = q_idx, E = E, v = v, detector = detector)[0]
         else:    
             data = self.strain[..., detector, q_idx]
         
@@ -257,7 +257,7 @@ class StrainPlotting(object):
         
         data = np.nan * self.strain[..., 0, 0]
         for idx in np.ndindex(data.shape):
-            p = self.strain_param[idx][0]
+            p = self.strain_param[idx][q_idx]
             e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)
             e_xy = -np.sin(2 * (p[1] + angle)) * p[0]     
             if not stress:
