@@ -17,6 +17,19 @@ from scipy.interpolate import griddata
 from pyxe.plotting import line_extract
 from pyxe.fitting_functions import cos_
 
+def az90(phi, idx):
+    
+    for i in [-np.pi/2, np.pi/2]:
+        if phi[idx] < -np.pi:
+            find_ind = np.isclose(phi, np.pi - phi[idx] + i)
+        else:
+            find_ind = np.isclose(phi, phi[idx] + i)
+        if np.sum(find_ind) == 1:
+            return np.argmax(find_ind)
+    raise ValueError('No cake segment found perpendicular to given index.', 
+                     'Number of cake segments must be divisable by 4.')
+
+
 class StrainTools(object):
     """
     Takes post-processed .nxs file from the I12 EDXD detector. File should have
@@ -127,7 +140,7 @@ class StrainTools(object):
         for idx, detector in enumerate(detectors):
             
             if stress:
-                data = self.extract_stress(detector=detector, q_idx=q_idx)[0]   
+                data = self.extract_slice(detector=detector, q_idx=q_idx, stress = True)
             else:
                 data = self.strain[..., detector, q_idx]
              
@@ -209,28 +222,38 @@ class StrainTools(object):
             return d1_e, d2_e, data_ext                      
                          
                          
-    def extract_stress(self, angle = 0, detector = [], q_idx=0, save = False):
-        """
-        Uses a plane strain assumption, with the strain the unmeasured plane
-        approximating to zero. Incorrect when this is not the case.
-        
-        NOT true now uses either plane strain or plane stress assumption.
-        """
-        if detector != []:
-            det1 = detector
-            det2 = det1 + 11 if (det1 + 11) < 22 else (det1 - 11)
-            e_xx = self.strain[..., det1, q_idx]
-            e_yy = self.strain[..., det2, q_idx]
-        else:
-            angles = [angle, angle + np.pi/2]
-            e_xx = np.nan * self.strain[..., 0, 0]
-            e_yy = np.nan * self.strain[..., 0, 0]
-            for angle, strain_field in zip(angles, (e_xx, e_yy)):
-                for idx in np.ndindex(strain_field.shape):
-                    p = self.strain_param[idx][0]
-                    strain_field[idx] = cos_(angle, *p)
+    def extract_slice(self, phi = 0, detector = [], q_idx = 0,
+                          stress = False, shear = False):
+            """
+    
+            """                  
+            if detector != []:
+                error = "Can't calculate shear from single detector/cake slice"
+                assert shear == False, error
+                e_xx = self.strain[..., detector, q_idx]
+                if stress:
+                    e_yy = self.strain[..., az90(self.phi, detector), q_idx]
+            else:
+                angles = [phi, phi + np.pi/2, phi]
+                e_xx = np.nan * self.strain[..., 0, 0]
+                e_yy = np.nan * self.strain[..., 0, 0]
+                e_xy = np.nan * self.strain[..., 0, 0]
+                strains = (e_xx, e_yy, e_xy)
+                for e_idx, (angle, strain) in enumerate(zip(angles, strains)):
+                    for idx in np.ndindex(strain.shape):
+                        p = self.strain_param[idx][0]
+                        if e_idx == 2:
+                            strain[idx] = -np.sin(2 * (p[1] + angle) ) * p[0]
+                        else:
+                            strain[idx] = cos_(angle, *p)
             
-        return self.sig_eqn(e_xx, e_yy), self.sig_eqn(e_yy, e_xx)          
+            if stress:
+                data = self.sig_eqn(e_xx, e_yy) if not shear else e_xy * self.G
+            else:
+                data = e_xx if not shear else e_xy
+            
+            return data       
+    
     
     def angle_to_text(self, fname, angles = [0, np.pi/2], q_idx = 0, 
                       strain = True, shear = True, stress = False):
@@ -243,7 +266,7 @@ class StrainTools(object):
                       Default - [0, pi/2].
         # detectors:  Define detectors to take strain from (rather than 
                       calculating from full detector array).
-        # e_xy:       Option to save shear strain data extracted at angles 
+        # shear:      Option to save shear strain data extracted at angles 
                       (default = [0]).
         """                
         
