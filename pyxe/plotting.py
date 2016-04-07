@@ -74,7 +74,7 @@ class StrainPlotting(object):
         plt.ylabel('Strain')
             
             
-    def plot_mohrs(self, point = (), q_idx = 0, angle = -np.pi, figsize = (7, 5)):
+    def plot_mohrs(self, point = (), q_idx=0, angle=-np.pi, figsize = (7, 5)):
         """
         Use fitted in-plane styrain tensor to plot Mohr's circle. 
         *Not implemented for merged files.*
@@ -154,10 +154,10 @@ class StrainPlotting(object):
             plt.plot(x[axis], data, '-x')
 
 
-    def plot_detector(self, detector = 0, q_idx = 0, stress = False, err = False,  
+    def plot_detector(self, detector = 0, q_idx = 0, stress = False, err=False,  
                       res = 0.1, lvls = 11, figsize = (10, 10), line = False,                    
                       pnt = (0,0), line_angle = 0, line_props = 'w-', 
-                      plotting = plot_complex, ax=False, cbar = True, **kwargs):
+                      plotting = plot_complex, ax=False, cbar =True, **kwargs):
         """
         Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
         
@@ -236,7 +236,7 @@ class StrainPlotting(object):
         assert len(self.dims) == 2, error
                                      
         d1, d2 = [self.co_ords[x] for x in self.dims]   
-        data = self.extract_slice(phi, q_idx = q_idx, stress = stress, shear = shear)
+        data = self.extract_slice(phi, q_idx=q_idx, stress=stress, shear=shear)
                     
         if data.ndim != 2:
             D1, D2 = meshgrid_res(d1, d2, spatial_resolution = res)

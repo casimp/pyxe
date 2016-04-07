@@ -10,7 +10,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-#from scipy.interpolate import griddata
 import numpy as np
 from pyxe.plotting_tools import line_ext, az90
 from pyxe.fitting_functions import cos_
@@ -39,7 +38,6 @@ class StrainTools(object):
         # state:      Stress state assumption used for stress calculation
                       - 'plane strain' (default) or 'plane stress'.
         """
-        
         self.E = E
         self.v = v
         self.G = E / (2 * (1 + v)) if G == None else G
@@ -179,7 +177,6 @@ class StrainTools(object):
         # shear:      Option to save shear strain data extracted at angles 
                       (default = [0]).
         """                
-        
         data_array = ()
         for i in self.dims:
             data_array += (self.co_ords[i], )
