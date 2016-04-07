@@ -28,6 +28,10 @@ def az90(phi, idx):
             return np.argmax(find_ind)
     raise ValueError('No cake segment found perpendicular to given index.', 
                      'Number of cake segments must be divisable by 4.')
+                     
+def line_dec(func):
+    pass
+    #positions, data, pnt, line_angle, method = func()
 
 
 class StrainTools(object):
@@ -252,7 +256,34 @@ class StrainTools(object):
             else:
                 data = e_xx if not shear else e_xy
             
-            return data       
+            return data      
+    
+    @line_dec        
+    def extract_line(self, phi = 0, detector = None, q_idx = 0,  pnt = (0,0),
+                     line_angle = 0, npnts = 100, method = 'linear', 
+                     stress = False, shear = False):
+        """
+        Extracts line profile through 2D strain field.
+        
+        # phi:        Define angle (in rad) from which to calculate strain. 
+                      Default - 0.
+        # detector:   Define detector to see strain/stress from cake not 
+                      full ring.
+        # q_idx:      Specify lattice parameter/peak to save data from. 
+        # line_angle: Angle across array to extract strain from
+        # pnt:        Centre point for data extraction  
+        # npts:       Number of points (default = 100) to extract along line
+        # method:     Interpolation mehod (default = 'linear')
+        # shear:      Extract shear.
+        """
+        error = 'Extract_line method only compatible with 1D/2D data sets.'
+        assert len(self.dims) <= 2, error
+        
+        positions = [self.co_ords[x] for x in self.dims]
+        data = self.extract_slice(phi = phi, detector = detector, 
+                                  stress = stress, shear = shear)
+        
+        return positions, data, pnt, npnts, line_angle, method    
     
     
     def angle_to_text(self, fname, angles = [0, np.pi/2], q_idx = 0, 
