@@ -54,7 +54,7 @@ class StrainTools(object):
            
     def extract_line_detector(self, detectors = [0, 11], q_idx = 0, pnt = (0,0),
                               line_angle = 0, npts = 100, method = 'linear', 
-                              data_type = 'strain', shear = False, save = False, 
+                              stress = False, shear = False, save = False, 
                               E = 200 * 10 **9, v = 0.3, G = 79 * 10 **9):
         """
         Extracts line profile through 2D strain field.
@@ -81,10 +81,11 @@ class StrainTools(object):
         
         for idx, detector in enumerate(detectors):
             
-            if data_type == 'strain':
+            if stress:
+                data = self.extract_stress(q_idx = q_idx, E = E, v = v, detector = detector)[0]   
+            else:
                 data = self.strain[..., detector, q_idx]
-            elif data_type == 'stress':
-                data = self.extract_stress(E = E, v = v, detector = detector)[0]                
+             
             not_nan = ~np.isnan(data)
             try:
                 data_line = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
@@ -101,7 +102,7 @@ class StrainTools(object):
 
     def extract_line_angle(self, az_angles = [0, np.pi/2], q_idx = 0,  pnt = (0,0),
                            line_angle = 0, npts = 100, method = 'linear', 
-                           data_type = 'strain', shear = False, save = False, 
+                           stress = False, shear = False, save = False, 
                            E = 200 * 10 **9, v = 0.3, G = 79 * 10 **9):
         """
         Extracts line profile through 2D strain field.
@@ -134,28 +135,29 @@ class StrainTools(object):
             
             data = np.nan * self.strain[..., 0, 0]
             for idx in np.ndindex(data.shape):
-                p = self.strain_param[idx][0]
+                p = self.strain_param[idx][q_idx]
                 e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)
                 e_xy = -np.sin(2 * (p[1] + angle)) * p[0]    
                 
-                if data_type == 'strain':
-                    data[idx] = e_xx if not shear else e_xy
-                elif data_type == 'stress':
+                if stress:
                     sigma_xx = E * ((1-v)*e_xx + v*e_yy) / ((1+v)*(1-2*v))
                     data[idx] = sigma_xx if not shear else e_xy * G
+                else:
+                    data[idx] = e_xx if not shear else e_xy
+                    
             not_nan = ~np.isnan(data)
             if len(self.dims) == 2:
                 try:
-                    print(d1[not_nan].shape, d1[not_nan].shape, data[not_nan].shape)
+                    #print(d1[not_nan].shape, d1[not_nan].shape, data[not_nan].shape)
                     data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
                                           (d1_e, d2_e), method = method)
                     
                 except ValueError:
                     pass
-            print(np.sum(~not_nan), np.sum(np.isnan(data)))
+            #print(np.sum(~not_nan), np.sum(np.isnan(data)))
             data_ext[:, angle_idx] = data
                 
-        if save != False:
+        if save:
             fname = save if isinstance(save, str) else self.filename[:-4] + '.txt'
             np.savetxt(fname, (d1_e, d2_e, data_ext), delimiter = ',')
         
