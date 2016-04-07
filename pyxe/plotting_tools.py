@@ -8,6 +8,7 @@ Created on Wed Nov 18 16:34:59 2015
 import numpy as np
 import matplotlib.pyplot as plt 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.interpolate import griddata
 
 
 def line_extract(X, Y, point, theta, npoints = 10):
@@ -37,6 +38,40 @@ def line_extract(X, Y, point, theta, npoints = 10):
         x = (y - c) / m
 
     return x, y
+
+
+def az90(phi, idx):
+    
+    for i in [-np.pi/2, np.pi/2]:
+        if phi[idx] < -np.pi:
+            find_ind = np.isclose(phi, np.pi - phi[idx] + i)
+        else:
+            find_ind = np.isclose(phi, phi[idx] + i)
+        if np.sum(find_ind) == 1:
+            return np.argmax(find_ind)
+    raise ValueError('No cake segment found perpendicular to given index.', 
+                     'Number of cake segments must be divisable by 4.')
+                     
+def line_ext(positions, data, pnt, npnts, line_angle, method):
+    """
+    Not yet working function to take line from data
+    """#### Not working but almost!
+    if len(positions) == 1:
+        d1 = positions[0]
+    else:
+        d1, d2 = positions        
+        d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npnts)
+    
+    not_nan = ~np.isnan(data)
+    if len(positions) == 2:
+        try:
+            data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
+                                  (d1_e, d2_e), method = method)
+            return d1_e, d2_e, data
+        except ValueError:
+            pass
+    else:
+        return d1[not_nan], data[not_nan]
     
 def meshgrid_res(d1, d2, spatial_resolution):
     """

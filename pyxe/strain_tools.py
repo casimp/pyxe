@@ -10,47 +10,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-#import h5py
+#from scipy.interpolate import griddata
 import numpy as np
-from scipy.interpolate import griddata
-
-from pyxe.plotting import line_extract
+from pyxe.plotting_tools import line_ext, az90
 from pyxe.fitting_functions import cos_
-
-def az90(phi, idx):
-    
-    for i in [-np.pi/2, np.pi/2]:
-        if phi[idx] < -np.pi:
-            find_ind = np.isclose(phi, np.pi - phi[idx] + i)
-        else:
-            find_ind = np.isclose(phi, phi[idx] + i)
-        if np.sum(find_ind) == 1:
-            return np.argmax(find_ind)
-    raise ValueError('No cake segment found perpendicular to given index.', 
-                     'Number of cake segments must be divisable by 4.')
-                     
-def line_ext(positions, data, pnt, npnts, line_angle, method):
-    """
-    Not yet working function to take line from data
-    """#### Not working but almost!
-    if len(positions) == 1:
-        d1 = positions[0]
-        d1_e = d1
-    else:
-        d1, d2 = positions        
-        d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npnts)
-    
-    not_nan = ~np.isnan(data)
-    print(not_nan.shape, data.shape, d1.shape, d2.shape, d1_e.shape, d2_e.shape)
-    if len(positions) == 2:
-        try:
-            data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
-                                  (d1_e, d2_e), method = method)
-            return d1_e, d2_e, data
-        except ValueError:
-            pass
-    else:
-        return d1[not_nan], data[not_nan]
 
 
 class StrainTools(object):
@@ -59,9 +22,9 @@ class StrainTools(object):
     been created with the XRD_analysis tool and contain detector specific peaks 
     and associated strain.
     """
-        
     def __enter__(self):
         return self
+
 
     def define_matprops(self, E = 200*10**9, v = 0.3, G = None, 
                         state = 'plane strain'):
@@ -87,6 +50,7 @@ class StrainTools(object):
             self.sig_eqn = lambda e_xx, e_yy: E * ((1 - v) * e_xx + v * e_yy)/\
                                                    ((1 + v) * (1 - 2 * v))
         
+        
     def recentre(self, centre, reverse = []):
         """
         Shifts centre point to user defined location. Not reflected in .nxs
@@ -100,10 +64,21 @@ class StrainTools(object):
         
         for co_ord, offset in zip(co_ords, centre):
             co_ord -= offset
+
             
-        reverse = [reverse] if isinstance(reverse, int) else reverse
+    def reverse(self, rev_ind = []):
+        """
+        Reverses specified dimensions (i.e. negative transform). 
+        Not reflected in .nxs file unless. Accept reversal for both 2D and 
+        3D data sets (x, y, z).
+        Reversal completed in the order in which data was acquired.
+        
+        # rev_ind:    List of dimensions to reverse
+        """
+        reverse = [rev_ind] if isinstance(rev_ind, int) else rev_ind
         for i in reverse:
-            self.co_ords[self.dims[i]] = -self.co_ords[self.dims[i]]
+            self.co_ords[self.dims[i]] = -self.co_ords[self.dims[i]] 
+            
             
     def rotate(self, order = [1, 0]):
         """
@@ -229,119 +204,6 @@ class StrainTools(object):
                         data_array += (data.flatten(), )
 
         np.savetxt(fname, np.vstack(data_array).T, delimiter=',')
-
-
-    def extract_line_detector(self, detectors = [0, 11], q_idx = 0, pnt = (0,0),
-                              line_angle = 0, npts = 100, method = 'linear', 
-                              stress = False, shear = False, save = False):
-        """
-        Extracts line profile through 2D strain field.
-        
-        # detectors:  Define detectors to take strain from (rather than 
-                      calculating from full detector array).
-        # q_idx:      Specify lattice parameter/peak to save data from. 
-        # line_angle: Angle across array to extract strain from
-        # pnt:        Centre point for data extraction  
-        # npts:       Number of points (default = 100) to extract along line
-        # method:     Interpolation mehod (default = 'linear')
-        # save:       Save - replace False with filename to save
-        """
-        
-        error = 'Extract_line method only compatible with 2d data sets.'
-        assert len(self.dims) == 2, error
-        
-        d1, d2 = [self.co_ords[x] for x in self.dims]        
-        d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npts)
-        
-        detectors = [detectors] if isinstance(detectors, 
-                    (int, float, np.float64)) else detectors
-                    
-        data_ext = np.nan * np.ones((len(d1_e), len(detectors)))
-        
-        for idx, detector in enumerate(detectors):
-            
-            if stress:
-                data = self.extract_slice(detector=detector, q_idx=q_idx, stress = True)
-            else:
-                data = self.strain[..., detector, q_idx]
-             
-            not_nan = ~np.isnan(data)
-            try:
-                data_line = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
-                                      (d1_e, d2_e), method = method)
-            except ValueError:
-                pass
-            data_ext[:, idx] = data_line
-        
-        if save:
-            fname = save if isinstance(save, str) else self.filename[:-4] + '.txt'
-            np.savetxt(fname, (d1_e, d2_e, data_ext), delimiter = ',')
-        
-        return d1_e, d2_e, data_ext
-
-    def extract_line_angle(self, az_angles = [0, np.pi/2], q_idx = 0,  pnt = (0,0),
-                           line_angle = 0, npts = 100, method = 'linear', 
-                           stress = False, shear = False, save = False):
-        """
-        Extracts line profile through 2D strain field.
-        
-        # az_angles:  Define angle (in rad) from which to calculate strain. 
-                      Default - 0.
-        # q_idx:      Specify lattice parameter/peak to save data from. 
-        # line_angle: Angle across array to extract strain from
-        # pnt:        Centre point for data extraction  
-        # npts:       Number of points (default = 100) to extract along line
-        # method:     Interpolation mehod (default = 'linear')
-        # save:       Save - replace False with filename to save
-        # e_xy:       Extract data from shear map rather than strain map.
-        """
-        error = 'Extract_line method only compatible with 1D/2D data sets.'
-        assert len(self.dims) <= 2, error
-        
-        
-        if len(self.dims) == 1:
-            d1 = self.co_ords[self.dims[0]]
-            data_ext = np.nan * np.ones((len(d1), len(az_angles)))
-
-        else:
-            d1, d2 = [self.co_ords[x] for x in self.dims]        
-            d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npts)
-            data_ext = np.nan * np.ones((len(d1_e), len(az_angles)))
-            
-        
-        for angle_idx, angle in enumerate(az_angles):
-            
-            data = np.nan * self.strain[..., 0, 0]
-            for idx in np.ndindex(data.shape):
-                p = self.strain_param[idx][q_idx]
-                e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)
-                e_xy = -np.sin(2 * (p[1] + angle)) * p[0]    
-                
-                if stress:
-                    sigma_xx = self.sig_eqn(e_xx, e_yy)
-                    data[idx] = sigma_xx if not shear else e_xy * self.G
-                else:
-                    data[idx] = e_xx if not shear else e_xy
-                    
-            not_nan = ~np.isnan(data)
-            if len(self.dims) == 2:
-                try:
-                    data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
-                                          (d1_e, d2_e), method = method)
-                    
-                except ValueError:
-                    pass
-            data_ext[:, angle_idx] = data
-                
-        if save:
-            fname = save if isinstance(save, str) else self.filename[:-4] + '.txt'
-            np.savetxt(fname, (d1_e, d2_e, data_ext), delimiter = ',')
-        
-        if len(self.dims) == 1:
-            return d1[not_nan], data_ext[not_nan]
-        else:
-            return d1_e, d2_e, data_ext                      
-                         
                          
                 
     def __exit__(self, exc_type, exc_value, traceback):
