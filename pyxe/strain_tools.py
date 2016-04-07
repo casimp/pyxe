@@ -42,6 +42,14 @@ class StrainTools(object):
         reverse = [reverse] if isinstance(reverse, int) else reverse
         for i in reverse:
             self.co_ords[self.dims[i]] = -self.co_ords[self.dims[i]]
+            
+    def rotate(self, order = [1, 0]):
+        """
+        Switches order of axes, which has the same effect as rotating the 
+        strain data. Order must be a list of the same number of dimensions
+        as the data.        
+        """
+        self.dims = [self.dims[i] for i in order]
         
            
     def extract_line_detector(self, detectors = [0, 11], q_idx = 0, pnt = (0,0),
@@ -120,6 +128,7 @@ class StrainTools(object):
             d1, d2 = [self.co_ords[x] for x in self.dims]        
             d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npts)
             data_ext = np.nan * np.ones((len(d1_e), len(az_angles)))
+            
         
         for angle_idx, angle in enumerate(az_angles):
             
@@ -127,21 +136,23 @@ class StrainTools(object):
             for idx in np.ndindex(data.shape):
                 p = self.strain_param[idx][0]
                 e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)
-                e_xy = -np.sin(2 * (p[1] + angle)) * p[0]     
+                e_xy = -np.sin(2 * (p[1] + angle)) * p[0]    
+                
                 if data_type == 'strain':
                     data[idx] = e_xx if not shear else e_xy
                 elif data_type == 'stress':
                     sigma_xx = E * ((1-v)*e_xx + v*e_yy) / ((1+v)*(1-2*v))
                     data[idx] = sigma_xx if not shear else e_xy * G
-
             not_nan = ~np.isnan(data)
-            
             if len(self.dims) == 2:
                 try:
+                    print(d1[not_nan].shape, d1[not_nan].shape, data[not_nan].shape)
                     data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
                                           (d1_e, d2_e), method = method)
+                    
                 except ValueError:
                     pass
+            print(np.sum(~not_nan), np.sum(np.isnan(data)))
             data_ext[:, angle_idx] = data
                 
         if save != False:
