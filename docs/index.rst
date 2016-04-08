@@ -58,7 +58,8 @@ Contents
 
    background
    tools
-   example
+   example_edxd
+   example_area
    changes
    LICENSE
 
