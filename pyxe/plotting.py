@@ -46,7 +46,7 @@ class StrainPlotting(object):
         plt.ylabel('Intensity')
 
             
-    def plot_fitted(self, point = (), q_idx = 0, figsize = (7, 5)):
+    def plot_fitted(self, pnt=(), q_idx=0, figsize=(7, 5)):
         """
         Plots fitted in-plane strain field for given data point. 
         *Not implemented for merged files.*
@@ -56,39 +56,35 @@ class StrainPlotting(object):
         # q_idx:      0 based indexing - 0 (default) to 23 - detector 23 empty.
         # figsize:    Figure dimensions
         """
-        if point == ():
-            point = (0, ) * len(self.strain[..., 0, 0].shape)
-
+        pnt = (0, ) * len(self.strain[..., 0, 0].shape) if pnt == () else pnt
 
         plt.figure(figsize = figsize)
-        p = self.strain_param[point][q_idx]
+        p = self.strain_param[pnt][q_idx]
         theta = self.phi
         # Data from edi12 has extra, unused detector (filled with nan) 
         try:
-            plt.plot(theta, self.strain[point][..., q_idx], 'k*')
+            plt.plot(theta, self.strain[pnt][..., q_idx], 'k*')
         except ValueError:
-            plt.plot(theta, self.strain[point][..., q_idx][:-1], 'k*')
+            plt.plot(theta, self.strain[pnt][..., q_idx][:-1], 'k*')
         theta_2 = np.linspace(self.phi[0], self.phi[-1], 1000)
         plt.plot(theta_2, cos_(theta_2, *p), 'k-')
         plt.xlabel('Azimuthal angle (rad)')
         plt.ylabel('Strain')
             
             
-    def plot_mohrs(self, point = (), q_idx=0, angle=-np.pi, figsize = (7, 5)):
+    def plot_mohrs(self, pnt =(), q_idx=0, angle=-np.pi, figsize=(7, 5)):
         """
         Use fitted in-plane styrain tensor to plot Mohr's circle. 
-        *Not implemented for merged files.*
         
-        # point:      Define point (index) from which to plot fitted in-plane
+        # pnt:        Define point (index) from which to plot fitted in-plane
                       strain field.
         # q_idx:      0 based indexing - 0 (default) to 23 - detector 23 empty.
         # angle:      Angle to highlight on circle (inc + 90deg).
         # figsize:    Figure dimensions
         """
-        if point == ():
-            point = (0, ) * len(self.strain[..., 0, 0].shape)
+        pnt = (0, ) * len(self.strain[..., 0, 0].shape) if pnt == () else pnt
             
-        p = self.strain_param[point][q_idx] ### test change
+        p = self.strain_param[pnt][q_idx] ### test change
         R = p[0]
         theta = p[1] + angle
 
@@ -118,7 +114,206 @@ class StrainPlotting(object):
         plt.xlabel('Normal strain')
         plt.ylabel('Shear strain')
 
+    
+    def plot_peak_map(self, phi=0, az_idx=None, q_idx=0, z_idx=0, err=False, 
+                        FWHM=False, res=0.1, plotting=plot_complex, **kwargs):
+        """
+        Plot a 2D heat map of the strain field (or shear/error variants of this).
+        Returns plot axis object, which allows for plot customization (e.g. 
+        axis naming) or the overlaying of additional data.
+        
+        Must define **either** an azimuthal angle, phi, or azimuthal (cake)
+        index. The azimuthal angle leverages the fitted strain profiles, 
+        the az_idx plots that specific azimuthal slice. Note that for the
+        EDXD detector in I12, az_idx == detector_idx.
+        
+        # phi:        Azimuthal angle in radians. 
+        # az_idx:     Index for azimuthal slice/cake - in EDXD (I12) = detector
+        # q_idx:      Specify lattice parameter/peak to display.  
+        # z_idx:      Slice height (index) for 3D data
+        # shear:      Plot shear strain (True/False)
+        # err:        Plot strain error (True/False)
+        # res:        Resolution in points per unit length (of raw data) 
+        """
+        x = self.extract_peak_slice(phi, az_idx, q_idx, z_idx, err, FWHM)
+        [d1, d2], data = x
+                    
+        if data.ndim == 1:
+            D1, D2 = meshgrid_res(d1, d2, spatial_resolution = res)
+            Z = griddata((d1.flatten(),d2.flatten()), data.flatten(), (D1, D2))
+        else:
+            D1, D2, Z = d1, d2, data
+            
+        ax_ = plotting(d1, d2, D1, D2, Z, **kwargs)
 
+        return ax_
+            
+            
+    def plot_strain_map(self, phi=0, az_idx=None, q_idx=0, z_idx=0, err=False, 
+                        shear=False, res=0.1, plotting=plot_complex, **kwargs):
+        """
+        Plot a 2D heat map of the strain field (or shear/error variants of this).
+        Returns plot axis object, which allows for plot customization (e.g. 
+        axis naming) or the overlaying of additional data.
+        
+        Must define **either** an azimuthal angle, phi, or azimuthal (cake)
+        index. The azimuthal angle leverages the fitted strain profiles, 
+        the az_idx plots that specific azimuthal slice. Note that for the
+        EDXD detector in I12, az_idx == detector_idx.
+        
+        # phi:        Azimuthal angle in radians. 
+        # az_idx:     Index for azimuthal slice/cake - in EDXD (I12) = detector
+        # q_idx:      Specify lattice parameter/peak to display.  
+        # z_idx:      Slice height (index) for 3D data
+        # shear:      Plot shear strain (True/False)
+        # err:        Plot strain error (True/False)
+        # res:        Resolution in points per unit length (of raw data) 
+        """
+        x = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err, shear)
+        [d1, d2], data = x
+                    
+        if data.ndim == 1:
+            D1, D2 = meshgrid_res(d1, d2, spatial_resolution = res)
+            Z = griddata((d1.flatten(),d2.flatten()), data.flatten(), (D1, D2))
+        else:
+            D1, D2, Z = d1, d2, data
+            
+        ax_ = plotting(d1, d2, D1, D2, Z, **kwargs)
+
+        return ax_
+    
+    
+    def plot_stress_map(self, phi=0, az_idx=None, q_idx=0, z_idx=0, err=False, 
+                        shear=False, res=0.1, plotting=plot_complex, **kwargs):
+        """
+        Plot a 2D heat map of the stress field (or shear/error variants of this).
+        Returns plot axis object, which allows for plot customization (e.g. 
+        axis naming) or the overlaying of additional data.
+        
+        Must define **either** an azimuthal angle, phi, or azimuthal (cake)
+        index. The azimuthal angle leverages the fitted strain profiles, 
+        the az_idx plots that specific azimuthal slice. Note that for the
+        EDXD detector in I12, az_idx == detector_idx.
+        
+        # phi:        Azimuthal angle in radians. 
+        # az_idx:     Index for azimuthal slice.
+        # q_idx:      Specify lattice parameter/peak to display.  
+        # z_idx:      Slice height (index) for 3D data
+        # shear:      Plot shear stress (True/False)
+        # err:        Plot stress error (True/False)
+        # res:        Resolution in points per unit length (of raw data) 
+        """
+        x = self.extract_stress_slice(phi, az_idx, q_idx, z_idx, err, shear)
+        [d1, d2], data = x
+                    
+        if data.ndim == 1:
+            D1, D2 = meshgrid_res(d1, d2, spatial_resolution = res)
+            Z = griddata((d1.flatten(),d2.flatten()), data.flatten(), (D1, D2))
+        else:
+            D1, D2, Z = d1, d2, data
+            
+        ax_ = plotting(d1, d2, D1, D2, Z, **kwargs)
+
+        return ax_
+
+    def plot_peak_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, pnt=(0, 0),
+                         line_angle=0, npnts=100, axis='scalar', method='linear',
+                         err=False, FWHM=False):
+        """
+        Plots a line profile through a 1D/2D strain field - extract_line 
+        method must be run first. *Not yet implemented in 3D.*
+                
+        # detector:   0 based indexing - 0 (default) to 23 - detector 23 empty.       
+        # q0_index:   Specify lattice parameter/peak to display.   
+        # axis:       Plot strain against the 'd1', 'd2' or 'scalar' (default)
+                      position. 'scalar' co-ordinates re-zeroed/centred against 
+                      point specified in the extract_line command.
+        """
+ 
+        dims, data = self.extract_stress_line(phi, az_idx, q_idx, z_idx, pnt, 
+                                      line_angle, npnts, method, err, FWHM)
+        if len(self.dims) == 1:
+            plt.plot(dims, data, '-*')
+        
+        else:
+            d1, d2 = dims
+                                    
+            if d1[0] > d1[-1]:
+                d1, d2, data = d1[::-1], d2[::-1], data[::-1]
+                
+            zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
+            scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
+
+            x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
+            plt.plot(x[axis], data, '-x')
+            
+
+
+
+    def plot_strain_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, err=False,
+                         shear = False, pnt=(0, 0), line_angle=0, npnts=100, 
+                         method = 'linear', axis='scalar'):
+        """
+        Plots a line profile through a 1D/2D strain field - extract_line 
+        method must be run first. *Not yet implemented in 3D.*
+                
+        # detector:   0 based indexing - 0 (default) to 23 - detector 23 empty.       
+        # q0_index:   Specify lattice parameter/peak to display.   
+        # axis:       Plot strain against the 'd1', 'd2' or 'scalar' (default)
+                      position. 'scalar' co-ordinates re-zeroed/centred against 
+                      point specified in the extract_line command.
+        """
+ 
+        dims, data = self.extract_strain_line(phi, az_idx, q_idx, z_idx, err, 
+                                    shear, pnt, line_angle, npnts, method)
+        if len(self.dims) == 1:
+            plt.plot(dims, data, '-*')
+        
+        else:
+            d1, d2 = dims
+                                    
+            if d1[0] > d1[-1]:
+                d1, d2, data = d1[::-1], d2[::-1], data[::-1]
+                
+            zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
+            scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
+
+            x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
+            plt.plot(x[axis], data, '-x')
+            
+            
+    def plot_stress_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, pnt=(0, 0),
+                         line_angle=0, npnts=100, axis='scalar', method = 'linear',
+                         shear = False, err=False):
+        """
+        Plots a line profile through a 1D/2D strain field - extract_line 
+        method must be run first. *Not yet implemented in 3D.*
+                
+        # detector:   0 based indexing - 0 (default) to 23 - detector 23 empty.       
+        # q0_index:   Specify lattice parameter/peak to display.   
+        # axis:       Plot strain against the 'd1', 'd2' or 'scalar' (default)
+                      position. 'scalar' co-ordinates re-zeroed/centred against 
+                      point specified in the extract_line command.
+        """
+ 
+        dims, data = self.extract_stress_line(phi, az_idx, q_idx, z_idx, pnt, 
+                                      line_angle, npnts, method, err, shear)
+        if len(self.dims) == 1:
+            plt.plot(dims, data, '-*')
+        
+        else:
+            d1, d2 = dims
+                                    
+            if d1[0] > d1[-1]:
+                d1, d2, data = d1[::-1], d2[::-1], data[::-1]
+                
+            zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
+            scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
+
+            x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
+            plt.plot(x[axis], data, '-x')
+
+        
     def plot_line(self, phi = 0, detector = [], q_idx = 0, 
                   line_angle = 0, pnt = (0, 0), npnts = 100, axis = 'scalar', 
                   method = 'linear', stress = False, shear = False):
