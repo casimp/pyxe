@@ -137,10 +137,12 @@ class EDI12(StrainTools, StrainPlotting):
         
         shutil.copy(self.filename, fname)
         data_ids = ('phi', 'dims', 'slit_size', 'q0','peak_windows', 'peaks',  
-                    'peaks_err', 'strain', 'strain_err', 'strain_param', 'q')
+                    'peaks_err', 'fwhm', 'fwhm_err', 'strain', 'strain_err', 
+                    'strain_param', 'q')
         data_array = (self.phi, self.dims, self.slit_size, self.q0,  
-                      self.peak_windows, self.peaks, self.peaks_err,  
-                      self.strain, self.strain_err, self.strain_param, self.q)
+                      self.peak_windows, self.peaks, self.peaks_err, self.fwhm,
+                      self.fwhm_err, self.strain, self.strain_err, 
+                      self.strain_param, self.q)
         with h5py.File(fname, 'r+') as f:
             
             for data_id, data in zip(data_ids, data_array):

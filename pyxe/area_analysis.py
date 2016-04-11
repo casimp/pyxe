@@ -16,7 +16,6 @@ import fabio
 import numpy as np
 import pyFAI
 import h5py
-import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 from pyxe.fitting_tools import array_fit
@@ -204,11 +203,11 @@ class Area(StrainTools, StrainPlotting):
         
         with h5py.File(fname, 'w') as f:
             data_ids = ('dims', 'phi', 'slit_size', 'q0','peak_windows', 
-                        'peaks', 'peaks_err', 'strain', 'strain_err', 
+                        'peaks', 'peaks_err', 'fwhm', 'fwhm_err', 'strain', 'strain_err', 
                         'strain_param', 'q', 'data') \
                         + tuple([dim.decode('utf8') for dim in self.dims])
             data_array = (self.dims, self.phi, self.slit_size, self.q0,  
-                          self.peak_windows, self.peaks, self.peaks_err,  
+                          self.peak_windows, self.peaks, self.peaks_err, self.fwhm, self.fwhm_err,   
                           self.strain, self.strain_err, self.strain_param, 
                           self.q, self.I) \
                           + tuple([self.co_ords[x] for x in self.dims])
