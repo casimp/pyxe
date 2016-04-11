@@ -25,8 +25,7 @@ class StrainTools(object):
         return self
 
 
-    def define_matprops(self, E = 200*10**9, v = 0.3, G = None, 
-                        state = 'plane strain'):
+    def define_matprops(self, E=200*10**9, v=.3, G=None, state='plane strain'):
         """
         Define material properties and sample stress state such that stress 
         can be calculated. Default values are for a nominal steel in a plane 
@@ -43,10 +42,10 @@ class StrainTools(object):
         self.G = E / (2 * (1 + v)) if G == None else G
         
         if state != 'plane strain':   
-            self.sig_eqn = lambda e_xx, e_yy: (E/(1 - v**2)) * (e_xx + v*e_yy)
+            self.sig_eqn = lambda e_xx, e_yy: (E /(1 - v**2)) * (e_xx + v*e_yy)
         else:
-            self.sig_eqn = lambda e_xx, e_yy: E * ((1 - v) * e_xx + v * e_yy)/\
-                                                   ((1 + v) * (1 - 2 * v))
+            self.sig_eqn = lambda e_xx, e_yy: (E * ((1 - v) * e_xx + v * e_yy)/
+                                                   ((1 + v) * (1 - 2 * v)))
         
         
     def recentre(self, centre, reverse = []):
@@ -104,63 +103,181 @@ class StrainTools(object):
         isin = [patch.contains_point((x, y), radius = radius) for x, y in pos]
         self.strain_param[np.array(isin)] = np.nan
         self.strain[np.array(isin)] = np.nan
-        
-           
 
-    def extract_slice(self, phi = 0, detector = [], q_idx = 0,
-                          stress = False, shear = False):
-            """
-            Extract slice of strain or stress.
-            """                  
-            if detector != []:
-                error = "Can't calculate shear from single detector/cake slice"
-                assert shear == False, error
-                e_xx = self.strain[..., detector, q_idx]
-                if stress:
-                    e_yy = self.strain[..., az90(self.phi, detector), q_idx]
-            else:
-                angles = [phi, phi + np.pi/2, phi]
-                strains = [np.nan * self.strain[..., 0, 0] for i in range(3)]
-                for e_idx, (angle, strain) in enumerate(zip(angles, strains)):
-                    for idx in np.ndindex(strain.shape):
-                        p = self.strain_param[idx][0]
-                        if e_idx == 2:
-                            strain[idx] = -np.sin(2 * (p[1] + angle) ) * p[0]
-                        else:
-                            strain[idx] = cos_(angle, *p)
-                e_xx, e_yy, e_xy = strains
-            if stress:
-                data = self.sig_eqn(e_xx, e_yy) if not shear else e_xy * self.G
-            else:
-                data = e_xx if not shear else e_xy
-            
-            return data      
-    
-    def extract_line(self, phi = 0, detector = [], q_idx = 0,  pnt = (0,0),
-                     line_angle = 0, npnts = 100, method = 'linear', 
-                     stress = False, shear = False):
-        """
-        Extracts line profile through 2D strain field.
+
+    def extract_peak_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
+                           err=False, FWHM=False):  
+        """ 
+        Extracts line profile through 2D/3D peak array.
         
-        # phi:        Define angle (in rad) from which to calculate strain. 
-                      Default - 0.
-        # detector:   Define detector to see strain/stress from cake not 
-                      full ring.
+        Must define **either** an azimuthal angle, phi, or azimuthal (cake)
+        index. The azimuthal angle leverages the fitted strain profiles, 
+        the az_idx plots that specific azimuthal slice. Note that for the
+        EDXD detector in I12, az_idx == detector_idx.
+        
+        # phi:        Define angle (in rad) from which to calculate strain.
+        # az_idx:     Index for azimuthal slice.
         # q_idx:      Specify lattice parameter/peak to save data from. 
-        # line_angle: Angle across array to extract strain from
-        # pnt:        Centre point for data extraction  
-        # npts:       Number of points (default = 100) to extract along line
-        # method:     Interpolation mehod (default = 'linear')
-        # shear:      Extract shear.
-        """
-        error = 'Extract_line method only compatible with 1D/2D data sets.'
-        assert len(self.dims) <= 2, error
+        # z_idx:      Slice height (index) for 3D data
+        # err:        Extract peak error (True/False)
+        # FWHM:       Extract FWHM (True/False)
+        """                        
+        if FWHM:
+            if len(self.dims) != 3:            
+                FWHM = self.FWHM[..., az_idx, q_idx]
+            else:
+                FWHM = self.FWHM[..., z_idx, az_idx, q_idx]                
+            return FWHM
         
-        positions = [self.co_ords[x] for x in self.dims]
-        data = self.extract_slice(phi = phi, detector = detector, 
-                                  stress = stress, shear = shear)
-        print(data.shape)
-        return line_ext(positions, data, pnt, npnts, line_angle, method)
+        dims, e = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err)
+        return dims, self.q0[q_idx] - e * self.q0[q_idx]   
+
+
+    def extract_strain_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
+                             err=False, shear=False):  
+        """ 
+        Extracts slice from 2D/3D strain array.
+        
+        Must define **either** an azimuthal angle, phi, or azimuthal (cake)
+        index. The azimuthal angle leverages the fitted strain profiles, 
+        the az_idx plots that specific azimuthal slice. Note that for the
+        EDXD detector in I12, az_idx == detector_idx.
+        
+        # phi:        Define angle (in rad) from which to calculate strain.
+        # az_idx:     Index for azimuthal slice.
+        # q_idx:      Specify lattice parameter/peak to save data from. 
+        # z_idx:      Slice height (index) for 3D data
+        # err:        Extract strain error (True/False)
+        # shear:      Extract shear strain (True/False)
+        """  
+        if az_idx != None:
+            assert not shear, "Can't calc shear from individual az_idx"
+            data = self.strain_err if err else self.strain
+            if len(self.dims) != 3:            
+                e = data[..., az_idx, q_idx]
+            else:
+                e = data[..., z_idx, az_idx, q_idx]
+
+        else:
+            assert not err, "Can't extract error from fitted data"
+            params = self.strain_param[..., q_idx, :]
+            e = np.nan * np.ones(self.strain.shape[:-len(self.dims)])
+
+            for idx in np.ndindex(e.shape):
+                p = params[idx]
+                if shear:
+                    e[idx] = -np.sin(2 * (p[1] + phi) ) * p[0]
+                else:
+                    e[idx] = cos_(phi, *p)
+        if len(self.dims) == 1:
+            return self.co_ords[self.dims[0]], e
+        else:
+            return [self.co_ords[dim] for dim in self.dims[:2]], e
+
+
+    def extract_stress_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
+                             err=False, shear=False):  
+        """ 
+        Extracts line profile through 2D/3D stress array.
+        
+        Must define **either** an azimuthal angle, phi, or azimuthal (cake)
+        index. The azimuthal angle leverages the fitted strain profiles, 
+        the az_idx plots that specific azimuthal slice. Note that for the
+        EDXD detector in I12, az_idx == detector_idx.
+        
+        
+        
+        # phi:        Define angle (in rad) from which to calculate strain.
+        # az_idx:     Index for azimuthal slice.
+        # q_idx:      Specify lattice parameter/peak to save data from. 
+        # z_idx:      Slice height (index) for 3D data
+        # err:        Extract stress error (True/False)
+        # shear:      Extract shear stress (True/False)
+        """  
+        dims, e_xx = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err)
+        if shear:
+            x = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err, True)
+            e_xy = x[1]
+        az_idx = None if az_idx == None else az90(self.phi, az_idx)
+        phi = None if phi == None else phi + np.pi/2
+        _, e_yy = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err)
+        
+        return dims, self.sig_eqn(e_xx, e_yy) if not shear else e_xy * self.G        
+
+    
+    def extract_peak_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
+                            err=False, FWHM=False, pnt=(0,0), line_angle=0, 
+                            npnts=100, method = 'linear'):  
+        """ 
+        Extracts line profile through 1D/2D/3D peak array.
+        
+        Must define **either** an azimuthal angle, phi, or azimuthal (cake)
+        index. The azimuthal angle leverages the fitted strain profiles, 
+        the az_idx plots that specific azimuthal slice. Note that for the
+        EDXD detector in I12, az_idx == detector_idx.       
+        
+        # phi:        Define angle (in rad) from which to calculate strain.
+        # az_idx:     Index for azimuthal slice.
+        # q_idx:      Specify lattice parameter/peak to save data from. 
+        # z_idx:      Slice height (index) for 3D data
+        # err:        Extract peak error (True/False)
+        # FWHM:       Extract FWHM (True/False)
+        # pnt:        Centre point for data extraction  
+        # line_angle: Angle across array to extract strain from
+        # method:     Interpolation mehod (default = 'linear')
+        """  
+        data = self.extract_peak_slice(phi, az_idx, q_idx, z_idx, err, FWHM)
+        return line_ext(*data, pnt, npnts, line_angle, method)
+            
+            
+    def extract_strain_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
+                            err=False, shear=False, pnt=(0,0), line_angle=0, 
+                            npnts=100, method = 'linear'):  
+        """ 
+        Extracts line profile through 1D/2D/3D strain array.
+        
+        Must define **either** an azimuthal angle, phi, or azimuthal (cake)
+        index. The azimuthal angle leverages the fitted strain profiles, 
+        the az_idx plots that specific azimuthal slice. Note that for the
+        EDXD detector in I12, az_idx == detector_idx.    
+        
+        # phi:        Define angle (in rad) from which to calculate strain.
+        # az_idx:     Index for azimuthal slice.
+        # q_idx:      Specify lattice parameter/peak to save data from. 
+        # z_idx:      Slice height (index) for 3D data
+        # err:        Extract strain error (True/False)
+        # shear:      Extract shear strain (True/False)
+        # pnt:        Centre point for data extraction  
+        # line_angle: Angle across array to extract strain from
+        # method:     Interpolation mehod (default = 'linear')
+        """  
+        data = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err, shear)
+        return line_ext(*data, pnt, npnts, line_angle, method)
+
+
+    def extract_stress_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
+                            err=False, shear=False, pnt=(0,0), line_angle=0, 
+                            npnts=100, method = 'linear'):  
+        """ 
+        Extracts line profile through 1D/2D/3D stress array.
+        
+        Must define **either** an azimuthal angle, phi, or azimuthal (cake)
+        index. The azimuthal angle leverages the fitted strain profiles, 
+        the az_idx plots that specific azimuthal slice. Note that for the
+        EDXD detector in I12, az_idx == detector_idx.    
+        
+        # phi:        Define angle (in rad) from which to calculate strain.
+        # az_idx:     Index for azimuthal slice.
+        # q_idx:      Specify lattice parameter/peak to save data from. 
+        # z_idx:      Slice height (index) for 3D data
+        # err:        Extract stress error (True/False)
+        # shear:      Extract stress strain (True/False)
+        # pnt:        Centre point for data extraction  
+        # line_angle: Angle across array to extract strain from
+        # method:     Interpolation mehod (default = 'linear')
+        """  
+        data = self.extract_stress_slice(phi, az_idx, q_idx, z_idx, err, shear)
+        return line_ext(*data, pnt, npnts, line_angle, method)
     
     
     def save_to_text(self, fname, angles = [0, np.pi/2], detectors = [],
