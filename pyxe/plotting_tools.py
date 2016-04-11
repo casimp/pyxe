@@ -56,13 +56,15 @@ def line_ext(positions, data, pnt, npnts, line_angle, method):
     """
     Not yet working function to take line from data
     """
+    not_nan = np.isfinite(data)
+    assert np.sum(not_nan) > 0, "Can't extract data from empty (nan) slice."
     if len(positions) == 1:
         d1 = positions[0]
     else:
         d1, d2 = positions        
         d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npnts)
     
-    not_nan = ~np.isnan(data)
+    
     if len(positions) == 2:
         try:
             data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
