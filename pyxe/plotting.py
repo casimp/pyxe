@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from scipy.interpolate import griddata
 from pyxe.fitting_functions import cos_
-from pyxe.plotting_tools import plot_complex, meshgrid_res, line_extract
+from pyxe.plotting_tools import plot_complex, meshgrid_res, mohrs_dec, plot_line
 
 
 class StrainPlotting(object):
@@ -27,19 +27,19 @@ class StrainPlotting(object):
         pass
 
         
-    def plot_intensity(self, detector = 0, point = (), figsize = (7, 5)):
+    def plot_intensity(self, az_idx=0, pnt=(), figsize=(7, 5)):
         """
-        Plots q v intensity. *Not implemented for merged files.*
+        Plots q v intensity.
         
         # detector:   0 based indexing - 0 (default) to 23 - detector 23 empty. 
         # point:      Define point (index) from which to extract q v I plot.
                       First point in array chosen if not (default) specified.
         """
-        if point == ():
-            point = (0, ) * len(self.strain[..., 0, 0].shape)        
+        if pnt == ():
+            pnt = (0, ) * len(self.strain[..., 0, 0].shape)        
 
-        q = self.q[detector]
-        I = self.I[point][detector]
+        q = self.q[az_idx]
+        I = self.I[pnt][az_idx]
         plt.figure(figsize = figsize)
         plt.plot(q, I, 'k-')
         plt.xlabel('q (rad)')
@@ -49,7 +49,6 @@ class StrainPlotting(object):
     def plot_fitted(self, pnt=(), q_idx=0, figsize=(7, 5)):
         """
         Plots fitted in-plane strain field for given data point. 
-        *Not implemented for merged files.*
         
         # point:      Define point (index) from which to plot fitted in-plane
                       strain field.
@@ -71,7 +70,7 @@ class StrainPlotting(object):
         plt.xlabel('Azimuthal angle (rad)')
         plt.ylabel('Strain')
             
-            
+    @mohrs_dec        
     def plot_mohrs(self, pnt =(), q_idx=0, angle=-np.pi, figsize=(7, 5)):
         """
         Use fitted in-plane styrain tensor to plot Mohr's circle. 
@@ -83,40 +82,18 @@ class StrainPlotting(object):
         # figsize:    Figure dimensions
         """
         pnt = (0, ) * len(self.strain[..., 0, 0].shape) if pnt == () else pnt
-            
-        p = self.strain_param[pnt][q_idx] ### test change
-        R = p[0]
+        p = self.strain_param[pnt][q_idx] 
         theta = p[1] + angle
 
         e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)
         e_1, e_2 = (p[2] + abs(p[0])), (p[2] - abs(p[0]))
         e_xy = -np.sin(2 * theta) * ((p[2] + p[0]) - (p[2] - p[0]))/2
-
-        fig = plt.figure(figsize = figsize)
-        plt.axis('equal')
-        ax = fig.add_subplot(1, 1, 1)
-        circ = plt.Circle((p[2], 0), radius=R, color='k', fill = False)
         
-        ax.add_patch(circ)
-        
-        plt.xlim([p[2] - abs(2 * R), p[2] + abs(2 * R)])
-        plt.plot([e_1, e_2], [0, 0], 'ko', markersize = 3)
-        
-        plt.plot(e_xx, e_xy, 'ko',label=r'$(\epsilon_{xx}$, $\epsilon_{xy})$')
-        plt.plot(e_yy,-e_xy, 'wo',label=r'$(\epsilon_{yy}$, $-\epsilon_{xy})$')
-        
-        plt.legend(numpoints=1, frameon = False, handletextpad = 0.2)
-        plt.plot([e_xx, e_yy], [e_xy, -e_xy], 'k-.')
-        ax.annotate('  %s' % r'$\epsilon_{1}$', xy=(e_1, 0), 
-                    textcoords='offset points', xytext=(e_1, 0))
-        ax.annotate('  %s' % r'$\epsilon_{2}$', xy=(e_2, 0), 
-                    textcoords='offset points', xytext=(e_2, 0))
-        plt.xlabel('Normal strain')
-        plt.ylabel('Shear strain')
+        return e_xx, e_yy, e_xy, e_1, e_2
 
     
     def plot_peak_map(self, phi=0, az_idx=None, q_idx=0, z_idx=0, err=False, 
-                        FWHM=False, res=0.1, plotting=plot_complex, **kwargs):
+                        fwhm=False, res=0.1, plotting=plot_complex, **kwargs):
         """
         Plot a 2D heat map of the strain field (or shear/error variants of this).
         Returns plot axis object, which allows for plot customization (e.g. 
@@ -135,7 +112,7 @@ class StrainPlotting(object):
         # err:        Plot strain error (True/False)
         # res:        Resolution in points per unit length (of raw data) 
         """
-        x = self.extract_peak_slice(phi, az_idx, q_idx, z_idx, err, FWHM)
+        x = self.extract_peak_slice(phi, az_idx, q_idx, z_idx, err, fwhm)
         [d1, d2], data = x
                     
         if data.ndim == 1:
@@ -216,10 +193,10 @@ class StrainPlotting(object):
 
         return ax_
 
-
+    @plot_line
     def plot_peak_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, pnt=(0, 0),
                          line_angle=0, npnts=100, axis='scalar', method='linear',
-                         err=False, FWHM=False):
+                         err=False, fwhm=False):
         """
         Plots a line profile through a 1D/2D strain field - extract_line 
         method must be run first. *Not yet implemented in 3D.*
@@ -232,23 +209,12 @@ class StrainPlotting(object):
         """
  
         dims, data = self.extract_peak_line(phi, az_idx, q_idx, z_idx, err, 
-                                    FWHM, pnt, line_angle, npnts, method)
-        if len(self.dims) == 1:
-            plt.plot(dims, data, '-*')
-        
-        else:
-            d1, d2 = dims
+                                    fwhm, pnt, line_angle, npnts, method)
                                     
-            if d1[0] > d1[-1]:
-                d1, d2, data = d1[::-1], d2[::-1], data[::-1]
-                
-            zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
-            scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
+        return pnt, axis, dims, data 
 
-            x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
-            plt.plot(x[axis], data, '-x')
             
-
+    @plot_line
     def plot_strain_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, err=False,
                          shear = False, pnt=(0, 0), line_angle=0, npnts=100, 
                          method = 'linear', axis='scalar'):
@@ -265,24 +231,12 @@ class StrainPlotting(object):
  
         dims, data = self.extract_strain_line(phi, az_idx, q_idx, z_idx, err, 
                                     shear, pnt, line_angle, npnts, method)
-        if len(self.dims) == 1:
-            plt.plot(dims, data, '-*')
         
-        else:
-            d1, d2 = dims
-                                    
-            if d1[0] > d1[-1]:
-                d1, d2, data = d1[::-1], d2[::-1], data[::-1]
-                
-            zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
-            scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
-
-            x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
-            plt.plot(x[axis], data, '-x')
+        return pnt, axis, dims, data 
             
-            
+    @plot_line            
     def plot_stress_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, pnt=(0, 0),
-                         line_angle=0, npnts=100, axis='scalar', method = 'linear',
+                         line_angle=0, npnts=100, axis='scalar', method='linear',
                          shear = False, err=False):
         """
         Plots a line profile through a 1D/2D strain field - extract_line 
@@ -297,19 +251,6 @@ class StrainPlotting(object):
  
         dims, data = self.extract_stress_line(phi, az_idx, q_idx, z_idx, err, 
                                     shear, pnt, line_angle, npnts, method)
-        if len(self.dims) == 1:
-            plt.plot(dims, data, '-*')
         
-        else:
-            d1, d2 = dims
-                                    
-            if d1[0] > d1[-1]:
-                d1, d2, data = d1[::-1], d2[::-1], data[::-1]
-                
-            zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
-            scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
-
-            x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
-            plt.plot(x[axis], data, '-x')
-
-        
+        return pnt, axis, dims, data 
+            

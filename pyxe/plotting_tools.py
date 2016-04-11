@@ -55,7 +55,7 @@ def az90(phi, idx):
 def line_ext(positions, data, pnt, npnts, line_angle, method):
     """
     Not yet working function to take line from data
-    """#### Not working but almost!
+    """
     if len(positions) == 1:
         d1 = positions[0]
     else:
@@ -67,7 +67,7 @@ def line_ext(positions, data, pnt, npnts, line_angle, method):
         try:
             data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
                                   (d1_e, d2_e), method = method)
-            return d1_e, d2_e, data
+            return [d1_e, d2_e], data
         except ValueError:
             pass
     else:
@@ -84,6 +84,53 @@ def meshgrid_res(d1, d2, spatial_resolution):
     D1, D2 = np.meshgrid(d1_, d2_)
     return D1, D2
     
+def mohrs_dec(func):
+    def func_wrapper(*args):
+        e_xx, e_yy, e_xy, e_1, e_2 = func(*args)
+        R, mean = (e_1 - e_2) / 2, (e_1 + e_2) / 2
+
+        fig = plt.figure(figsize = (7, 5))
+        plt.axis('equal')
+        ax = fig.add_subplot(1, 1, 1)
+        circ = plt.Circle((mean, 0), radius=R, color='k', fill = False)
+        ax.add_patch(circ)
+
+        plt.xlim([mean - abs(2 * R), mean + abs(2 * R)])
+        plt.plot([e_1, e_2], [0, 0], 'ko', markersize = 3)
+        
+        plt.plot(e_xx, e_xy, 'ko',label=r'$(\epsilon_{xx}$, $\epsilon_{xy})$')
+        plt.plot(e_yy,-e_xy, 'wo',label=r'$(\epsilon_{yy}$, $-\epsilon_{xy})$')
+        
+        plt.legend(numpoints=1, frameon = False, handletextpad = 0.2)
+        plt.plot([e_xx, e_yy], [e_xy, -e_xy], 'k-.')
+        ax.annotate('  %s' % r'$\epsilon_{1}$', xy=(e_1, 0), 
+                    textcoords='offset points', xytext=(e_1, 0))
+        ax.annotate('  %s' % r'$\epsilon_{2}$', xy=(e_2, 0), 
+                    textcoords='offset points', xytext=(e_2, 0))
+        plt.xlabel('Normal strain')
+        plt.ylabel('Shear strain')
+    
+    return func_wrapper
+    
+
+def plot_line(func):
+    def func_wrapper(*args):
+        pnt, axis, dims, data = func(*args)
+        if len(dims) == 1:
+                plt.plot(dims, data, '-*')
+            
+        else:
+            d1, d2 = dims
+                                    
+            if d1[0] > d1[-1]:
+                d1, d2, data = d1[::-1], d2[::-1], data[::-1]
+                
+            zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
+            scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
+    
+            x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
+            plt.plot(x[axis], data, '-x')
+    return func_wrapper
     
 def plot_complex(x, y, X, Y, Z, lvls = 11, figsize = (10, 10), ax = False, cbar = True, **kwargs):
     
