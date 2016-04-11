@@ -119,10 +119,10 @@ class Area(StrainTools, StrainPlotting):
         if len(np.shape(self.q0)) == 2:
             q0_av = np.nanmean(self.q0, 0)
             self.peak_windows = [[q_ - window/2, q_ +window/2] for q_ in q0_av]
-
+        
         array_shape = (positions.shape[0], npt_azim, ) + (np.shape(self.q0)[-1],)
-        self.peaks = np.nan * np.ones((array_shape))   
-        self.peaks_err = np.nan * np.ones(array_shape)
+        data = [np.nan * np.ones(array_shape) for i in range(4)]
+        self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = data
 
         # consider saving all profiles?        
         shape_I = (positions.shape[0], npt_azim, npt_rad)
@@ -133,13 +133,11 @@ class Area(StrainTools, StrainPlotting):
             self.I[fidx] = I         
             
             q = np.repeat(q_[None, :], npt_azim, axis = 0)
-#            for i in range(npt_azim):            
-#                plt.plot(q[i], I[i])
-#            plt.xlim([1.5, 6])
 
             for idx, window in enumerate(self.peak_windows):
-                fit_data = array_fit(q, I, window, func, error_limit, output, unused_detectors = [])
-                self.peaks[fidx, ..., idx], self.peaks_err[fidx, ..., idx] = fit_data
+                a, b, c, d = array_fit(q, I, window, func, error_limit, output, unused_detectors = [])
+                self.peaks[..., idx], self.peaks_err[..., idx] = a, b
+                self.fwhm[..., idx], self.fwhm_err[..., idx] = c, d
         self.q = q
         print(phi)        
         self.phi = phi * np.pi / 180        

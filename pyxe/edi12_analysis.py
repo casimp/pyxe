@@ -63,7 +63,7 @@ class EDI12(StrainTools, StrainPlotting):
         self.ss2_y = dimension_fill(self.f, 'ss2_y')
         self.ss2_z = dimension_fill(self.f, 'ss2_z')
         self.co_ords = {b'ss2_x': self.ss2_x,b'ss2_y': self.ss2_y, 
-                        b'self_z': self.ss2_z} 
+                        b'ss2_z': self.ss2_z} 
         self.slit_size = scrape_slits(self.f)   
                         
         scan_command = self.f['entry1/scan_command'][0]
@@ -82,15 +82,16 @@ class EDI12(StrainTools, StrainPlotting):
  
         # Iterate across q0 values and fit peaks for all detectors
         array_shape = I.shape[:-1] + (np.shape(self.q0)[-1],)
-        self.peaks = np.nan * np.ones(array_shape)
-        self.peaks_err = np.nan * np.ones(array_shape)
-        
+        data = [np.nan * np.ones(array_shape) for i in range(4)]
+        self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = data
+
         print('\nFile: %s - %s acquisition points\n' % 
              (self.filename, self.f['entry1/EDXD_elements/ss2_x'].size))
         
         for idx, window in enumerate(self.peak_windows):
-            fit_data = array_fit(q, I, window, func, error_limit, output)
-            self.peaks[..., idx], self.peaks_err[..., idx] = fit_data
+            a, b, c, d = array_fit(q, I, window, func, error_limit, output)
+            self.peaks[..., idx], self.peaks_err[..., idx] = a, b
+            self.fwhm[..., idx], self.fwhm_err[..., idx] = c, d
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
         self.strain_fit(error_limit)
