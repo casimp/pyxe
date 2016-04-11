@@ -66,8 +66,8 @@ class Merge(StrainTools, StrainPlotting):
 
         merged_data = masked_merge(data_mask[0], data_mask[1])
         self.q = self.data[0].q
-        self.I, self.strain, self.strain_err, self.strain_param, self.peaks, \
-        self.peaks_err, self.ss2_x, self.ss2_y, self.ss2_z = merged_data
+        (self.I, self.strain, self.strain_err, self.strain_param, self.peaks,
+        self.peaks_err, self.fwhm, self.fwhm_err, self.ss2_x, self.ss2_y, self.ss2_z) = merged_data
         self.co_ords = {b'ss2_x': self.ss2_x, b'ss2_y': self.ss2_y, 
                         b'ss2_z': self.ss2_z} 
         self.slit_size = []
