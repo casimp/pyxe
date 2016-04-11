@@ -17,9 +17,8 @@ from pyxe.fitting_functions import cos_
 
 class StrainTools(object):
     """
-    Takes post-processed .nxs file from the I12 EDXD detector. File should have
-    been created with the XRD_analysis tool and contain detector specific peaks 
-    and associated strain.
+    Takes post-processed .nxs file and allows for further analysis/vizulisation. 
+    File should have been created with the EDI12 or Area analysis tools.
     """
     def __enter__(self):
         return self
@@ -106,7 +105,7 @@ class StrainTools(object):
 
 
     def extract_peak_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
-                           err=False, FWHM=False):  
+                           err=False, fwhm=False):  
         """ 
         Extracts line profile through 2D/3D peak array.
         
@@ -122,13 +121,17 @@ class StrainTools(object):
         # err:        Extract peak error (True/False)
         # FWHM:       Extract FWHM (True/False)
         """                        
-        if FWHM:
+        if fwhm:
+            assert az_idx == None, "Can't extract fwhm from fitted data"
             if len(self.dims) != 3:            
-                FWHM = self.FWHM[..., az_idx, q_idx]
+                fwhm = self.fwhm[..., az_idx, q_idx]
             else:
-                FWHM = self.FWHM[..., z_idx, az_idx, q_idx]                
-            return FWHM
-        
+                fwhm = self.fwhm[..., z_idx, az_idx, q_idx]                
+            if len(self.dims) == 1:
+                return self.co_ords[self.dims[0]], fwhm
+            else:
+                return [self.co_ords[dim] for dim in self.dims[:2]], fwhm
+            
         dims, e = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err)
         return dims, self.q0[q_idx] - e * self.q0[q_idx]   
 
@@ -171,8 +174,10 @@ class StrainTools(object):
                     e[idx] = cos_(phi, *p)
         if len(self.dims) == 1:
             return self.co_ords[self.dims[0]], e
+        elif len(self.dims) == 3:
+            return [self.co_ords[dim][..., z_idx] for dim in self.dims[:2]], e
         else:
-            return [self.co_ords[dim] for dim in self.dims[:2]], e
+            return [self.co_ords[dim] for dim in self.dims], e
 
 
     def extract_stress_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
@@ -206,7 +211,7 @@ class StrainTools(object):
 
     
     def extract_peak_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
-                            err=False, FWHM=False, pnt=(0,0), line_angle=0, 
+                            err=False, fwhm=False, pnt=(0,0), line_angle=0, 
                             npnts=100, method = 'linear'):  
         """ 
         Extracts line profile through 1D/2D/3D peak array.
@@ -226,7 +231,7 @@ class StrainTools(object):
         # line_angle: Angle across array to extract strain from
         # method:     Interpolation mehod (default = 'linear')
         """  
-        data = self.extract_peak_slice(phi, az_idx, q_idx, z_idx, err, FWHM)
+        data = self.extract_peak_slice(phi, az_idx, q_idx, z_idx, err, fwhm)
         return line_ext(*data, pnt, npnts, line_angle, method)
             
             
