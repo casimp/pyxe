@@ -216,6 +216,7 @@ class StrainPlotting(object):
 
         return ax_
 
+
     def plot_peak_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, pnt=(0, 0),
                          line_angle=0, npnts=100, axis='scalar', method='linear',
                          err=False, FWHM=False):
@@ -230,8 +231,8 @@ class StrainPlotting(object):
                       point specified in the extract_line command.
         """
  
-        dims, data = self.extract_stress_line(phi, az_idx, q_idx, z_idx, pnt, 
-                                      line_angle, npnts, method, err, FWHM)
+        dims, data = self.extract_peak_line(phi, az_idx, q_idx, z_idx, err, 
+                                    FWHM, pnt, line_angle, npnts, method)
         if len(self.dims) == 1:
             plt.plot(dims, data, '-*')
         
@@ -247,8 +248,6 @@ class StrainPlotting(object):
             x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
             plt.plot(x[axis], data, '-x')
             
-
-
 
     def plot_strain_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, err=False,
                          shear = False, pnt=(0, 0), line_angle=0, npnts=100, 
@@ -296,8 +295,8 @@ class StrainPlotting(object):
                       point specified in the extract_line command.
         """
  
-        dims, data = self.extract_stress_line(phi, az_idx, q_idx, z_idx, pnt, 
-                                      line_angle, npnts, method, err, shear)
+        dims, data = self.extract_stress_line(phi, az_idx, q_idx, z_idx, err, 
+                                    shear, pnt, line_angle, npnts, method)
         if len(self.dims) == 1:
             plt.plot(dims, data, '-*')
         
@@ -314,138 +313,3 @@ class StrainPlotting(object):
             plt.plot(x[axis], data, '-x')
 
         
-    def plot_line(self, phi = 0, detector = [], q_idx = 0, 
-                  line_angle = 0, pnt = (0, 0), npnts = 100, axis = 'scalar', 
-                  method = 'linear', stress = False, shear = False):
-        """
-        Plots a line profile through a 1D/2D strain field - extract_line 
-        method must be run first. *Not yet implemented in 3D.*
-                
-        # detector:   0 based indexing - 0 (default) to 23 - detector 23 empty.       
-        # q0_index:   Specify lattice parameter/peak to display.   
-        # axis:       Plot strain against the 'd1', 'd2' or 'scalar' (default)
-                      position. 'scalar' co-ordinates re-zeroed/centred against 
-                      point specified in the extract_line command.
-        """
-        error = 'Line plotting only implemented for 1D or 2D data sets'
-        assert len(self.dims) <= 2, error      
-        
-        if len(self.dims) == 1:
-            d1, data = self.extract_line(phi, detector, q_idx, pnt, 
-                                    line_angle, npnts, method, stress, shear)
-            plt.plot(d1, data, '-*')
-        
-        else:
-            d1, d2, data = self.extract_line(phi, detector, q_idx, pnt, 
-                                    line_angle, npnts, method, stress, shear)
-                                    
-            if d1[0] > d1[-1]:
-                d1, d2, data = d1[::-1], d2[::-1], data[::-1]
-                
-            zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
-            scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
-
-            x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
-            plt.plot(x[axis], data, '-x')
-
-
-    def plot_detector(self, detector = 0, q_idx = 0, stress = False, err=False,  
-                      res = 0.1, lvls = 11, figsize = (10, 10), line = False,                    
-                      pnt = (0,0), line_angle = 0, line_props = 'w-', 
-                      plotting = plot_complex, ax=False, cbar =True, **kwargs):
-        """
-        Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
-        
-        # detector:   0 based indexing - 0 (default) to 23 - detector 23 empty. 
-        # q0_index:   Specify lattice parameter/peak to display.  
-        # res:        Resolution in points per unit length (of raw data) 
-                      - only implemented for merged data
-        # cmap:       The colormap (default - 'RdBu_r') to use for plotting
-        # lvls:       Number of contours to overlay on map. Can also explicitly 
-                      define levels.
-        # figsize:    Tuple containing the fig size (x, y) - default (10, 10).
-                      Constrained by axis being equal.
-        
-        Additional functionality allows for the overlaying of a line on top of 
-        the map - to be used in conjunction with the line plotting.
-        
-        # line:       Plot line (default = False)
-        # line_props: Define line properties (default = 'w-')
-        # mark:       Mark properties for centre point of line (default = None)
-        """
-        error = 'Plotting method only compatible with 2D data sets'
-        assert len(self.dims) == 2, error
-                                     
-        d1, d2 = [self.co_ords[x] for x in self.dims] 
-        
-        if err:
-            data = 1 - self.strain_err[..., detector, q_idx]
-        else:
-            data = self.extract_slice(detector = detector, q_idx = q_idx, 
-                                      stress = stress)
-        
-        if data.ndim != 2:
-            D1, D2 = meshgrid_res(d1, d2, res)
-            Z = griddata((d1.flatten(), d2.flatten()),data.flatten(), (D1, D2))
-        else:
-            D1, D2, Z = d1, d2, data
-            
-        ax_ = plotting(d1, d2, D1, D2, Z, lvls = lvls, figsize = figsize, 
-                       ax = ax, cbar = cbar, **kwargs)
-
-        if line == True:
-            plt.figure()
-            line = line_extract(D1, D2, pnt, line_angle, 100)   
-            ax.plot(line[0], line[1], line_props, linewidth = 2)
-        
-        return ax_
-
-
-
-    def plot_angle(self, phi = 0, q_idx = 0, stress = False, shear = False,   
-                   res = 0.1, lvls = 11, figsize = (10, 10), 
-                   line = False, pnt = (0,0), line_angle=0, line_props = 'w-', 
-                   plotting = plot_complex, ax = False, cbar = True, **kwargs):
-        """
-        Plot a 2D heat map of the strain field. *Not yet implemented in 3D.*
-        
-        # angle:      Angle in radians - default (0). 
-        # q0_index:   Specify lattice parameter/peak to display.  
-        # res:        Resolution in points per unit length (of raw data) 
-                      - only implemented for merged data
-        # cmap:       The colormap (default - 'RdBu_r') to use for plotting
-        # lvls:       Number of contours to overlay on map. Can also explicitly 
-                      define levels.
-        # figsize:    Tuple containing the fig size (x, y) - default (10, 10).
-                      Constrained by axis being equal.
-        
-        Additional functionality allows for the overlaying of a line on top of 
-        the map - to be used in conjunction with the line plotting.
-        
-        # line:       Plot line (default = False)
-        # line_props: Define line properties (default = 'w-')
-        # mark:       Mark properties for centre point of line (default = None)
-        """
-
-        error = 'Plotting method only compatible with 2D data sets'
-        assert len(self.dims) == 2, error
-                                     
-        d1, d2 = [self.co_ords[x] for x in self.dims]   
-        data = self.extract_slice(phi, q_idx=q_idx, stress=stress, shear=shear)
-                    
-        if data.ndim != 2:
-            D1, D2 = meshgrid_res(d1, d2, spatial_resolution = res)
-            Z = griddata((d1.flatten(),d2.flatten()), data.flatten(), (D1, D2))
-        else:
-            D1, D2, Z = d1, d2, data
-            
-        ax_ = plotting(d1, d2, D1, D2, Z, lvls = lvls, figsize = figsize, 
-                       ax = ax, cbar = cbar, **kwargs)
-        
-        if line == True:
-            plt.figure()
-            line = line_extract(D1, D2, pnt, line_angle, 100)   
-            ax.plot(line[0], line[1], line_props, linewidth = 2)
-
-        return ax_
-
