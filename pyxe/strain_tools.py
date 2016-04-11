@@ -163,8 +163,13 @@ class StrainTools(object):
 
         else:
             assert not err, "Can't extract error from fitted data"
-            params = self.strain_param[..., q_idx, :]
-            e = np.nan * np.ones(self.strain.shape[:-len(self.dims)])
+            
+            if len(self.dims) == 3:
+                e = np.nan * np.ones(self.strain.shape[:-3])
+                params = self.strain_param[..., z_idx, q_idx, :]
+            else:
+                e = np.nan * np.ones(self.strain.shape[:-2])
+                params = self.strain_param[..., q_idx, :]
 
             for idx in np.ndindex(e.shape):
                 p = params[idx]
