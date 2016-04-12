@@ -83,7 +83,8 @@ def masked_merge(unmerged_data, mask_array = None):
 
     
     merged_data = (np.vstack(I), np.vstack(strain), np.vstack(strain_err), 
-                   np.vstack(strain_param), np.vstack(peaks), np.vstack(peaks_err))
+                   np.vstack(strain_param), np.vstack(peaks), np.vstack(peaks_err),
+                   np.vstack(fwhm), np.vstack(fwhm_err))
                   
     for ss2 in [ss2_x, ss2_y, ss2_z]:
         merged_data += (np.concatenate(ss2), ) if ss2 !=[] else (None, )
