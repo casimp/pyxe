@@ -122,7 +122,7 @@ class StrainTools(object):
         # FWHM:       Extract FWHM (True/False)
         """                        
         if fwhm:
-            assert az_idx == None, "Can't extract fwhm from fitted data"
+            assert az_idx != None, "Can't extract fwhm from fitted data"
             if len(self.dims) != 3:            
                 fwhm = self.fwhm[..., az_idx, q_idx]
             else:
