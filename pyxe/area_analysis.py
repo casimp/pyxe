@@ -135,8 +135,8 @@ class Area(StrainTools, StrainPlotting):
 
             for idx, window in enumerate(self.peak_windows):
                 a, b, c, d = array_fit(q, I, window, func, error_limit, output, unused_detectors = [])
-                self.peaks[..., idx], self.peaks_err[..., idx] = a, b
-                self.fwhm[..., idx], self.fwhm_err[..., idx] = c, d
+                self.peaks[fidx, ..., idx], self.peaks_err[fidx, ..., idx] = a, b
+                self.fwhm[fidx, ..., idx], self.fwhm_err[fidx, ..., idx] = c, d
         self.q = q
         print(phi)        
         self.phi = phi * np.pi / 180        
@@ -202,15 +202,22 @@ class Area(StrainTools, StrainPlotting):
         fname = fname + '_md.nxs'
         
         with h5py.File(fname, 'w') as f:
-            data_ids = ('dims', 'phi', 'slit_size', 'q0','peak_windows', 
-                        'peaks', 'peaks_err', 'fwhm', 'fwhm_err', 'strain', 'strain_err', 
-                        'strain_param', 'q', 'data') \
-                        + tuple([dim.decode('utf8') for dim in self.dims])
-            data_array = (self.dims, self.phi, self.slit_size, self.q0,  
-                          self.peak_windows, self.peaks, self.peaks_err, self.fwhm, self.fwhm_err,   
-                          self.strain, self.strain_err, self.strain_param, 
-                          self.q, self.I) \
-                          + tuple([self.co_ords[x] for x in self.dims])
+            data_ids = ('dims', 'phi', 
+                        'slit_size', 
+                        'q0','peak_windows', 
+                        'peaks', 'peaks_err', 
+                        'fwhm', 'fwhm_err', 
+                        'strain', 'strain_err', 
+                        'strain_param', 
+                        'q', 'data') + tuple([dim.decode('utf8') for dim in self.dims])
+            data_array = (self.dims, self.phi, 
+                          self.slit_size, 
+                          self.q0, self.peak_windows, 
+                          self.peaks, self.peaks_err, 
+                          self.fwhm, self.fwhm_err,   
+                          self.strain, self.strain_err, 
+                          self.strain_param, 
+                          self.q, self.I) + tuple([self.co_ords[x] for x in self.dims])
             
             for data_id, data in zip(data_ids, data_array):
                 base_tree = 'entry1/EDXD_elements/%s'
