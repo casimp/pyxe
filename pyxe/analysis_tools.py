@@ -37,3 +37,25 @@ def mirror_data(phi, data):
     for i in range(phi_len):
         d2[:, i] = (data[:, i] + data[:, i + new_shape[-2]]) / 2
     return angles, d2
+    
+
+def dimension_fill(data, dim_ID):
+    """
+    Extracts correct spatial array from hdf5 file. Returns None is the
+    dimension doesn't exist.
+    
+    # data:       Raw data (hdf5 format)   
+    # dim_ID:     Dimension ID (ss_x, ss2_y or ss2_z)
+    """
+    try:
+        dimension_data = data['entry1/EDXD_elements/' + dim_ID][:]
+    except KeyError:
+        dimension_data = None
+    return dimension_data
+
+def scrape_slits(data):
+    try:        
+        slit_size = data['entry1/before_scan/s4/s4_xs'][0]
+    except KeyError:
+        slit_size = []   
+    return slit_size
