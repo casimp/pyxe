@@ -25,13 +25,6 @@ from pyxe.strain_tools import StrainTools
 from pyxe.plotting import StrainPlotting
 
 
-def exclusion(file_list, exclusion_list):
-    fnames = []
-    for fname in file_list:
-        if not any([s.upper() in fname.upper() for s in exclusion_list]):
-            fnames.append(fname)
-    return fnames
-    
 def dim_fill(data):
     print(data)
 
@@ -57,9 +50,8 @@ class Area(StrainTools, StrainPlotting):
     associated error. 
     """
    
-    def __init__(self, folder, pos_data, det_params, f_ext = '.edf', 
-                 pos_delim = ',', exclude = [], npt_rad = 1024, npt_az = 36, 
-                 az_range = [-180, 180]):
+    def __init__(self, folder, pos_data, det_params, f_ext='.edf', 
+                 pos_delim=',', npt_rad=1024, npt_az=36, az_range=[-180, 180]):
         """
         # folder:     Folder containing the image files for analysis
         # pos_data:   Either csv file or numpy array containing position data 
@@ -84,7 +76,7 @@ class Area(StrainTools, StrainPlotting):
         print(ai)
         
         fnames = sorted([x for x in os.listdir(folder) if x.endswith(f_ext)])
-        fnames = exclusion(fnames, exclude)
+
         error = ('Position data not supplied in correct format: \n'
                  ' pos_data variable must be the (str) path to a csv file, '
                  'a numpy array containing 1, 2 or 3d co-ordinates')
