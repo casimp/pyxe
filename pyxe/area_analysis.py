@@ -95,7 +95,6 @@ class Area(StrainTools, StrainPlotting):
             
         self.q = np.repeat(q_[None, :], npt_az, axis = 0)
         self.phi = phi * np.pi / 180
-        self.slit_size = []
         
         
     def peak_fit(self, q0, window, mirror = True, func = 'gaussian', 
@@ -172,7 +171,6 @@ class Area(StrainTools, StrainPlotting):
         data_dict = {'dims': self.dims,
                      'phi': self.phi,
                      'peak_windows': self.peak_windows,
-                     'slit_size': self.slit_size, 
                      'q0': self.q0,
                      'peak_windows': self.peak_windows,
                      'peaks': self.peaks,

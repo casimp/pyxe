@@ -29,10 +29,10 @@ class Merge(StrainTools, StrainPlotting):
                       XRD_analysis tool.
         # name:       Experiment name/ID.
         # order:      Merging method/order. Specify 'simple' merge (keeps all 
-                      data) or by 'slit' size (default)/ user defined order.
-                      Slit/user defined order allows for the supression/removal
-                      of overlapping data. User defined should be a list of
-                      the same length as the data tuple.
+                      data) or by user defined order. User defined order allows 
+                      for the supression/removal of overlapping data. User 
+                      defined should be a list of the same length as the data 
+                      tuple.
         """
         self.data = np.array(data)
         self.phi = self.data[0].phi
@@ -70,7 +70,6 @@ class Merge(StrainTools, StrainPlotting):
         self.peaks_err, self.fwhm, self.fwhm_err, self.ss2_x, self.ss2_y, self.ss2_z) = merged_data
         self.co_ords = {b'ss2_x': self.ss2_x, b'ss2_y': self.ss2_y, 
                         b'ss2_z': self.ss2_z} 
-        self.slit_size = []
 
         
         
@@ -83,10 +82,10 @@ class Merge(StrainTools, StrainPlotting):
         """
 
         with h5py.File(fname, 'w') as f:
-            data_ids = ('phi', 'dims', 'slit_size', 'q0','peak_windows', 'peaks',  
+            data_ids = ('phi', 'dims', 'q0','peak_windows', 'peaks',  
                         'peaks_err', 'fwhm', 'fwhm_err', 'strain', 'strain_err', 'strain_param', 'q', 'data') \
                         + tuple([dim.decode('utf8') for dim in self.dims])
-            data_array = (self.phi, self.dims, self.slit_size, self.q0,  
+            data_array = (self.phi, self.dims, self.q0,  
                           self.peak_windows, self.peaks, self.peaks_err,  
                           self.fwhm, self.fwhm_err,  
                           self.strain, self.strain_err, self.strain_param, self.q, self.I) \

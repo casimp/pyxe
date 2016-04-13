@@ -87,11 +87,11 @@ class Reload(StrainTools, StrainPlotting):
         fname = fname + '_md.nxs'
         
         with h5py.File(fname, 'w') as f:
-            data_ids = ('dims', 'phi', 'slit_size', 'q0','peak_windows', 
+            data_ids = ('dims', 'phi', 'q0','peak_windows', 
                         'peaks', 'peaks_err', 'strain', 'strain_err', 
                         'strain_param', 'q', 'data') \
                         + tuple([dim.decode('utf8') for dim in self.dims])
-            data_array = (self.dims, self.phi, self.slit_size, self.q0,  
+            data_array = (self.dims, self.phi, self.q0,  
                           self.peak_windows, self.peaks, self.peaks_err,  
                           self.strain, self.strain_err, self.strain_param, 
                           self.q, self.I) \

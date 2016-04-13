@@ -43,7 +43,6 @@ class EDI12(StrainTools, StrainPlotting):
         self.ss2_z = dimension_fill(self.f, 'ss2_z')
         self.co_ords = {b'ss2_x': self.ss2_x, b'ss2_y': self.ss2_y, 
                         b'ss2_z': self.ss2_z} 
-        self.slit_size = scrape_slits(self.f)   
         scan_command = self.f['entry1/scan_command'][0]
         self.dims = re.findall(b'ss2_\w+', scan_command)
         self.q = self.f['entry1/EDXD_elements/edxd_q'][:]
@@ -117,10 +116,10 @@ class EDI12(StrainTools, StrainPlotting):
             fname = '%s_md.nxs' % self.name[:-4]
         
         shutil.copy(self.filename, fname)
-        data_ids = ('phi', 'dims', 'slit_size', 'q0','peak_windows', 'peaks',  
+        data_ids = ('phi', 'dims', 'q0','peak_windows', 'peaks',  
                     'peaks_err', 'fwhm', 'fwhm_err', 'strain', 'strain_err', 
                     'strain_param', 'q')
-        data_array = (self.phi, self.dims, self.slit_size, self.q0,  
+        data_array = (self.phi, self.dims, self.q0,  
                       self.peak_windows, self.peaks, self.peaks_err, self.fwhm,
                       self.fwhm_err, self.strain, self.strain_err, 
                       self.strain_param, self.q)
