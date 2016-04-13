@@ -91,6 +91,10 @@ def array_fit(q_array, I_array, peak_window, func='gaussian',
                 perr = np.sqrt(np.diag(var_matrix))                
                 peak, peak_err = coeff[2], perr[2]
                 fw, fw_err = coeff[3], perr[3]
+                if func == 'gaussian':
+                    fwhm, fwhm_err = fwhm * 2.35482, fwhm_err * 2.35482
+                elif func == 'lorentzian':
+                    fwhm, fwhm_err = fwhm * 2, fwhm_err * 2
                 # Check error and store
                 if peak_err / peak > error_limit:
                     err_exceed += 1
@@ -114,7 +118,6 @@ def array_fit(q_array, I_array, peak_window, func='gaussian',
     return peaks, peaks_err, fwhm, fwhm_err
     
     
-
 def q0_analysis(fname, q0_approx, window = 0.25, func = 'gaussian'):
     
     f = h5py.File(fname, 'r')

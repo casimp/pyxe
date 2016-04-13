@@ -105,7 +105,6 @@ class EDI12(StrainTools, StrainPlotting):
               % (count, np.size(self.peaks[:, 0, 0])))
                 
         
-
     def save_to_nxs(self, fname = None):
         """
         Saves all data back into an expanded .nxs file. Contains all original 

@@ -33,12 +33,12 @@ class Area(StrainTools, StrainPlotting):
     be analysed (peak_fit/strain calculations). 
     """
    
-    def __init__(self, folder, pos_data, det_params, f_ext='.edf', progress=True,
+    def __init__(self, folder, pos_data, params, f_ext='.edf', progress=True,
                  pos_delim=',', npt_rad=1024, npt_az=36, az_range=[-180, 180]):
         """
         # folder:     Folder containing the image files for analysis
         # pos_data:   Either csv file or numpy array containing position data 
-        # det_params: Accepts a file location for a .poni parameter file 
+        # params:     Accepts a file location for a .poni parameter file 
                       produced by pyFAI-calib. Alternative directly enter 
                       calibration details as take from Fit2D in form:
                       (sample_to_detector (mm), centre_x (pix), centre_y (pix), 
@@ -52,12 +52,12 @@ class Area(StrainTools, StrainPlotting):
         """
         error = 'Azimuthal range must be less than or equal to 360deg'
         assert abs(np.max(az_range) - np.min(az_range)) <= 360, error
-        if isinstance(det_params, ("".__class__, u"".__class__)):
-            ai = pyFAI.load(det_params) ## CORRECT??
+        if isinstance(params, ("".__class__, u"".__class__)):
+            ai = pyFAI.load(params) ## CORRECT??
         else:
             ai = pyFAI.AzimuthalIntegrator()
-            ai.setFit2D(*det_params[:-1])
-            ai.set_wavelength(det_params[-1])
+            ai.setFit2D(*params[:-1])
+            ai.set_wavelength(params[-1])
         
         fnames = sorted([x for x in os.listdir(folder) if x.endswith(f_ext)])
 
@@ -98,7 +98,7 @@ class Area(StrainTools, StrainPlotting):
         
         
     def peak_fit(self, q0, window, mirror = True, func = 'gaussian', 
-                     error_limit = 2 * 10 ** -4, output = 'simple'):
+                     error_limit = 2 * 10 ** -4, progress = True):
             
         # Convert int or float to list
         self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
@@ -117,10 +117,9 @@ class Area(StrainTools, StrainPlotting):
         print('\nFile: - %s acquisition points\n' % self.ss2_x.size)
         
         for idx, window in enumerate(self.peak_windows):
-            a, b, c, d = array_fit(self.q, self.I, window, func, error_limit, 
-                                   output, unused_detectors = [])
-            self.peaks[..., idx], self.peaks_err[..., idx] = a, b
-            self.fwhm[..., idx], self.fwhm_err[..., idx] = c, d
+            fit = array_fit(self.q,self.I, window, func, error_limit, progress)
+            self.peaks[..., idx], self.peaks_err[..., idx] = fit[0], fit[1]
+            self.fwhm[..., idx], self.fwhm_err[..., idx] = fit[2], fit[3]
         
         if mirror:
             _, self.peaks = mirror_data(self.phi, self.peaks)
