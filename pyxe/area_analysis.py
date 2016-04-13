@@ -23,33 +23,8 @@ from pyxe.fitting_tools import array_fit
 from pyxe.fitting_functions import cos_
 from pyxe.strain_tools import StrainTools
 from pyxe.plotting import StrainPlotting
+from pyxe.area_tools import dim_fill, mirror_data
 
-
-def dim_fill(data):
-
-    co_ords = []
-    dims = []
-    
-    if data.ndim == 1:
-        return [data, None, None], [b'ss2_x']
-    for axis, dim in zip(range(3), [b'ss2_x', b'ss2_y', b'ss2_z']):
-        try:
-            co_ords.append(data[:, axis])
-            dims.append(dim)
-        except IndexError:
-            co_ords.append(None)
-    return co_ords, dims
-    
-def mirror_data(phi, data):
-    # has to be even number of slices but uneven number of boundaries.
-    angles = phi[:int(phi[:].shape[0]/2)]
-    peak_shape = data.shape
-    phi_len = int(peak_shape[-2]/2)
-    new_shape = (peak_shape[:-2] + (phi_len, ) + peak_shape[-1:])
-    d2 = np.nan * np.zeros(new_shape)
-    for i in range(phi_len):
-        d2[:, i] = (data[:, i] + data[:, i + new_shape[-2]]) / 2
-    return angles, d2
 
 class Area(StrainTools, StrainPlotting):
     """
@@ -137,11 +112,11 @@ class Area(StrainTools, StrainPlotting):
         print('\nFile: - %s acquisition points\n' % self.ss2_x.size)
         
         for idx, window in enumerate(self.peak_windows):
-            a, b, c, d = array_fit(self.q, self.I, window, func, error_limit, output, unused_detectors = [])
+            a, b, c, d = array_fit(self.q, self.I, window, func, error_limit, 
+                                   output, unused_detectors = [])
             self.peaks[..., idx], self.peaks_err[..., idx] = a, b
             self.fwhm[..., idx], self.fwhm_err[..., idx] = c, d
         
-   
         if mirror:
             _, self.peaks = mirror_data(self.phi, self.peaks)
             _, self.peaks_err = mirror_data(self.phi, self.peaks_err)
@@ -153,6 +128,8 @@ class Area(StrainTools, StrainPlotting):
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
         self.strain_fit(error_limit)
 
+    def pawley_fit(self):
+        pass
 
     def strain_fit(self, error_limit):
         """
@@ -170,7 +147,7 @@ class Area(StrainTools, StrainPlotting):
                 # Estimate curve parameters
                 p0 = [np.nanmean(data), 3*np.nanstd(data)/(2**0.5), 0]
                 try:
-                    a, b = curve_fit(cos_, self.phi[not_nan], data[not_nan], p0)
+                    a, b = curve_fit(cos_,self.phi[not_nan], data[not_nan], p0)
                     perr_ = np.diag(b)
                     perr = np.sqrt(perr_[0] + perr_[2])
                     if perr < 2 * error_limit:              
