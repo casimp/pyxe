@@ -73,10 +73,10 @@ class EDI12(StrainTools, StrainPlotting):
              (self.filename, self.I[..., 0, 0].size))
         
         for idx, window in enumerate(self.peak_windows):
-            a, b, c, d = array_fit(self.q, self.I, window, func, 
-                                   error_limit, progress)
-            self.peaks[..., idx], self.peaks_err[..., idx] = a, b
-            self.fwhm[..., idx], self.fwhm_err[..., idx] = c, d
+            fit = array_fit(self.q,self.I, window, func, error_limit, progress)
+            self.peaks[..., idx], self.peaks_err[..., idx] = fit[0], fit[1]
+            self.fwhm[..., idx], self.fwhm_err[..., idx] = fit[2], fit[3]
+        
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
         self.full_ring_fit()
