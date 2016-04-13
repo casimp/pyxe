@@ -87,21 +87,28 @@ class EDI12(StrainTools, StrainPlotting):
         """
         data_shape = self.peaks.shape[:-2] + self.peaks.shape[-1:] + (3, )
         self.strain_param = np.nan * np.ones(data_shape)
-        for idx in np.ndindex(data_shape[:-1]):
-            data = self.strain[idx[:-1]][..., idx[-1]]
-            not_nan = ~np.isnan(data)
-            count = 0
-            if self.phi[not_nan].size > 2:
-                p0 = [np.nanmean(data), 3*np.nanstd(data)/(2**0.5), 0]
-                try:
-                    a, b = curve_fit(cos_,self.phi[not_nan], data[not_nan], p0)
-                    self.strain_param[idx] = a
-                except (TypeError, RuntimeError):
+        self.fwhm_param = np.nan * np.ones(data_shape)
+        for name, raw_data, param in zip(['peaks', 'fwhm'],
+                                         [self.strain, self.fwhm],
+                                         [self.strain_param, self.fwhm_param]):
+            for idx in np.ndindex(data_shape[:-1]):
+                data = raw_data[idx[:-1]][..., idx[-1]]
+                not_nan = ~np.isnan(data)
+                count = 0
+                if self.phi[not_nan].size > 2:
+                    # Estimate curve parameters
+                    p0 = [np.nanmean(data), 3 * np.nanstd(data)/(2**0.5), 0]
+                    try:
+                        a, b = curve_fit(cos_,self.phi[not_nan], data[not_nan], p0)
+                        param[idx] = a
+                    except (TypeError, RuntimeError):
+                        count += 1
+                        #print('Unable to fit curve to data.')
+                else:
                     count += 1
-            else:
-                count += 1
-        print('\nUnable to fit full ring data %i out of %i points'
-              % (count, np.size(self.peaks[:, 0, 0])))
+                    #print('Insufficient data to attempt curve_fit.')   
+            print('\nUnable to fit full ring (%s) data %i out of %i points'
+                  % (name, count, np.size(self.peaks[:, 0, 0])))
                 
         
     def save_to_nxs(self, fname = None):
