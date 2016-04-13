@@ -197,19 +197,14 @@ def peak_fit(data, window, p0 = [], func = 'gaussian'):
 
     return curve_fit(func, x_, I_, p0)
 
-def array_fit(q_array, I_array, peak_window, func = 'gaussian', error_limit = 10 **-4, 
-              output = 'verbose', unused_detectors = [23]):
+
+def array_fit(q_array, I_array, peak_window, func='gaussian', 
+              error_limit=10 **-4, progress = True):
         
     data = [np.zeros(I_array.shape[:-1]) * np.nan for i in range(4)]
     peaks, peaks_err, fwhm, fwhm_err = data 
     
     detectors = [i for i in range(q_array.shape[0])]
-    try:
-        for detector in unused_detectors:
-            detectors.remove(detector)
-    except ValueError:
-        detectors = [i for i in range(q_array.shape[0])]
-        print('Unused detectors invalid. Analyzing all detectors.')
 
     total_err_exceed = 0
     total_run_error = 0
@@ -245,23 +240,18 @@ def array_fit(q_array, I_array, peak_window, func = 'gaussian', error_limit = 10
             except RuntimeError:
                 run_error += 1
                 
-            if output == 'simple':
+            if progress:
                 sys.stdout.write("\rProgress: [{0:20s}] {1:.0f}%".format('#' * 
                 int(20*(idx + 1) / len(detectors)), 100*((idx + 1)/len(detectors))))
                 sys.stdout.flush()
-                
-        if output == 'verbose':
-            print('D%02d: Peak not found at %i positions, err_limit exceeded '
-                  '%i times.' % (detector, run_error, err_exceed))
                   
         total_err_exceed += err_exceed
         total_run_error += run_error 
          
-    if output != 'none':
-        print('\nTotal points: %i (23 detectors x %i positions)'
-          '\nPeak not found in %i position/detector combintions'
-          '\nError limit exceeded (or pcov not estimated) %i times' % 
-          (23*peaks.size/24, peaks.size/24, total_run_error, total_err_exceed))                  
+    print('\nTotal points: %i (%i az_angles x %i positions)'
+      '\nPeak not found in %i position/detector combintions'
+      '\nError limit exceeded (or pcov not estimated) %i times' % 
+      (peaks.size, peaks.shape[-2], peaks[..., 0, 0].size, total_run_error, total_err_exceed))                  
     
     return peaks, peaks_err, fwhm, fwhm_err
     
