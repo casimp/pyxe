@@ -44,7 +44,9 @@ class Area(StrainTools, StrainPlotting):
                       (sample_to_detector (mm), centre_x (pix), centre_y (pix), 
                       tilt (deg), tilt_plane (deg), pixel_size_x (micron), 
                       pixel_size_y (micron), wavelength (m))
-        # pos_delim:  If in .csv format the file delimiter              
+        # pos_delim:  If in .csv format the file delimiter
+        # npt_rad:    Number of radial bins, should equal half detector pix
+        # npt_az:     Number of azimuthal wedges           
         # az_range:   Range of azimuthal values to investigate - note that 0
                       degrees is defined at the eastern edge of the circle.
         """
@@ -128,7 +130,7 @@ class Area(StrainTools, StrainPlotting):
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
         self.strain_fit(error_limit)
 
-    def pawley_fit(self):
+    def pawley_fit(self, structure = 'bcc'):
         pass
 
     def strain_fit(self, error_limit):
@@ -157,7 +159,7 @@ class Area(StrainTools, StrainPlotting):
             else:
                 print('Insufficient data to attempt curve_fit.')        
         
-    def save_to_nxs(self, fname):
+    def save_to_nxs(self, fname=None):
         """
         Saves all data back into an expanded .nxs file. Contains all original 
         data plus q0, peak locations and strain.
@@ -165,31 +167,34 @@ class Area(StrainTools, StrainPlotting):
         # fname:      File name/location - default is to save to parent 
                       directory (*_md.nxs) 
         """
-        fname = fname + '_md.nxs'
+        if fname == None:
+            fname = fname + '_md.nxs'
+        data_dict = {'dims': self.dims,
+                     'phi': self.phi,
+                     'peak_windows': self.peak_windows,
+                     'slit_size': self.slit_size, 
+                     'q0': self.q0,
+                     'peak_windows': self.peak_windows,
+                     'peaks': self.peaks,
+                     'peaks_err': self.peaks_err,
+                     'fwhm': self.fwhm,
+                     'fwhm_err': self.fwhm_err,
+                     'strain': self.strain,
+                     'strain_err': self.strain_err,
+                     'strain_param': self.strain_param,
+                     'q': self.q,
+                     'data': self.I}
+        dims = tuple([dim.decode('utf8') for dim in self.dims])
+        dim_data = tuple([self.co_ords[x] for x in self.dims])
+        for idx, dim in enumerate(dims):
+            data_dict[dim] = dim_data[idx]        
         
         with h5py.File(fname, 'w') as f:
-            data_ids = ('dims', 'phi', 
-                        'slit_size', 
-                        'q0','peak_windows', 
-                        'peaks', 'peaks_err', 
-                        'fwhm', 'fwhm_err', 
-                        'strain', 'strain_err', 
-                        'strain_param', 
-                        'q', 'data') + tuple([dim.decode('utf8') for dim in self.dims])
-            data_array = (self.dims, self.phi, 
-                          self.slit_size, 
-                          self.q0, self.peak_windows, 
-                          self.peaks, self.peaks_err, 
-                          self.fwhm, self.fwhm_err,   
-                          self.strain, self.strain_err, 
-                          self.strain_param, 
-                          self.q, self.I) + tuple([self.co_ords[x] for x in self.dims])
-            
-            for data_id, data in zip(data_ids, data_array):
+            for data in data_dict:
                 base_tree = 'entry1/EDXD_elements/%s'
-                if data_id == 'data':
-                    f.create_dataset(base_tree % data_id, data = data, compression = 'gzip')
+                if data == 'data':
+                    f.create_dataset(base_tree % data, data=data_dict[data], 
+                                     compression = 'gzip')
                 else:
-                    f.create_dataset(base_tree % data_id, data = data)
+                    f.create_dataset(base_tree % data, data=data_dict[data])
                 
-         
