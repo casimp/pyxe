@@ -36,7 +36,7 @@ class StrainPlotting(object):
                       First point in array chosen if not (default) specified.
         """
         if pnt == ():
-            pnt = (0, ) * len(self.strain[..., 0, 0].shape)        
+            pnt = (0, ) * len(self.I[..., 0, 0].shape)        
 
         q = self.q[az_idx]
         I = self.I[pnt][az_idx]

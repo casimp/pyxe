@@ -263,7 +263,7 @@ def array_fit(q_array, I_array, peak_window, func = 'gaussian', error_limit = 10
           '\nError limit exceeded (or pcov not estimated) %i times' % 
           (23*peaks.size/24, peaks.size/24, total_run_error, total_err_exceed))                  
     
-    return(peaks, peaks_err, fwhm, fwhm_err)
+    return peaks, peaks_err, fwhm, fwhm_err
     
     
 

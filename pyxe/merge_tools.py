@@ -65,8 +65,8 @@ def masked_merge(unmerged_data, mask_array = None):
         strain_err.append(data.strain_err[mask].reshape(shape))
         peaks.append(data.peaks[mask].reshape(shape))
         peaks_err.append(data.peaks_err[mask].reshape(shape))
-        fwhm.append(data.peaks[mask].reshape(shape))
-        fwhm_err.append(data.peaks_err[mask].reshape(shape))        
+        fwhm.append(data.fwhm[mask].reshape(shape))
+        fwhm_err.append(data.fwhm_err[mask].reshape(shape))        
         
 
         for ss2, posn in zip((ss2_x, ss2_y, ss2_z), 

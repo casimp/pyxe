@@ -58,11 +58,11 @@ class Reload(StrainTools, StrainPlotting):
         self.peak_windows = group['peak_windows'][:]
         self.peaks = group['peaks'][:]
         self.peaks_err = group['peaks_err'][:]    
-        try:
-            self.fwhm = group['fwhm'][:]
-            self.fwhm_err = group['fwhm_err'][:]
-        except:
-            pass
+    #try:
+        self.fwhm = group['fwhm'][:]
+        self.fwhm_err = group['fwhm_err'][:]
+    #except:
+        #pass
         self.strain_err = group['strain_err'][:]
         self.strain_param = group['strain_param'][:]
         
