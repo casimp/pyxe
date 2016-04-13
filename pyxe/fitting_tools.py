@@ -92,9 +92,9 @@ def array_fit(q_array, I_array, peak_window, func='gaussian',
                 peak, peak_err = coeff[2], perr[2]
                 fw, fw_err = coeff[3], perr[3]
                 if func == 'gaussian':
-                    fwhm, fwhm_err = fwhm * 2.35482, fwhm_err * 2.35482
+                    fw, fw_err = fw * 2.35482, fw_err * 2.35482
                 elif func == 'lorentzian':
-                    fwhm, fwhm_err = fwhm * 2, fwhm_err * 2
+                    fwhm, fwhm_err = fw * 2, fw_err * 2
                 # Check error and store
                 if peak_err / peak > error_limit:
                     err_exceed += 1
