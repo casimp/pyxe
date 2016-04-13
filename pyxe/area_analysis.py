@@ -11,12 +11,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from six import string_types
-import unittest
 import os
 import fabio
 import numpy as np
 import pyFAI
 import h5py
+import sys
 from scipy.optimize import curve_fit
 
 from pyxe.fitting_tools import array_fit
@@ -26,7 +26,6 @@ from pyxe.plotting import StrainPlotting
 
 
 def dim_fill(data):
-    print(data)
 
     co_ords = []
     dims = []
@@ -39,15 +38,24 @@ def dim_fill(data):
             dims.append(dim)
         except IndexError:
             co_ords.append(None)
-    print(co_ords)
     return co_ords, dims
-
+    
+def mirror_data(phi, data):
+    # has to be even number of slices but uneven number of boundaries.
+    angles = phi[:int(phi[:].shape[0]/2)]
+    peak_shape = data.shape
+    phi_len = int(peak_shape[-2]/2)
+    new_shape = (peak_shape[:-2] + (phi_len, ) + peak_shape[-1:])
+    d2 = np.nan * np.zeros(new_shape)
+    for i in range(phi_len):
+        d2[:, i] = (data[:, i] + data[:, i + new_shape[-2]]) / 2
+    return angles, d2
 
 class Area(StrainTools, StrainPlotting):
     """
-    Takes an un-processed .nxs file from the I12 EDXD detector and fits curves
-    to all specified peaks for each detector. Calculates strain and details
-    associated error. 
+    Takes a folder containing image files from area detectors and cakes the 
+    data while associating it with spatial information. The caked data can then
+    be analysed (peak_fit/strain calculations). 
     """
    
     def __init__(self, folder, pos_data, det_params, f_ext='.edf', 
@@ -73,7 +81,6 @@ class Area(StrainTools, StrainPlotting):
             ai = pyFAI.AzimuthalIntegrator()
             ai.setFit2D(*det_params[:-1])
             ai.set_wavelength(det_params[-1])
-        print(ai)
         
         fnames = sorted([x for x in os.listdir(folder) if x.endswith(f_ext)])
 
@@ -94,9 +101,13 @@ class Area(StrainTools, StrainPlotting):
         self.co_ords = {b'ss2_x': self.ss2_x, b'ss2_y': self.ss2_y, 
                         b'self_z': self.ss2_z} 
               
-        shape_I = (positions.shape[0], npt_az, npt_rad)
-        self.I = np.nan * np.ones((shape_I))
+        self.I = np.nan * np.ones((positions.shape[0], npt_az, npt_rad))
+
+        print('\nLoading files and carrying out azimuthal integration:\n')
         for fidx, fname in enumerate(fnames):
+            sys.stdout.write("\rProgress: [{0:20s}] {1:.0f}%".format('#' * 
+            int(20*(fidx + 1) / len(fnames)), 100*((fidx + 1)/len(fnames))))
+            sys.stdout.flush()
             img = fabio.open(os.path.join(folder, fname)).data
             I, q_, phi = ai.integrate2d(img, npt_rad=npt_rad, npt_azim=npt_az, 
                                         azimuth_range=az_range, unit='q_A^-1')
@@ -106,53 +117,41 @@ class Area(StrainTools, StrainPlotting):
         self.phi = phi * np.pi / 180  
         
         
-        def peak_fit(self, q0, window, mirror = True, func = 'gaussian', 
+    def peak_fit(self, q0, window, mirror = True, func = 'gaussian', 
                      error_limit = 2 * 10 ** -4, output = 'simple'):
             
-            # Convert int or float to list
-            self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
-            self.peak_windows = [[q_ - window/2, q_ + window/2] for q_ in self.q0]
-            
-            # Accept detector specific q0 2d-array
-            if len(np.shape(self.q0)) == 2:
-                q0_av = np.nanmean(self.q0, 0)
-                self.peak_windows = [[q_ - window/2, q_ +window/2] for q_ in q0_av]
-            
-            array_shape = (positions.shape[0], npt_az, ) + (np.shape(self.q0)[-1],)
-            data = [np.nan * np.ones(array_shape) for i in range(4)]
-            self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = data
-            
-            for idx, window in enumerate(self.peak_windows):
-                a, b, c, d = array_fit(self.q, I, window, func, error_limit, output, unused_detectors = [])
-                self.peaks[fidx, ..., idx], self.peaks_err[fidx, ..., idx] = a, b
-                self.fwhm[fidx, ..., idx], self.fwhm_err[fidx, ..., idx] = c, d
-       
-            
-            if mirror:
-                # has to be even number of slices but uneven number of boundaries.
-                angles = self.phi[:int(self.phi[:].shape[0]/2)]
-                peak_shape = self.peaks.shape
-                phi_len = int(peak_shape[-2]/2)
-                new_shape = (peak_shape[:-2] + (phi_len, ) + peak_shape[-1:]) 
-                empty_arrays = [np.nan * np.zeros(new_shape) for i in range(4)]
-                mirror_peak, mirror_err, mirror_fwhm, mirror_fwhm_err = empty_arrays
+        # Convert int or float to list
+        self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
+        self.peak_windows = [[q - window/2, q + window/2] for q in self.q0]
+    
+        # Accept detector specific q0 2d-array
+        if len(np.shape(self.q0)) == 2:
+            q0_av = np.nanmean(self.q0, 0)
+            self.peak_windows = [[q - window/2, q + window/2] for q in q0_av]
+        
+        # Iterate across q0 values and fit peaks for all detectors
+        array_shape = self.I.shape[:-1] + (np.shape(self.q0)[-1],)
+        data = [np.nan * np.ones(array_shape) for i in range(4)]
+        self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = data
 
-                for i in range(phi_len):
-                    mirror_peak[:, i] = (self.peaks[:, i] + self.peaks[:, i + new_shape[-2]]) / 2
-                    mirror_err[:, i] = (self.peaks_err[:, i] + self.peaks_err[:, i + new_shape[-2]]) / 2
-                    mirror_fwhm[:, i] = (self.fwhm[:, i] + self.fwhm[:, i + new_shape[-2]]) / 2
-                    mirror_fwhm_err[:, i] = (self.fwhm_err[:, i] + self.fwhm_err[:, i + new_shape[-2]]) / 2
-                self.peaks = mirror_peak
-                self.phi = angles
-                self.peaks_err = mirror_err
-                self.fwhm = mirror_fwhm
-                self.fwhm_err = mirror_fwhm_err
-                
-            self.slit_size = []
-            self.strain = (self.q0 - self.peaks)/ self.q0
-            self.strain_err = (self.q0 - self.peaks_err)/ self.q0
-            self.strain_fit(error_limit)
+        print('\nFile: - %s acquisition points\n' % self.ss2_x.size)
+        
+        for idx, window in enumerate(self.peak_windows):
+            a, b, c, d = array_fit(self.q, self.I, window, func, error_limit, output, unused_detectors = [])
+            self.peaks[..., idx], self.peaks_err[..., idx] = a, b
+            self.fwhm[..., idx], self.fwhm_err[..., idx] = c, d
+        
+   
+        if mirror:
+            _, self.peaks = mirror_data(self.phi, self.peaks)
+            _, self.peaks_err = mirror_data(self.phi, self.peaks_err)
+            _, self.fwhm = mirror_data(self.phi, self.fwhm)
+            self.phi, self.fwhm_err = mirror_data(self.phi, self.fwhm_err)
 
+        self.slit_size = []
+        self.strain = (self.q0 - self.peaks)/ self.q0
+        self.strain_err = (self.q0 - self.peaks_err)/ self.q0
+        self.strain_fit(error_limit)
 
 
     def strain_fit(self, error_limit):
@@ -217,25 +216,3 @@ class Area(StrainTools, StrainPlotting):
                     f.create_dataset(base_tree % data_id, data = data)
                 
          
-
-class MonoTestCase(unittest.TestCase):
-    """
-    Tests parts of XRD analysis
-    """
-
-    def setUp(self):
-        pass
-        
-    def test_exclusion(self):
-        """
-        Test exclusion - check for correct return.
-        """
-        file_list = ['Purgative', 'maccabees', 'kuwait', 'hypostatizing', 
-                     'patternable', '', 'UNDENIABLE']
-        exclusion_list = ['ble', 'maccabee', 'wait']
-        self.assertEqual(exclusion(file_list, exclusion_list), 
-                         ['Purgative', 'hypostatizing', ''])
-        
-if __name__ == '__main__':
-    unittest.main()
-
