@@ -36,7 +36,7 @@ class EDI12(StrainTools, StrainPlotting):
         detector. Allows definition of az_angle (phi) if the unused detector is
         not 23.
         """
-        self.filename = file
+        self.name = file
         self.f = h5py.File(file, 'r') 
         self.ss2_x = dimension_fill(self.f, 'ss2_x')   
         self.ss2_y = dimension_fill(self.f, 'ss2_y')
@@ -114,7 +114,7 @@ class EDI12(StrainTools, StrainPlotting):
                       directory (*_md.nxs) 
         """
         if fname == None:        
-            fname = '%s_md.nxs' % self.filename[:-4]
+            fname = '%s_md.nxs' % self.name[:-4]
         
         shutil.copy(self.filename, fname)
         data_ids = ('phi', 'dims', 'slit_size', 'q0','peak_windows', 'peaks',  
@@ -129,5 +129,6 @@ class EDI12(StrainTools, StrainPlotting):
             for data_id, data in zip(data_ids, data_array):
                 base_tree = 'entry1/EDXD_elements/%s'
                 f.create_dataset(base_tree % data_id, data = data)
+                
                 
                 

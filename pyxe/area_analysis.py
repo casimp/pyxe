@@ -50,6 +50,7 @@ class Area(StrainTools, StrainPlotting):
         # az_range:   Range of azimuthal values to investigate - note that 0
                       degrees is defined at the eastern edge of the circle.
         """
+        self.name = folder
         error = 'Azimuthal range must be less than or equal to 360deg'
         assert abs(np.max(az_range) - np.min(az_range)) <= 360, error
         if isinstance(params, ("".__class__, u"".__class__)):
@@ -114,7 +115,7 @@ class Area(StrainTools, StrainPlotting):
         data = [np.nan * np.ones(array_shape) for i in range(4)]
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = data
 
-        print('\nFile: - %s acquisition points\n' % self.ss2_x.size)
+        print('\n%s: - %s acquisition points\n' % (self.name, self.ss2_x.size))
         
         for idx, window in enumerate(self.peak_windows):
             fit = array_fit(self.q,self.I, window, func, error_limit, progress)
@@ -167,7 +168,7 @@ class Area(StrainTools, StrainPlotting):
                       directory (*_md.nxs) 
         """
         if fname == None:
-            fname = fname + '_md.nxs'
+            fname = self.name + '_md.nxs'
         data_dict = {'dims': self.dims,
                      'phi': self.phi,
                      'peak_windows': self.peak_windows,

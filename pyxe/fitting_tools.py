@@ -112,7 +112,7 @@ def array_fit(q_array, I_array, peak_window, func='gaussian',
     print('\nTotal points: %i (%i az_angles x %i positions)'
           '\nPeak not found in %i position/detector combintions'
           '\nError limit exceeded (or pcov not estimated) %i times' % 
-          (peaks.size, peaks.shape[-2], peaks[..., 0, 0].size, 
+          (peaks.size, peaks.shape[-1], peaks[..., 0].size, 
            run_error, err_exceed))                  
     
     return peaks, peaks_err, fwhm, fwhm_err
