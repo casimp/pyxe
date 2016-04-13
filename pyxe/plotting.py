@@ -112,7 +112,8 @@ class StrainPlotting(object):
         # err:        Plot strain error (True/False)
         # res:        Resolution in points per unit length (of raw data) 
         """
-        x = self.extract_peak_slice(phi, az_idx, q_idx, z_idx, err, fwhm)
+        slice_extract = self.extract_fwhm_slice if fwhm else self.extract_peak_slice
+        x = slice_extract(phi, az_idx, q_idx, z_idx, err)
         [d1, d2], data = x
                     
         if data.ndim == 1:
@@ -207,9 +208,9 @@ class StrainPlotting(object):
                       position. 'scalar' co-ordinates re-zeroed/centred against 
                       point specified in the extract_line command.
         """
- 
-        dims, data = self.extract_peak_line(phi, az_idx, q_idx, z_idx, err, 
-                                    fwhm, pnt, line_angle, npnts, method)
+        line_extract = self.extract_fwhm_line if fwhm else self.extract_peak_line
+        dims, data = line_extract(phi, az_idx, q_idx, z_idx, err, 
+                                  pnt, line_angle, npnts, method)
                                     
         return pnt, axis, dims, data 
 

@@ -105,7 +105,7 @@ class StrainTools(object):
 
 
     def extract_peak_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
-                           err=False, fwhm=False):  
+                           err=False):  
         """ 
         Extracts line profile through 2D/3D peak array.
         
@@ -121,21 +121,57 @@ class StrainTools(object):
         # err:        Extract peak error (True/False)
         # FWHM:       Extract FWHM (True/False)
         """                        
-        if fwhm:
-            assert az_idx != None, "Can't extract fwhm from fitted data"
+        dims, e = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err)
+        return dims, self.q0[q_idx] - e * self.q0[q_idx]   
+
+    def extract_fwhm_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
+                           err=False):
+        """ 
+        Extracts line profile through 2D/3D fwhm array.
+        
+        Must define **either** an azimuthal angle, phi, or azimuthal (cake)
+        index. The azimuthal angle leverages the fitted strain profiles, 
+        the az_idx plots that specific azimuthal slice. Note that for the
+        EDXD detector in I12, az_idx == detector_idx.
+        
+        # phi:        Define angle (in rad) from which to calculate strain.
+        # az_idx:     Index for azimuthal slice.
+        # q_idx:      Specify lattice parameter/peak to save data from. 
+        # z_idx:      Slice height (index) for 3D data
+        # err:        Extract peak error (True/False)
+        """  
+        if az_idx != None:
+            data = self.fwhm_err if err else self.fwhm
             if len(self.dims) != 3:            
-                fwhm = self.fwhm[..., az_idx, q_idx]
+                fwhm = data[..., az_idx, q_idx]
             else:
-                fwhm = self.fwhm[..., z_idx, az_idx, q_idx]                
+                fwhm = data[..., z_idx, az_idx, q_idx]                
             if len(self.dims) == 1:
                 return self.co_ords[self.dims[0]], fwhm
             else:
                 return [self.co_ords[dim] for dim in self.dims[:2]], fwhm
+        else:
+            assert not err, "Can't extract error from fitted data"
             
-        dims, e = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err)
-        return dims, self.q0[q_idx] - e * self.q0[q_idx]   
-
-
+            if len(self.dims) == 3:
+                fwhm = np.nan * np.ones(self.fwhm.shape[:-3])
+                params = self.fwhm_param[..., z_idx, q_idx, :]
+            else:
+                fwhm = np.nan * np.ones(self.strain.shape[:-2])
+                params = self.fwhm_param[..., q_idx, :]
+                
+            for idx in np.ndindex(fwhm.shape):
+                p = params[idx]
+                fwhm[idx] = cos_(phi, *p)
+        
+        if len(self.dims) == 1:
+            return self.co_ords[self.dims[0]], fwhm
+        elif len(self.dims) == 3:
+            return [self.co_ords[dim][..., z_idx] for dim in self.dims[:2]], fwhm
+        else:
+            return [self.co_ords[dim] for dim in self.dims], fwhm       
+            
+            
     def extract_strain_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
                              err=False, shear=False):  
         """ 
@@ -238,6 +274,32 @@ class StrainTools(object):
         """  
         data = self.extract_peak_slice(phi, az_idx, q_idx, z_idx, err, fwhm)
         return line_ext(*data, pnt, npnts, line_angle, method)
+        
+        
+    def extract_fwhm_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
+                            err=False, pnt=(0,0), line_angle=0, 
+                            npnts=100, method = 'linear'):  
+        """ 
+        Extracts line profile through 1D/2D/3D peak array.
+        
+        Must define **either** an azimuthal angle, phi, or azimuthal (cake)
+        index. The azimuthal angle leverages the fitted strain profiles, 
+        the az_idx plots that specific azimuthal slice. Note that for the
+        EDXD detector in I12, az_idx == detector_idx.       
+        
+        # phi:        Define angle (in rad) from which to calculate strain.
+        # az_idx:     Index for azimuthal slice.
+        # q_idx:      Specify lattice parameter/peak to save data from. 
+        # z_idx:      Slice height (index) for 3D data
+        # err:        Extract peak error (True/False)
+        # FWHM:       Extract FWHM (True/False)
+        # pnt:        Centre point for data extraction  
+        # line_angle: Angle across array to extract strain from
+        # method:     Interpolation mehod (default = 'linear')
+        """  
+        data = self.extract_fwhm_slice(phi, az_idx, q_idx, z_idx, err)
+        return line_ext(*data, pnt, npnts, line_angle, method)
+
             
             
     def extract_strain_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
