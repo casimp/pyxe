@@ -51,8 +51,7 @@ class EDI12(StrainTools, StrainPlotting):
     associated error. 
     """
    
-    def __init__(self, file, q0, window, func = 'gaussian', 
-                 error_limit = 1 * 10 ** -4, output = 'simple'):
+    def __init__(self, file):
         """
         Extract and manipulate all pertinent data from the .nxs file. Takes 
         either one or multiple (list) q0s.
@@ -68,20 +67,22 @@ class EDI12(StrainTools, StrainPlotting):
                         
         scan_command = self.f['entry1/scan_command'][0]
         self.dims = re.findall(b'ss2_\w+', scan_command)
+
+        self.q = self.f['entry1/EDXD_elements/edxd_q'][:]
+        self.I = self.f['entry1/EDXD_elements/data'][:]
+        self.phi = np.linspace(-np.pi, 0, 23)
+
+    def peak_fit(self, q0, window, func='gaussian', error_limit=10**-4,
+                 output = 'simple'): 
+        
         self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
         self.peak_windows = [[q_ - window/2, q_ + window/2] for q_ in self.q0]               
         if len(np.shape(self.q0)) == 2:
             q0_av = np.nanmean(self.q0, 0)
             self.peak_windows = [[q_ - window/2, q_ +window/2] for q_ in q0_av]
-            
-        group = self.f['entry1/EDXD_elements']
-        q, I = group['edxd_q'], group['data']
-        self.q = q[:]
-        self.I = I[:]#really?
-        self.phi = np.linspace(-np.pi, 0, 23)
- 
-        # Iterate across q0 values and fit peaks for all detectors
-        array_shape = I.shape[:-1] + (np.shape(self.q0)[-1],)
+       
+       # Iterate across q0 values and fit peaks for all detectors
+        array_shape = self.I.shape[:-1] + (np.shape(self.q0)[-1],)
         data = [np.nan * np.ones(array_shape) for i in range(4)]
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = data
 
@@ -89,7 +90,8 @@ class EDI12(StrainTools, StrainPlotting):
              (self.filename, self.f['entry1/EDXD_elements/ss2_x'].size))
         
         for idx, window in enumerate(self.peak_windows):
-            a, b, c, d = array_fit(q, I, window, func, error_limit, output)
+            a, b, c, d = array_fit(self.q, self.I, window, func, 
+                                   error_limit, output)
             self.peaks[..., idx], self.peaks_err[..., idx] = a, b
             self.fwhm[..., idx], self.fwhm_err[..., idx] = c, d
         self.strain = (self.q0 - self.peaks)/ self.q0
@@ -97,7 +99,7 @@ class EDI12(StrainTools, StrainPlotting):
         self.strain_fit(error_limit)
         
 
-    def strain_fit(self, error_limit):
+    def strain_fit(self, error_limit=1 * 10 ** -4):
         """
         Fits a sinusoidal curve to the strain information from each detector. 
         """
