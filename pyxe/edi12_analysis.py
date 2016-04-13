@@ -20,28 +20,7 @@ from pyxe.fitting_tools import array_fit
 from pyxe.fitting_functions import cos_
 from pyxe.strain_tools import StrainTools
 from pyxe.plotting import StrainPlotting
-
-
-def dimension_fill(data, dim_ID):
-    """
-    Extracts correct spatial array from hdf5 file. Returns None is the
-    dimension doesn't exist.
-    
-    # data:       Raw data (hdf5 format)   
-    # dim_ID:     Dimension ID (ss_x, ss2_y or ss2_z)
-    """
-    try:
-        dimension_data = data['entry1/EDXD_elements/' + dim_ID][:]
-    except KeyError:
-        dimension_data = None
-    return dimension_data
-
-def scrape_slits(data):
-    try:        
-        slit_size = data['entry1/before_scan/s4/s4_xs'][0]
-    except KeyError:
-        slit_size = []   
-    return slit_size
+from pyxe.analysis_tools import dimension_fill, scrape_slits
 
 
 class EDI12(StrainTools, StrainPlotting):
@@ -51,29 +30,33 @@ class EDI12(StrainTools, StrainPlotting):
     associated error. 
     """
    
-    def __init__(self, file):
+    def __init__(self, file, unused_detector=23, phi=None):
         """
-        Extract and manipulate all pertinent data from the .nxs file. Takes 
-        either one or multiple (list) q0s.
+        Extract useful data from raw .nxs file. Removes data from unused 
+        detector. Allows definition of az_angle (phi) if the unused detector is
+        not 23.
         """
         self.filename = file
         self.f = h5py.File(file, 'r') 
         self.ss2_x = dimension_fill(self.f, 'ss2_x')   
         self.ss2_y = dimension_fill(self.f, 'ss2_y')
         self.ss2_z = dimension_fill(self.f, 'ss2_z')
-        self.co_ords = {b'ss2_x': self.ss2_x,b'ss2_y': self.ss2_y, 
+        self.co_ords = {b'ss2_x': self.ss2_x, b'ss2_y': self.ss2_y, 
                         b'ss2_z': self.ss2_z} 
         self.slit_size = scrape_slits(self.f)   
-                        
         scan_command = self.f['entry1/scan_command'][0]
         self.dims = re.findall(b'ss2_\w+', scan_command)
-
         self.q = self.f['entry1/EDXD_elements/edxd_q'][:]
         self.I = self.f['entry1/EDXD_elements/data'][:]
-        self.phi = np.linspace(-np.pi, 0, 23)
-
+        self.I = np.delete(self.I, unused_detector, -2)
+        if phi == None:
+            self.phi = np.linspace(-np.pi, 0, 23)
+        else:
+            self.phi = phi
+        
+        
     def peak_fit(self, q0, window, func='gaussian', error_limit=10**-4,
-                 output = 'simple'): 
+                 progress = True): 
         
         self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
         self.peak_windows = [[q_ - window/2, q_ + window/2] for q_ in self.q0]               
@@ -87,42 +70,39 @@ class EDI12(StrainTools, StrainPlotting):
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = data
 
         print('\nFile: %s - %s acquisition points\n' % 
-             (self.filename, self.f['entry1/EDXD_elements/ss2_x'].size))
+             (self.filename, self.I[..., 0, 0].size))
         
         for idx, window in enumerate(self.peak_windows):
             a, b, c, d = array_fit(self.q, self.I, window, func, 
-                                   error_limit, output)
+                                   error_limit, progress)
             self.peaks[..., idx], self.peaks_err[..., idx] = a, b
             self.fwhm[..., idx], self.fwhm_err[..., idx] = c, d
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
-        self.strain_fit(error_limit)
+        self.full_ring_fit()
         
 
-    def strain_fit(self, error_limit=1 * 10 ** -4):
+    def full_ring_fit(self):
         """
         Fits a sinusoidal curve to the strain information from each detector. 
         """
-        data_shape = self.strain.shape
-        self.strain_param = np.nan * np.ones(data_shape[:-2] + \
-                            (data_shape[-1], ) + (3, ))
-        for idx in np.ndindex(data_shape[:-2] + (data_shape[-1],)):
-            data = self.strain[idx[:-1]][:-1][..., idx[-1]]
+        data_shape = self.peaks.shape[:-2] + self.peaks.shape[-1:] + (3, )
+        self.strain_param = np.nan * np.ones(data_shape)
+        for idx in np.ndindex(data_shape[:-1]):
+            data = self.strain[idx[:-1]][..., idx[-1]]
             not_nan = ~np.isnan(data)
-            angle = self.phi
-            if angle[not_nan].size > 2:
-                # Estimate curve parameters
+            count = 0
+            if self.phi[not_nan].size > 2:
                 p0 = [np.nanmean(data), 3*np.nanstd(data)/(2**0.5), 0]
                 try:
-                    a, b = curve_fit(cos_, angle[not_nan], data[not_nan], p0)
-                    perr_ = np.diag(b)
-                    perr = np.sqrt(perr_[0] + perr_[2])
-                    if perr < 2 * error_limit:              
-                        self.strain_param[idx] = a
+                    a, b = curve_fit(cos_,self.phi[not_nan], data[not_nan], p0)
+                    self.strain_param[idx] = a
                 except (TypeError, RuntimeError):
-                    print('Unable to fit peak.')
+                    count += 1
             else:
-                print('Insufficient data to attempt curve_fit.')
+                count += 1
+        print('\nUnable to fit full ring data %i out of %i points'
+              % (count, np.size(self.peaks[:, 0, 0])))
                 
         
 
