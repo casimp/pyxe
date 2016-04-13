@@ -23,7 +23,7 @@ from pyxe.fitting_tools import array_fit
 from pyxe.fitting_functions import cos_
 from pyxe.strain_tools import StrainTools
 from pyxe.plotting import StrainPlotting
-from pyxe.area_tools import dim_fill, mirror_data
+from pyxe.analysis_tools import dim_fill, mirror_data
 
 
 class Area(StrainTools, StrainPlotting):
@@ -33,7 +33,7 @@ class Area(StrainTools, StrainPlotting):
     be analysed (peak_fit/strain calculations). 
     """
    
-    def __init__(self, folder, pos_data, det_params, f_ext='.edf', 
+    def __init__(self, folder, pos_data, det_params, f_ext='.edf', progress=True,
                  pos_delim=',', npt_rad=1024, npt_az=36, az_range=[-180, 180]):
         """
         # folder:     Folder containing the image files for analysis
@@ -82,16 +82,19 @@ class Area(StrainTools, StrainPlotting):
 
         print('\nLoading files and carrying out azimuthal integration:\n')
         for fidx, fname in enumerate(fnames):
-            sys.stdout.write("\rProgress: [{0:20s}] {1:.0f}%".format('#' * 
-            int(20*(fidx + 1) / len(fnames)), 100*((fidx + 1)/len(fnames))))
-            sys.stdout.flush()
             img = fabio.open(os.path.join(folder, fname)).data
             I, q_, phi = ai.integrate2d(img, npt_rad=npt_rad, npt_azim=npt_az, 
                                         azimuth_range=az_range, unit='q_A^-1')
-            self.I[fidx] = I         
+            self.I[fidx] = I 
+            if progress:
+                sys.stdout.write("\rProgress: [{0:20s}] {1:.0f}%".format('#' * 
+                int(20*(fidx + 1)/ len(fnames)), 100*((fidx + 1)/len(fnames))))
+                sys.stdout.flush()
+            
             
         self.q = np.repeat(q_[None, :], npt_az, axis = 0)
-        self.phi = phi * np.pi / 180  
+        self.phi = phi * np.pi / 180
+        self.slit_size = []
         
         
     def peak_fit(self, q0, window, mirror = True, func = 'gaussian', 
@@ -125,39 +128,36 @@ class Area(StrainTools, StrainPlotting):
             _, self.fwhm = mirror_data(self.phi, self.fwhm)
             self.phi, self.fwhm_err = mirror_data(self.phi, self.fwhm_err)
 
-        self.slit_size = []
         self.strain = (self.q0 - self.peaks)/ self.q0
         self.strain_err = (self.q0 - self.peaks_err)/ self.q0
-        self.strain_fit(error_limit)
+        self.full_ring_fit()
 
-    def pawley_fit(self, structure = 'bcc'):
-        pass
 
-    def strain_fit(self, error_limit):
+    def full_ring_fit(self):
         """
         Fits a sinusoidal curve to the strain information from each detector. 
         """
-        data_shape = self.strain.shape
-        self.strain_param = np.nan * np.ones(data_shape[:-2] + \
-                            (data_shape[-1], ) + (3, ))
-        for idx in np.ndindex(data_shape[:-2] + (data_shape[-1],)):
-            
+        data_shape = self.peaks.shape[:-2] + self.peaks.shape[-1:] + (3, )
+        self.strain_param = np.nan * np.ones(data_shape)
+        for idx in np.ndindex(data_shape[:-1]):
             data = self.strain[idx[:-1]][..., idx[-1]]
             not_nan = ~np.isnan(data)
-            
+            count = 0
             if self.phi[not_nan].size > 2:
                 # Estimate curve parameters
                 p0 = [np.nanmean(data), 3*np.nanstd(data)/(2**0.5), 0]
                 try:
                     a, b = curve_fit(cos_,self.phi[not_nan], data[not_nan], p0)
-                    perr_ = np.diag(b)
-                    perr = np.sqrt(perr_[0] + perr_[2])
-                    if perr < 2 * error_limit:              
-                        self.strain_param[idx] = a
+                    #perr_ = np.diag(b)
+                    self.strain_param[idx] = a
                 except (TypeError, RuntimeError):
-                    print('Unable to fit curve to data.')
+                    count += 1
+                    #print('Unable to fit curve to data.')
             else:
-                print('Insufficient data to attempt curve_fit.')        
+                count += 1
+                #print('Insufficient data to attempt curve_fit.')   
+        print('\nUnable to fit full ring data %i out of %i points'
+              % (count, np.size(self.peaks[:, 0, 0])))
         
     def save_to_nxs(self, fname=None):
         """
