@@ -122,7 +122,7 @@ class StrainTools(object):
         # FWHM:       Extract FWHM (True/False)
         """                        
         dims, e = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err)
-        return dims, self.q0[q_idx] - e * self.q0[q_idx]   
+        return dims, self.q0 / (1 + e)
 
     def extract_fwhm_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
                            err=False):
