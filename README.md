@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/20396/casimp/pyxe.svg)](https://zenodo.org/badge/latestdoi/20396/casimp/pyxe)
+
 pyXe: X-ray Diffraction Strain Analysis Package
 ===============================================
 
