@@ -20,7 +20,7 @@ from pyxe.fitting_tools import array_fit
 from pyxe.fitting_functions import cos_
 from pyxe.strain_tools import StrainTools
 from pyxe.plotting import StrainPlotting
-from pyxe.analysis_tools import dimension_fill, scrape_slits
+from pyxe.analysis_tools import dimension_fill
 
 
 class EDI12(StrainTools, StrainPlotting):
@@ -48,6 +48,7 @@ class EDI12(StrainTools, StrainPlotting):
         self.q = self.f['entry1/EDXD_elements/edxd_q'][:]
         self.I = self.f['entry1/EDXD_elements/data'][:]
         self.I = np.delete(self.I, unused_detector, -2)
+        self.q = np.delete(self.q, unused_detector, 0)
         if phi == None:
             self.phi = np.linspace(-np.pi, 0, 23)
         else:
@@ -69,15 +70,15 @@ class EDI12(StrainTools, StrainPlotting):
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = data
 
         print('\nFile: %s - %s acquisition points\n' % 
-             (self.filename, self.I[..., 0, 0].size))
+             (self.name, self.I[..., 0, 0].size))
         
         for idx, window in enumerate(self.peak_windows):
             fit = array_fit(self.q,self.I, window, func, error_limit, progress)
             self.peaks[..., idx], self.peaks_err[..., idx] = fit[0], fit[1]
             self.fwhm[..., idx], self.fwhm_err[..., idx] = fit[2], fit[3]
         
-        self.strain = (self.q0 - self.peaks)/ self.q0
-        self.strain_err = (self.q0 - self.peaks_err)/ self.q0
+        self.strain = (self.q0 / self.peaks) - 1
+        self.strain_err = (self.q0 / self.peaks_err) - 1
         self.full_ring_fit()
         
 

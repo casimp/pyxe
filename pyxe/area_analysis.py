@@ -127,8 +127,8 @@ class Area(StrainTools, StrainPlotting):
             _, self.fwhm = mirror_data(self.phi, self.fwhm)
             self.phi, self.fwhm_err = mirror_data(self.phi, self.fwhm_err)
 
-        self.strain = (self.q0 - self.peaks)/ self.q0
-        self.strain_err = (self.q0 - self.peaks_err)/ self.q0
+        self.strain = (self.q0 / self.peaks) - 1
+        self.strain_err = (self.q0 / self.peaks_err) - 1
         self.full_ring_fit()
 
 
