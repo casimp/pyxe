@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from scipy.interpolate import griddata
 from pyxe.fitting_functions import cos_
-from pyxe.plotting_tools import plot_complex, meshgrid_res, mohrs_dec, plot_line
+from pyxe.plotting_tools import plot_complex, meshgrid_res, plot_line
 
 
 class StrainPlotting(object):
@@ -27,7 +27,7 @@ class StrainPlotting(object):
         pass
 
         
-    def plot_intensity(self, az_idx=0, pnt=(), figsize=(7, 5)):
+    def plot_intensity(self, az_idx=0, pnt=(), figsize=(7, 5), ax=False):
         """
         Plots q v intensity.
         
@@ -35,18 +35,21 @@ class StrainPlotting(object):
         # point:      Define point (index) from which to extract q v I plot.
                       First point in array chosen if not (default) specified.
         """
+        if ax == False:
+            fig = plt.figure(figsize = figsize)
+            ax = fig.add_subplot(1, 1, 1)
         if pnt == ():
             pnt = (0, ) * len(self.I[..., 0, 0].shape)        
 
         q = self.q[az_idx]
         I = self.I[pnt][az_idx]
-        plt.figure(figsize = figsize)
-        plt.plot(q, I, 'k-')
-        plt.xlabel('q (rad)')
-        plt.ylabel('Intensity')
+        ax.plot(q, I, 'k-')
+        ax.set_xlabel('q (rad)')
+        ax.set_ylabel('Intensity')
+        return ax
 
             
-    def plot_fitted(self, pnt=(), q_idx=0, figsize=(7, 5)):
+    def plot_fitted(self, pnt=(), q_idx=0, figsize=(7, 5), ax=False):
         """
         Plots fitted in-plane strain field for given data point. 
         
@@ -56,22 +59,26 @@ class StrainPlotting(object):
         # figsize:    Figure dimensions
         """
         pnt = (0, ) * len(self.strain[..., 0, 0].shape) if pnt == () else pnt
-
-        plt.figure(figsize = figsize)
+        
+        if ax == False:
+            fig = plt.figure(figsize = figsize)
+            ax = fig.add_subplot(1, 1, 1)
+        
+        #plt.axis('equal')
+        
         p = self.strain_param[pnt][q_idx]
         theta = self.phi
         # Data from edi12 has extra, unused detector (filled with nan) 
-        try:
-            plt.plot(theta, self.strain[pnt][..., q_idx], 'k*')
-        except ValueError:
-            plt.plot(theta, self.strain[pnt][..., q_idx][:-1], 'k*')
+        ax.plot(theta, self.strain[pnt][..., q_idx], 'k*')
         theta_2 = np.linspace(self.phi[0], self.phi[-1], 1000)
-        plt.plot(theta_2, cos_(theta_2, *p), 'k-')
-        plt.xlabel('Azimuthal angle (rad)')
-        plt.ylabel('Strain')
+        ax.plot(theta_2, cos_(theta_2, *p), 'k-')
+        ax.set_xlabel(r'$\phi$ (rad)', size = 14)
+        ax.set_ylabel(r'$\epsilon$', size = 14)
+        ax.ticklabel_format(axis='both', style='sci', scilimits=(-3, 3))
+        
+        return ax
             
-    @mohrs_dec        
-    def plot_mohrs(self, pnt =(), q_idx=0, angle=-np.pi, figsize=(7, 5)):
+    def plot_mohrs(self, pnt =(), q_idx=0, angle=0, figsize=(7, 5), ax=False):
         """
         Use fitted in-plane styrain tensor to plot Mohr's circle. 
         
@@ -81,15 +88,44 @@ class StrainPlotting(object):
         # angle:      Angle to highlight on circle (inc + 90deg).
         # figsize:    Figure dimensions
         """
+        if ax == False:
+            fig = plt.figure(figsize = figsize)
+            ax = fig.add_subplot(1, 1, 1)
+        ax.axis('equal')
         pnt = (0, ) * len(self.strain[..., 0, 0].shape) if pnt == () else pnt
         p = self.strain_param[pnt][q_idx] 
         theta = p[1] + angle
 
-        e_xx, e_yy = cos_(angle, *p), cos_(angle + np.pi/2, *p)
+        e_yy, e_xx = cos_(angle, *p), cos_(angle + np.pi/2, *p)
         e_1, e_2 = (p[2] + abs(p[0])), (p[2] - abs(p[0]))
         e_xy = -np.sin(2 * theta) * ((p[2] + p[0]) - (p[2] - p[0]))/2
         
-        return e_xx, e_yy, e_xy, e_1, e_2
+        
+        R, mean = (e_1 - e_2) / 2, (e_1 + e_2) / 2
+
+        circ = plt.Circle((mean, 0), radius=R, color='k', fill = False)
+        ax.add_patch(circ)
+        
+
+        ax.set_xlim([mean - abs(2 * R), mean + abs(2 * R)])
+        ax.plot([e_1, e_2], [0, 0], 'ko', markersize = 3)
+        
+        ax.plot(e_xx, e_xy, 'ko',label=r'$(\epsilon_{yy}$, $-\epsilon_{xy})$')
+        ax.plot(e_yy,-e_xy, 'wo',label=r'$(\epsilon_{xx}$, $\epsilon_{xy})$')
+        
+        ax.legend(numpoints=1, frameon = False, handletextpad = 0.2)
+        ax.plot([e_xx, e_yy], [e_xy, -e_xy], 'k-.')
+        
+        offset = (e_1 - e_2)/30        
+        ax.annotate('%s' % r'$\epsilon_{1}$', xy=(e_1 + offset, 0), 
+                    textcoords='offset points', xytext=(e_1, 0), size=14)
+        ax.annotate('%s' % r'$\epsilon_{2}$', xy=(e_2 + offset, 0), 
+                    textcoords='offset points', xytext=(e_2, 0), size=14)
+        ax.set_xlabel(r'$\epsilon$', size=14)
+        ax.set_ylabel(r'$\gamma$', size=14)
+        ax.ticklabel_format(axis='both', style='sci', scilimits=(-3, 3))
+#        return e_xx, e_yy, e_xy, e_1, e_2, fig
+        return ax
 
     
     def plot_peak_map(self, phi=0, az_idx=None, q_idx=0, z_idx=0, err=False, 

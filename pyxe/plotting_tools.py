@@ -88,10 +88,11 @@ def meshgrid_res(d1, d2, spatial_resolution):
     
 def mohrs_dec(func):
     def func_wrapper(*args):
-        e_xx, e_yy, e_xy, e_1, e_2 = func(*args)
+        e_xx, e_yy, e_xy, e_1, e_2, fig = func(*args)
+        
         R, mean = (e_1 - e_2) / 2, (e_1 + e_2) / 2
 
-        fig = plt.figure(figsize = (7, 5))
+        
         plt.axis('equal')
         ax = fig.add_subplot(1, 1, 1)
         circ = plt.Circle((mean, 0), radius=R, color='k', fill = False)
@@ -109,8 +110,8 @@ def mohrs_dec(func):
                     textcoords='offset points', xytext=(e_1, 0))
         ax.annotate('  %s' % r'$\epsilon_{2}$', xy=(e_2, 0), 
                     textcoords='offset points', xytext=(e_2, 0))
-        plt.xlabel('Normal strain')
-        plt.ylabel('Shear strain')
+        plt.xlabel(r'$\epsilon$', size=14)
+        plt.ylabel(r'$\gamma$', size=14)
     
     return func_wrapper
     
