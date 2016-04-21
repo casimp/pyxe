@@ -273,7 +273,7 @@ class StrainTools(object):
         # method:     Interpolation mehod (default = 'linear')
         """  
         data = self.extract_peak_slice(phi, az_idx, q_idx, z_idx, err, fwhm)
-        return line_ext(*data, pnt, npnts, line_angle, method)
+        return line_ext(data[0], data[1], pnt, npnts, line_angle, method)
         
         
     def extract_fwhm_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
@@ -298,7 +298,7 @@ class StrainTools(object):
         # method:     Interpolation mehod (default = 'linear')
         """  
         data = self.extract_fwhm_slice(phi, az_idx, q_idx, z_idx, err)
-        return line_ext(*data, pnt, npnts, line_angle, method)
+        return line_ext(data[0], data[1], pnt, npnts, line_angle, method)
 
             
             
@@ -324,7 +324,7 @@ class StrainTools(object):
         # method:     Interpolation mehod (default = 'linear')
         """  
         data = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err, shear)
-        return line_ext(*data, pnt, npnts, line_angle, method)
+        return line_ext(data[0], data[1], pnt, npnts, line_angle, method)
 
 
     def extract_stress_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
@@ -349,7 +349,7 @@ class StrainTools(object):
         # method:     Interpolation mehod (default = 'linear')
         """  
         data = self.extract_stress_slice(phi, az_idx, q_idx, z_idx, err, shear)
-        return line_ext(*data, pnt, npnts, line_angle, method)
+        return line_ext(data[0], data[1], pnt, npnts, line_angle, method)
     
     
     def save_to_text(self, fname, angles = [0, np.pi/2], detectors = [],
