@@ -6,7 +6,7 @@ except ImportError:
 
 setup(
     name='pyxe',
-    version='0.8.0',
+    version='0.8.1',
     author='C. Simpson',
     author_email='c.a.simpson01@gmail.com',
     packages=['pyxe'],
