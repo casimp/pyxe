@@ -22,6 +22,7 @@ def cos_(x, *p):
     """
     return p[0]*np.cos(2 * (x + p[1])) + p[2]
 
+
 def gaussian(x, *p):
     """
     Guassian curve fit for diffraction data.
@@ -57,7 +58,6 @@ def psuedo_voigt(x, *p):
     #   Linear combination fraction  : p[4]
     """
     return (1 - p[4]) * gaussian(x, *p) + p[4] * lorentzian(x, *p)
-    
 
 
 class FittingTests(unittest.TestCase):
@@ -110,7 +110,6 @@ class FittingTests(unittest.TestCase):
         pg = np.array([100, 1, 1, 1, 0])
         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
 
-        
         self.assertEqual(sum(gaussian(x, *p0)), sum(psuedo_voigt(x, *pg)))
         
     def test_psuedo_voigt_lorentzian(self):
@@ -122,7 +121,6 @@ class FittingTests(unittest.TestCase):
         pl = np.array([100, 1, 1, 1, 1])
         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
 
-        
         self.assertEqual(sum(lorentzian(x, *p0)), sum(psuedo_voigt(x, *pl)))
 
 

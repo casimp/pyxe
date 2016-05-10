@@ -9,14 +9,16 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from scipy.optimize import curve_fit
-import numpy as np
-import h5py
 import sys
+
+import h5py
+import numpy as np
+from scipy.optimize import curve_fit
+
 from pyxe.fitting_functions import gaussian, lorentzian, psuedo_voigt
 
 
-def p0_approx(data, peak_window, func = 'gaussian'):
+def p0_approx(data, peak_window, func='gaussian'):
     """
     Approximates p0 for curve fitting.
     Now estimates stdev.
@@ -31,20 +33,19 @@ def p0_approx(data, peak_window, func = 'gaussian'):
     x_ = x[peak_ind[0]:peak_ind[1]]
     I_ = y[peak_ind[0]:peak_ind[1]]
     max_index = np.argmax(I_)
-    HM = min(I_) + (max(I_) - min(I_)) / 2
+    hm = min(I_) + (max(I_) - min(I_)) / 2
     
-    stdev = x_[max_index + np.argmin(I_[max_index:] > HM)] - x_[max_index]
+    stdev = x_[max_index + np.argmin(I_[max_index:] > hm)] - x_[max_index]
     if stdev <= 0:
         stdev = 0.1
     p0 = [min(I_), max(I_) - min(I_), x_[max_index], stdev]
-    
-    
+
     if func == 'psuedo_voigt':
         p0.append(0.5)
     return p0
 
 
-def peak_fit(data, window, p0 = [], func = 'gaussian'):
+def peak_fit(data, window, p0=None, func='gaussian'):
     """
     Takes a function (guassian/lorentzian) and information about the peak 
     and calculates the peak location and standard deviation. 
@@ -58,7 +59,7 @@ def peak_fit(data, window, p0 = [], func = 'gaussian'):
         data[0] = data[0][::-1]
         data[1] = data[1][::-1]
         
-    if p0 == []:
+    if p0 is None:
         p0 = p0_approx(data, window, func_name)
         
     peak_ind = np.searchsorted(data[0], window)
@@ -69,9 +70,9 @@ def peak_fit(data, window, p0 = [], func = 'gaussian'):
 
 
 def array_fit(q_array, I_array, peak_window, func='gaussian', 
-              error_limit=10 **-4, progress = True):
+              error_limit=10 ** -4, progress=True):
         
-    data = [np.zeros(I_array.shape[:-1]) * np.nan for i in range(4)]
+    data = (np.zeros(I_array.shape[:-1]) * np.nan, ) * 4
     peaks, peaks_err, fwhm, fwhm_err = data 
     slices = [i for i in range(q_array.shape[0])]
 
@@ -105,8 +106,9 @@ def array_fit(q_array, I_array, peak_window, func='gaussian',
                 run_error += 1
                 
             if progress:
-                sys.stdout.write("\rProgress: [{0:20s}] {1:.0f}%".format('#' * 
-                int(20*(idx + 1)/len(slices)), 100*((idx + 1)/len(slices))))
+                sys.stdout.write('\rProgress: [{0:20s}] {1:.0f}%'.format('#' *
+                                 int(20*(idx + 1)/len(slices)),
+                                 100*((idx + 1)/len(slices))))
                 sys.stdout.flush()
                   
     print('\nTotal points: %i (%i az_angles x %i positions)'
@@ -118,7 +120,7 @@ def array_fit(q_array, I_array, peak_window, func='gaussian',
     return peaks, peaks_err, fwhm, fwhm_err
     
     
-def q0_analysis(fname, q0_approx, window = 0.25, func = 'gaussian'):
+def q0_analysis(fname, q0_approx, window=0.25, func='gaussian'):
     
     f = h5py.File(fname, 'r')
     group = f['entry1']['EDXD_elements']

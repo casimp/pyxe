@@ -2,16 +2,15 @@
 """
 Created on Wed Nov 18 16:34:59 2015
 
-@author: casim
+@author: casimp
 """
-
 import numpy as np
 import matplotlib.pyplot as plt 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import griddata
 
 
-def line_extract(X, Y, point, theta, npoints = 10):
+def line_extract(X, Y, point, theta, npoints=10):
     """
     Draw line through an x, y point cloud. Line is defined by a point and an 
     angle. The user defined point must lie within the point cloud.
@@ -51,7 +50,8 @@ def az90(phi, idx):
             return np.argmax(find_ind)
     raise ValueError('No cake segment found perpendicular to given index.', 
                      'Number of cake segments must be divisable by 4.')
-                     
+
+
 def line_ext(positions, data, pnt, npnts, line_angle, method):
     """
     Not yet working function to take line from data
@@ -63,18 +63,18 @@ def line_ext(positions, data, pnt, npnts, line_angle, method):
     else:
         d1, d2 = positions        
         d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npnts)
-    
-    
+
     if len(positions) == 2:
         try:
             data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
-                                  (d1_e, d2_e), method = method)
+                            (d1_e, d2_e), method = method)
             return [d1_e, d2_e], data
         except ValueError:
             pass
     else:
         return d1[not_nan], data[not_nan]
-    
+
+
 def meshgrid_res(d1, d2, spatial_resolution):
     """
     Takes data points and remeshes at a defined spatial resolution.
@@ -85,26 +85,27 @@ def meshgrid_res(d1, d2, spatial_resolution):
     d2_ = np.linspace(np.min(d2), np.max(d2), d2_points)
     D1, D2 = np.meshgrid(d1_, d2_)
     return D1, D2
-    
+
+
 def mohrs_dec(func):
     def func_wrapper(*args):
         e_xx, e_yy, e_xy, e_1, e_2, fig = func(*args)
-        
-        R, mean = (e_1 - e_2) / 2, (e_1 + e_2) / 2
+        r, mean = (e_1 - e_2) / 2, (e_1 + e_2) / 2
 
-        
         plt.axis('equal')
         ax = fig.add_subplot(1, 1, 1)
-        circ = plt.Circle((mean, 0), radius=R, color='k', fill = False)
-        ax.add_patch(circ)
+        circle = plt.Circle((mean, 0), radius=r, color='k', fill=False)
+        ax.add_patch(circle)
 
-        plt.xlim([mean - abs(2 * R), mean + abs(2 * R)])
-        plt.plot([e_1, e_2], [0, 0], 'ko', markersize = 3)
+        plt.xlim([mean - abs(2 * r), mean + abs(2 * r)])
+        plt.plot([e_1, e_2], [0, 0], 'ko', markersize=3)
         
-        plt.plot(e_xx, e_xy, 'ko',label=r'$(\epsilon_{xx}$, $\epsilon_{xy})$')
-        plt.plot(e_yy,-e_xy, 'wo',label=r'$(\epsilon_{yy}$, $-\epsilon_{xy})$')
+        plt.plot(e_xx, e_xy, 'ko', label=r'$(\epsilon_{xx}$, '
+                                         r'$\epsilon_{xy})$')
+        plt.plot(e_yy, -e_xy, 'wo', label=r'$(\epsilon_{yy}$, '
+                                          r'$-\epsilon_{xy})$')
         
-        plt.legend(numpoints=1, frameon = False, handletextpad = 0.2)
+        plt.legend(numpoints=1, frameon=False, handletextpad=0.2)
         plt.plot([e_xx, e_yy], [e_xy, -e_xy], 'k-.')
         ax.annotate('  %s' % r'$\epsilon_{1}$', xy=(e_1, 0), 
                     textcoords='offset points', xytext=(e_1, 0))
@@ -121,7 +122,6 @@ def plot_line(func):
         pnt, axis, dims, data = func(*args)
         if len(dims) == 1:
                 plt.plot(dims, data, '-*')
-            
         else:
             d1, d2 = dims
                                     
@@ -131,40 +131,44 @@ def plot_line(func):
             zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
             scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
     
-            x = {'d1' : d1, 'd2' : d2, 'scalar' : scalar_ext}
+            x = {'d1': d1, 'd2': d2, 'scalar': scalar_ext}
             plt.plot(x[axis], data, '-x')
     return func_wrapper
-    
-def plot_complex(x, y, X, Y, Z, lvls = 11, figsize = (10, 10), ax = False, cbar = True, **kwargs):
+
+
+def plot_complex(x, y, X, Y, Z, lvls=11, figsize=(10, 10),
+                 ax=False, cbar=True, **kwargs):
     
     if not ax:
-        fig = plt.figure(figsize = figsize)
+        fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
 
     cf_back = ax.contourf(X, Y, Z, lvls, **kwargs)
-    ax.contour(X, Y, Z, levels = [0], colors=('k',),linestyles=('--',),linewidths=(3,))
+    ax.contour(X, Y, Z, levels=[0], colors=('k',),
+               linestyles=('--',), linewidths=(3,))
     if type(lvls) != int:
         lvls_ = np.linspace(np.min(lvls), np.max(lvls), 192)
         ax.contourf(X, Y, Z, lvls_, **kwargs)
     else:
         ax.contourf(X, Y, Z, 192, **kwargs)
-    c = ax.contour(X, Y, Z, lvls, colors = '0' , alpha=0.625)
-    ax.plot(x, y, '+', color = '0.1' , alpha = 0.75, 
-            markersize = 5, linestyle = 'None')
-    ax.set_aspect('equal'); ax.autoscale(tight=True)
+    c = ax.contour(X, Y, Z, lvls, colors='0', alpha=0.625)
+    ax.plot(x, y, '+', color='0.1', alpha=0.75,
+            markersize=5, linestyle='None')
+    ax.set_aspect('equal')
+    ax.autoscale(tight=True)
 
     divider = make_axes_locatable(ax)
     
     if cbar:  
         cax = divider.append_axes("right", "3%", pad="3%")
-        cbar = plt.colorbar(cf_back, cax = cax)
+        cbar = plt.colorbar(cf_back, cax=cax)
         cbar.add_lines(c)
     return ax
-    
-def plot_simple(x, y, X, Y, Z, cmap = 'RdBu_r', lvls = 11):
+
+
+def plot_simple(x, y, X, Y, Z, cmap='RdBu_r', lvls=11):
     f, ax = plt.subplots()
-    cf = ax.contourf(X, Y, Z, lvls, cmap = cmap)
+    cf = ax.contourf(X, Y, Z, lvls, cmap=cmap)
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", "3%", pad="3%")
-    plt.colorbar(cf, cax = cax)
-
+    plt.colorbar(cf, cax=cax)

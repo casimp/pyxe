@@ -34,7 +34,7 @@ class Area(StrainTools, StrainPlotting):
     """
    
     def __init__(self, folder, pos_data, params, f_ext='.edf', progress=True,
-                 pos_delim=',', npt_rad=1024, npt_az=36, az_range=[-180, 180]):
+                 pos_delim=',', npt_rad=1024, npt_az=36, az_range=(-180, 180)):
         """
         # folder:     Folder containing the image files for analysis
         # pos_data:   Either csv file or numpy array containing position data 
@@ -54,7 +54,7 @@ class Area(StrainTools, StrainPlotting):
         error = 'Azimuthal range must be less than or equal to 360deg'
         assert abs(np.max(az_range) - np.min(az_range)) <= 360, error
         if isinstance(params, ("".__class__, u"".__class__)):
-            ai = pyFAI.load(params) ## CORRECT??
+            ai = pyFAI.load(params)  # CORRECT??
         else:
             ai = pyFAI.AzimuthalIntegrator()
             ai.setFit2D(*params[:-1])
@@ -67,12 +67,12 @@ class Area(StrainTools, StrainPlotting):
                  'a numpy array containing 1, 2 or 3d co-ordinates')
         assert isinstance(pos_data, (string_types, np.ndarray, tuple)), error
         if isinstance(pos_data, string_types):
-            positions = np.loadtxt(pos_data, delimiter = pos_delim)
+            positions = np.loadtxt(pos_data, delimiter=pos_delim)
         else:
             positions = pos_data
         
         error = ('Number of positions not equal to number of files (pos = %s,' 
-                ' files = %s)' % (positions.shape[0], len(fnames)))
+                 ' files = %s)' % (positions.shape[0], len(fnames)))
         assert positions.shape[0] == len(fnames), error
 
         (self.ss2_x, self.ss2_y, self.ss2_z), self.dims = dim_fill(positions)   
@@ -85,39 +85,44 @@ class Area(StrainTools, StrainPlotting):
         for fidx, fname in enumerate(fnames):
             img = fabio.open(os.path.join(folder, fname)).data
             I, q_, phi = ai.integrate2d(img, npt_rad=npt_rad, npt_azim=npt_az, 
-                                        azimuth_range=az_range, unit='q_A^-1')
+                                        azimuth_range=az_range,
+                                        unit=pyFAI.units.Q_A)
             self.I[fidx] = I 
             if progress:
-                sys.stdout.write("\rProgress: [{0:20s}] {1:.0f}%".format('#' * 
-                int(20*(fidx + 1)/ len(fnames)), 100*((fidx + 1)/len(fnames))))
+                sys.stdout.write('\rProgress: [{0:20s}] {1:.0f}%'.format('#' *
+                                 int(20*(fidx + 1) / len(fnames)),
+                                 100*((fidx + 1)/len(fnames))))
                 sys.stdout.flush()
             
-            
-        self.q = np.repeat(q_[None, :], npt_az, axis = 0)
+        self.q = np.repeat(q_[None, :], npt_az, axis=0)
         self.phi = phi * np.pi / 180
+
+        self.q0, self.peak_windows = None, None
+        self.peaks, self.peaks_err = None, None
+        self.strain, self.strain_err, self.strain_param = None, None, None
+        self.fwhm, self.fwhm_err, self.fwhm_param = None, None, None
         
-        
-    def peak_fit(self, q0, window, mirror = True, func = 'gaussian', 
-                     error_limit = 2 * 10 ** -4, progress = True):
+    def peak_fit(self, q0, window, mirror=True, func='gaussian',
+                 error_limit=2 * 10 ** -4, progress=True):
             
         # Convert int or float to list
         self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
         self.peak_windows = [[q - window/2, q + window/2] for q in self.q0]
     
         # Accept detector specific q0 2d-array
-        if len(np.shape(self.q0)) == 2:
+        if np.array(self.q0).ndim == 2:
             q0_av = np.nanmean(self.q0, 0)
             self.peak_windows = [[q - window/2, q + window/2] for q in q0_av]
         
         # Iterate across q0 values and fit peaks for all detectors
         array_shape = self.I.shape[:-1] + (np.shape(self.q0)[-1],)
-        data = [np.nan * np.ones(array_shape) for i in range(4)]
+        data = (np.nan * np.ones(array_shape), ) * 4
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = data
 
         print('\n%s: - %s acquisition points\n' % (self.name, self.ss2_x.size))
         
-        for idx, window in enumerate(self.peak_windows):
-            fit = array_fit(self.q,self.I, window, func, error_limit, progress)
+        for idx, win in enumerate(self.peak_windows):
+            fit = array_fit(self.q, self.I, win, func, error_limit, progress)
             self.peaks[..., idx], self.peaks_err[..., idx] = fit[0], fit[1]
             self.fwhm[..., idx], self.fwhm_err[..., idx] = fit[2], fit[3]
         
@@ -130,7 +135,6 @@ class Area(StrainTools, StrainPlotting):
         self.strain = (self.q0 / self.peaks) - 1
         self.strain_err = (self.q0 / self.peaks_err) - 1
         self.full_ring_fit()
-
 
     def full_ring_fit(self):
         """
@@ -150,14 +154,13 @@ class Area(StrainTools, StrainPlotting):
                     # Estimate curve parameters
                     p0 = [np.nanmean(data), 3 * np.nanstd(data)/(2**0.5), 0]
                     try:
-                        a, b = curve_fit(cos_,self.phi[not_nan], data[not_nan], p0)
+                        a, b = curve_fit(cos_, self.phi[not_nan],
+                                         data[not_nan], p0)
                         param[idx] = a
                     except (TypeError, RuntimeError):
                         count += 1
-                        #print('Unable to fit curve to data.')
                 else:
                     count += 1
-                    #print('Insufficient data to attempt curve_fit.')   
             print('\nUnable to fit full ring (%s) data %i out of %i points'
                   % (name, count, np.size(self.peaks[:, 0, 0])))
             
@@ -169,13 +172,12 @@ class Area(StrainTools, StrainPlotting):
         # fname:      File name/location - default is to save to parent 
                       directory (*_md.nxs) 
         """
-        if fname == None:
+        if fname is None:
             fname = self.name + '_md.nxs'
         data_dict = {'dims': self.dims,
                      'phi': self.phi,
                      'peak_windows': self.peak_windows,
                      'q0': self.q0,
-                     'peak_windows': self.peak_windows,
                      'peaks': self.peaks,
                      'peaks_err': self.peaks_err,
                      'fwhm': self.fwhm,
@@ -195,7 +197,6 @@ class Area(StrainTools, StrainPlotting):
                 base_tree = 'entry1/EDXD_elements/%s'
                 if data == 'data':
                     f.create_dataset(base_tree % data, data=data_dict[data], 
-                                     compression = 'gzip')
+                                     compression='gzip')
                 else:
                     f.create_dataset(base_tree % data, data=data_dict[data])
-                

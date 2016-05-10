@@ -9,11 +9,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import re
 import os
+import re
+
 import pandas as pd
 
-def spec_scrape(folder, save = False):
+def spec_scrape(folder, save=False):
     """
     Runs through a .spc file (located in folder with associated .edf files)
     and extracts load, position, and slit size information.
@@ -44,4 +45,3 @@ def spec_scrape(folder, save = False):
     if save:
         pd.to_pickle(df, os.path.join(folder, '%s.pkl' % scan))
     return df
-    

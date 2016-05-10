@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Oct 20 17:40:07 2015
-
 @author: casimp
 """
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import h5py
 import re
 import shutil
+
+import h5py
 import numpy as np
 from scipy.optimize import curve_fit
 
@@ -49,31 +47,36 @@ class EDI12(StrainTools, StrainPlotting):
         self.I = self.f['entry1/EDXD_elements/data'][:]
         self.I = np.delete(self.I, unused_detector, -2)
         self.q = np.delete(self.q, unused_detector, 0)
-        if phi == None:
+        if phi is None:
             self.phi = np.linspace(-np.pi, 0, 23)
         else:
             self.phi = phi
-        
-        
+
+        self.q0, self.peak_windows = None, None
+        self.peaks, self.peaks_err = None, None
+        self.strain, self.strain_err, self.strain_param = None, None, None
+        self.fwhm, self.fwhm_err, self.fwhm_param = None, None, None
+
     def peak_fit(self, q0, window, func='gaussian', error_limit=10**-4,
-                 progress = True): 
+                 progress=True):
         
         self.q0 = [q0] if isinstance(q0, (int, float, np.float64)) else q0
         self.peak_windows = [[q_ - window/2, q_ + window/2] for q_ in self.q0]               
         if len(np.shape(self.q0)) == 2:
             q0_av = np.nanmean(self.q0, 0)
-            self.peak_windows = [[q_ - window/2, q_ +window/2] for q_ in q0_av]
+            self.peak_windows = [[q_ - window / 2, q_ + window / 2]
+                                 for q_ in q0_av]
        
-       # Iterate across q0 values and fit peaks for all detectors
+        # Iterate across q0 values and fit peaks for all detectors
         array_shape = self.I.shape[:-1] + (np.shape(self.q0)[-1],)
         data = [np.nan * np.ones(array_shape) for i in range(4)]
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = data
 
         print('\nFile: %s - %s acquisition points\n' % 
-             (self.name, self.I[..., 0, 0].size))
+              (self.name, self.I[..., 0, 0].size))
         
-        for idx, window in enumerate(self.peak_windows):
-            fit = array_fit(self.q,self.I, window, func, error_limit, progress)
+        for idx, win in enumerate(self.peak_windows):
+            fit = array_fit(self.q, self.I, win, func, error_limit, progress)
             self.peaks[..., idx], self.peaks_err[..., idx] = fit[0], fit[1]
             self.fwhm[..., idx], self.fwhm_err[..., idx] = fit[2], fit[3]
         
@@ -81,7 +84,6 @@ class EDI12(StrainTools, StrainPlotting):
         self.strain_err = (self.q0 / self.peaks_err) - 1
         self.full_ring_fit()
         
-
     def full_ring_fit(self):
         """
         Fits a sinusoidal curve to the strain information from each detector. 
@@ -100,19 +102,17 @@ class EDI12(StrainTools, StrainPlotting):
                     # Estimate curve parameters
                     p0 = [np.nanmean(data), 3 * np.nanstd(data)/(2**0.5), 0]
                     try:
-                        a, b = curve_fit(cos_,self.phi[not_nan], data[not_nan], p0)
+                        a, b = curve_fit(cos_, self.phi[not_nan],
+                                         data[not_nan], p0)
                         param[idx] = a
                     except (TypeError, RuntimeError):
                         count += 1
-                        #print('Unable to fit curve to data.')
                 else:
                     count += 1
-                    #print('Insufficient data to attempt curve_fit.')   
             print('\nUnable to fit full ring (%s) data %i out of %i points'
                   % (name, count, np.size(self.peaks[:, 0, 0])))
                 
-        
-    def save_to_nxs(self, fname = None):
+    def save_to_nxs(self, fname=None):
         """
         Saves all data back into an expanded .nxs file. Contains all original 
         data plus q0, peak locations and strain.
@@ -120,11 +120,11 @@ class EDI12(StrainTools, StrainPlotting):
         # fname:      File name/location - default is to save to parent 
                       directory (*_md.nxs) 
         """
-        if fname == None:        
+        if fname is None:
             fname = '%s_md.nxs' % self.name[:-4]
         
         shutil.copy(self.filename, fname)
-        data_ids = ('phi', 'dims', 'q0','peak_windows', 'peaks',  
+        data_ids = ('phi', 'dims', 'q0', 'peak_windows', 'peaks',
                     'peaks_err', 'fwhm', 'fwhm_err', 'strain', 'strain_err', 
                     'strain_param', 'q')
         data_array = (self.phi, self.dims, self.q0,  
@@ -135,7 +135,4 @@ class EDI12(StrainTools, StrainPlotting):
             
             for data_id, data in zip(data_ids, data_array):
                 base_tree = 'entry1/EDXD_elements/%s'
-                f.create_dataset(base_tree % data_id, data = data)
-                
-                
-                
+                f.create_dataset(base_tree % data_id, data=data)

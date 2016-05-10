@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 
 import numpy as np
 
+
 def dim_fill(data):
 
     co_ords = []
@@ -27,6 +28,7 @@ def dim_fill(data):
             co_ords.append(None)
     return co_ords, dims
     
+
 def mirror_data(phi, data):
     # has to be even number of slices but uneven number of boundaries.
     angles = phi[:int(phi[:].shape[0]/2)]
@@ -52,6 +54,7 @@ def dimension_fill(data, dim_ID):
     except KeyError:
         dimension_data = None
     return dimension_data
+
 
 def scrape_slits(data):
     try:        

@@ -10,18 +10,19 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import numpy as np
 import h5py
+import numpy as np
 
 from pyxe.plotting import StrainPlotting
 from pyxe.strain_tools import StrainTools
 from pyxe.merge_tools import find_limits, mask_generator, masked_merge
 
+
 class Merge(StrainTools, StrainPlotting):
     """
     Tool to merge mutliple XRD data sets - inherits tools for XRD_tools.
     """
-    def __init__(self, data, name, order = 'simple', padding = 0.1):
+    def __init__(self, data, name, order='simple', padding=0.1):
         """
         Merge data, specifying mering method/order
         
@@ -66,13 +67,13 @@ class Merge(StrainTools, StrainPlotting):
 
         merged_data = masked_merge(data_mask[0], data_mask[1])
         self.q = self.data[0].q
-        (self.I, self.strain, self.strain_err, self.strain_param, self.peaks,
-        self.peaks_err, self.fwhm, self.fwhm_err, self.ss2_x, self.ss2_y, self.ss2_z) = merged_data
-        self.co_ords = {b'ss2_x': self.ss2_x, b'ss2_y': self.ss2_y, 
+        (self.I, self.strain, self.strain_err, self.strain_param,
+         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err,
+         self.ss2_x, self.ss2_y, self.ss2_z) = merged_data
+
+        self.co_ords = {b'ss2_x': self.ss2_x, b'ss2_y': self.ss2_y,
                         b'ss2_z': self.ss2_z} 
 
-        
-        
     def save_to_nxs(self, fname):
         """
         Saves all data back into an expanded .nxs file. Contains all original 
@@ -82,20 +83,20 @@ class Merge(StrainTools, StrainPlotting):
         """
 
         with h5py.File(fname, 'w') as f:
-            data_ids = ('phi', 'dims', 'q0','peak_windows', 'peaks',  
-                        'peaks_err', 'fwhm', 'fwhm_err', 'strain', 'strain_err', 'strain_param', 'q', 'data') \
+            data_ids = ('phi', 'dims', 'q0', 'peak_windows', 'peaks',
+                        'peaks_err', 'fwhm', 'fwhm_err', 'strain',
+                        'strain_err', 'strain_param', 'q', 'data') \
                         + tuple([dim.decode('utf8') for dim in self.dims])
             data_array = (self.phi, self.dims, self.q0,  
                           self.peak_windows, self.peaks, self.peaks_err,  
-                          self.fwhm, self.fwhm_err,  
-                          self.strain, self.strain_err, self.strain_param, self.q, self.I) \
-                          + tuple([self.co_ords[x] for x in self.dims])
-            
+                          self.fwhm, self.fwhm_err, self.strain,
+                          self.strain_err, self.strain_param, self.q, self.I,
+                          ) + tuple([self.co_ords[x] for x in self.dims])
+
             for data_id, data in zip(data_ids, data_array):
                 base_tree = 'entry1/EDXD_elements/%s'
                 if data_id == 'data':
-                    f.create_dataset(base_tree % data_id, data = data, compression = 'gzip')
+                    f.create_dataset(base_tree % data_id, data=data,
+                                     compression='gzip')
                 else:
-                    f.create_dataset(base_tree % data_id, data = data)
-
- 
+                    f.create_dataset(base_tree % data_id, data=data)

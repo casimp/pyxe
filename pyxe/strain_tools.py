@@ -11,18 +11,18 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import numpy as np
+
 from pyxe.plotting_tools import line_ext, az90
 from pyxe.fitting_functions import cos_
 
 
 class StrainTools(object):
     """
-    Takes post-processed .nxs file and allows for further analysis/vizulisation. 
+    Takes post-processed .nxs file and allows for analysis/vizulisation.
     File should have been created with the EDI12 or Area analysis tools.
     """
     def __enter__(self):
         return self
-
 
     def define_matprops(self, E=200*10**9, v=.3, G=None, state='plane strain'):
         """
@@ -38,16 +38,15 @@ class StrainTools(object):
         """
         self.E = E
         self.v = v
-        self.G = E / (2 * (1 + v)) if G == None else G
+        self.G = E / (2 * (1 + v)) if G is None else G
         
         if state != 'plane strain':   
             self.sig_eqn = lambda e_xx, e_yy: (E /(1 - v**2)) * (e_xx + v*e_yy)
         else:
             self.sig_eqn = lambda e_xx, e_yy: (E * ((1 - v) * e_xx + v * e_yy)/
                                                    ((1 + v) * (1 - 2 * v)))
-        
-        
-    def recentre(self, centre, reverse = []):
+
+    def recentre(self, centre):
         """
         Shifts centre point to user defined location. Not reflected in .nxs
         file unless saved.Accept offset for both 2D and 3D data sets (x, y, z).
@@ -61,8 +60,7 @@ class StrainTools(object):
         for co_ord, offset in zip(co_ords, centre):
             co_ord -= offset
 
-            
-    def reverse(self, rev_ind = []):
+    def reverse(self, rev_ind=()):
         """
         Reverses specified dimensions (i.e. negative transform). 
         Not reflected in .nxs file unless. Accept reversal for both 2D and 
@@ -75,8 +73,7 @@ class StrainTools(object):
         for i in reverse:
             self.co_ords[self.dims[i]] = -self.co_ords[self.dims[i]] 
             
-            
-    def rotate(self, order = [1, 0]):
+    def rotate(self, order=(1, 0)):
         """
         Switches order of axes, which has the same effect as rotating the 
         strain data. Order must be a list of a length equal to the number of 
@@ -85,7 +82,6 @@ class StrainTools(object):
         # order:      New order for dimensions
         """
         self.dims = [self.dims[i] for i in order]
-        
         
     def mask(self, patch, radius):
         """
@@ -99,12 +95,11 @@ class StrainTools(object):
         # radius:     Extend or contract mask from object edge. 
         """
         pos = zip(*[self.co_ords[i] for i in self.dims[:2]])
-        isin = [patch.contains_point((x, y), radius = radius) for x, y in pos]
+        isin = [patch.contains_point((x, y), radius=radius) for x, y in pos]
         self.strain_param[np.array(isin)] = np.nan
         self.strain[np.array(isin)] = np.nan
 
-
-    def extract_peak_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
+    def extract_peak_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0,
                            err=False):  
         """ 
         Extracts line profile through 2D/3D peak array.
@@ -119,8 +114,7 @@ class StrainTools(object):
         # q_idx:      Specify lattice parameter/peak to save data from. 
         # z_idx:      Slice height (index) for 3D data
         # err:        Extract peak error (True/False)
-        # FWHM:       Extract FWHM (True/False)
-        """                        
+        """
         dims, e = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err)
         return dims, self.q0 / (1 + e)
 
@@ -140,7 +134,7 @@ class StrainTools(object):
         # z_idx:      Slice height (index) for 3D data
         # err:        Extract peak error (True/False)
         """  
-        if az_idx != None:
+        if az_idx is not None:
             data = self.fwhm_err if err else self.fwhm
             if len(self.dims) != 3:            
                 fwhm = data[..., az_idx, q_idx]
@@ -167,12 +161,12 @@ class StrainTools(object):
         if len(self.dims) == 1:
             return self.co_ords[self.dims[0]], fwhm
         elif len(self.dims) == 3:
-            return [self.co_ords[dim][..., z_idx] for dim in self.dims[:2]], fwhm
+            pos = [self.co_ords[dim][..., z_idx] for dim in self.dims[:2]]
+            return pos, fwhm
         else:
             return [self.co_ords[dim] for dim in self.dims], fwhm       
             
-            
-    def extract_strain_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
+    def extract_strain_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0,
                              err=False, shear=False):  
         """ 
         Extracts slice from 2D/3D strain array.
@@ -189,7 +183,7 @@ class StrainTools(object):
         # err:        Extract strain error (True/False)
         # shear:      Extract shear strain (True/False)
         """  
-        if az_idx != None:
+        if az_idx is not None:
             assert not shear, "Can't calc shear from individual az_idx"
             data = self.strain_err if err else self.strain
             if len(self.dims) != 3:            
@@ -210,7 +204,7 @@ class StrainTools(object):
             for idx in np.ndindex(e.shape):
                 p = params[idx]
                 if shear:
-                    e[idx] = -np.sin(2 * (p[1] + phi) ) * p[0]
+                    e[idx] = -np.sin(2 * (p[1] + phi)) * p[0]
                 else:
                     e[idx] = cos_(phi, *p)
         if len(self.dims) == 1:
@@ -220,8 +214,7 @@ class StrainTools(object):
         else:
             return [self.co_ords[dim] for dim in self.dims], e
 
-
-    def extract_stress_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
+    def extract_stress_slice(self, phi=0, az_idx=None, q_idx=0, z_idx=0,
                              err=False, shear=False):  
         """ 
         Extracts line profile through 2D/3D stress array.
@@ -230,9 +223,7 @@ class StrainTools(object):
         index. The azimuthal angle leverages the fitted strain profiles, 
         the az_idx plots that specific azimuthal slice. Note that for the
         EDXD detector in I12, az_idx == detector_idx.
-        
-        
-        
+
         # phi:        Define angle (in rad) from which to calculate strain.
         # az_idx:     Index for azimuthal slice.
         # q_idx:      Specify lattice parameter/peak to save data from. 
@@ -244,16 +235,15 @@ class StrainTools(object):
         if shear:
             x = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err, True)
             e_xy = x[1]
-        az_idx = None if az_idx == None else az90(self.phi, az_idx)
-        phi = None if phi == None else phi + np.pi/2
+        az_idx = None if az_idx is None else az90(self.phi, az_idx)
+        phi = None if phi is None else phi + np.pi / 2
         _, e_yy = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err)
         
         return dims, self.sig_eqn(e_xx, e_yy) if not shear else e_xy * self.G        
 
-    
     def extract_peak_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
-                            err=False, fwhm=False, pnt=(0,0), line_angle=0, 
-                            npnts=100, method = 'linear'):  
+                          err=False, fwhm=False, pnt=(0, 0), line_angle=0,
+                          npnts=100, method='linear'):
         """ 
         Extracts line profile through 1D/2D/3D peak array.
         
@@ -267,7 +257,7 @@ class StrainTools(object):
         # q_idx:      Specify lattice parameter/peak to save data from. 
         # z_idx:      Slice height (index) for 3D data
         # err:        Extract peak error (True/False)
-        # FWHM:       Extract FWHM (True/False)
+        # fwhm:       Extract FWHM (True/False)
         # pnt:        Centre point for data extraction  
         # line_angle: Angle across array to extract strain from
         # method:     Interpolation mehod (default = 'linear')
@@ -275,10 +265,9 @@ class StrainTools(object):
         data = self.extract_peak_slice(phi, az_idx, q_idx, z_idx, err, fwhm)
         return line_ext(data[0], data[1], pnt, npnts, line_angle, method)
         
-        
-    def extract_fwhm_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
-                            err=False, pnt=(0,0), line_angle=0, 
-                            npnts=100, method = 'linear'):  
+    def extract_fwhm_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0,
+                          err=False, pnt=(0, 0), line_angle=0,
+                          npnts=100, method='linear'):
         """ 
         Extracts line profile through 1D/2D/3D peak array.
         
@@ -300,11 +289,9 @@ class StrainTools(object):
         data = self.extract_fwhm_slice(phi, az_idx, q_idx, z_idx, err)
         return line_ext(data[0], data[1], pnt, npnts, line_angle, method)
 
-            
-            
-    def extract_strain_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
-                            err=False, shear=False, pnt=(0,0), line_angle=0, 
-                            npnts=100, method = 'linear'):  
+    def extract_strain_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0,
+                            err=False, shear=False, pnt=(0, 0), line_angle=0,
+                            npnts=100, method='linear'):
         """ 
         Extracts line profile through 1D/2D/3D strain array.
         
@@ -326,10 +313,9 @@ class StrainTools(object):
         data = self.extract_strain_slice(phi, az_idx, q_idx, z_idx, err, shear)
         return line_ext(data[0], data[1], pnt, npnts, line_angle, method)
 
-
-    def extract_stress_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0, 
-                            err=False, shear=False, pnt=(0,0), line_angle=0, 
-                            npnts=100, method = 'linear'):  
+    def extract_stress_line(self, phi=0, az_idx=None, q_idx=0, z_idx=0,
+                            err=False, shear=False, pnt=(0, 0), line_angle=0,
+                            npnts=100, method='linear'):
         """ 
         Extracts line profile through 1D/2D/3D stress array.
         
@@ -351,9 +337,8 @@ class StrainTools(object):
         data = self.extract_stress_slice(phi, az_idx, q_idx, z_idx, err, shear)
         return line_ext(data[0], data[1], pnt, npnts, line_angle, method)
     
-    
-    def save_to_text(self, fname, angles = [0, np.pi/2], detectors = [],
-                     q_idx = 0, strain = True, shear = True, stress = False):
+    def save_to_text(self, fname, angles=(0, np.pi/2), detectors=None,
+                     q_idx=0, strain=True, shear=True, stress=False):
         """
         Saves key strain to text file. Not yet implemented in 3D.
         
@@ -374,24 +359,23 @@ class StrainTools(object):
         stress = False, False, True, True
         shear = False, True, False, True
         
-        if detectors != []:
+        if detectors is not None:
             for detector in detectors:
-                for i, xx, xy  in zip(order, stress, shear):
+                for i, xx, xy in zip(order, stress, shear):
                     if i:
-                        data = self.extract_slice(detector = detector, 
-                                    q_idx = q_idx, stress = xx, shear = xy)
+                        data = self.extract_slice(detector=detector,
+                                                  q_idx=q_idx, stress=xx,
+                                                  shear=xy)
                         data_array += (data.flatten(), )
         else:
             for phi in angles:
-                for i, xx, xy  in zip(order, stress, shear):
+                for i, xx, xy in zip(order, stress, shear):
                     if i:
-                        data = self.extract_slice(phi, q_idx = q_idx, 
-                                                  stress = xx, shear = xy)
+                        data = self.extract_slice(phi, q_idx=q_idx,
+                                                  stress=xx, shear=xy)
                         data_array += (data.flatten(), )
 
         np.savetxt(fname, np.vstack(data_array).T, delimiter=',')
                          
-                
     def __exit__(self, exc_type, exc_value, traceback):
         self.f.close()
-        
