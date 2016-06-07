@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="79f64a3a-2ace-42b3-b69d-12eac738394a" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyxe/test/test_EDXD_2D.py" afterPath="$PROJECT_DIR$/pyxe/test/test_EDXD_2D.py" />
     </list>
     <ignored path="pyxe.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -28,7 +27,7 @@
       <file leaf-file-name="edi12_analysis.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pyxe/edi12_analysis.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1054">
+            <state relative-caret-position="1905">
               <caret line="119" column="25" selection-start-line="119" selection-start-column="25" selection-end-line="119" selection-end-column="25" />
               <folding>
                 <element signature="e#48#86#0" expanded="true" />
@@ -37,11 +36,31 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="test_EDXD_2D.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="analysis_tools.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pyxe/analysis_tools.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="strain_tools.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pyxe/strain_tools.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="561">
+              <caret line="62" column="33" selection-start-line="62" selection-start-column="4" selection-end-line="62" selection-end-column="33" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="test_EDXD_2D.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/pyxe/test/test_EDXD_2D.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="222">
-              <caret line="19" column="0" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
+            <state relative-caret-position="613">
+              <caret line="55" column="22" selection-start-line="55" selection-start-column="22" selection-end-line="55" selection-end-column="22" />
               <folding>
                 <element signature="e#85#120#0" expanded="true" />
               </folding>
@@ -49,7 +68,7 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name=".gitignore" pinned="false" current-in-tab="true">
+      <file leaf-file-name=".gitignore" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/.gitignore">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="391">
@@ -69,8 +88,8 @@
       <list>
         <option value="$PROJECT_DIR$/pyxe/requirements.txt" />
         <option value="$PROJECT_DIR$/pyxe/edi12_analysis.py" />
-        <option value="$PROJECT_DIR$/pyxe/test/test_EDXD_2D.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
+        <option value="$PROJECT_DIR$/pyxe/test/test_EDXD_2D.py" />
       </list>
     </option>
   </component>
@@ -568,9 +587,25 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="391">
+          <caret line="23" column="5" selection-start-line="23" selection-start-column="5" selection-end-line="23" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pyxe/analysis_tools.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/pyxe/edi12_analysis.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1054">
+        <state relative-caret-position="1905">
           <caret line="119" column="25" selection-start-line="119" selection-start-column="25" selection-end-line="119" selection-end-column="25" />
           <folding>
             <element signature="e#48#86#0" expanded="true" />
@@ -578,21 +613,21 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pyxe/test/test_EDXD_2D.py">
+    <entry file="file://$PROJECT_DIR$/pyxe/strain_tools.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="222">
-          <caret line="19" column="0" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
-          <folding>
-            <element signature="e#85#120#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="561">
+          <caret line="62" column="33" selection-start-line="62" selection-start-column="4" selection-end-line="62" selection-end-column="33" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
+    <entry file="file://$PROJECT_DIR$/pyxe/test/test_EDXD_2D.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="391">
-          <caret line="23" column="5" selection-start-line="23" selection-start-column="5" selection-end-line="23" selection-end-column="5" />
-          <folding />
+        <state relative-caret-position="613">
+          <caret line="55" column="22" selection-start-line="55" selection-start-column="22" selection-end-line="55" selection-end-column="22" />
+          <folding>
+            <element signature="e#85#120#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

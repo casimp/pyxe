@@ -25,6 +25,15 @@ def test_load():
     data = EDI12(file_path)
 
 
+def test_add_params():
+    """
+    Check that the correct number of files is being loaded.
+    """
+    data = EDI12(file_path)
+    data.define_matprops(E=200*10**9, v=.3, G=None, state='plane strain')
+    data.define_matprops(E=200*10**9, v=.3, G=60*10**9, state='plane stress')
+
+
 def test_fit():
     """
     Check that the correct number of files is being loaded.
@@ -40,6 +49,14 @@ def test_ring_fit():
     data = EDI12(file_path)
     data.peak_fit(3.1, 0.25)
     data.full_ring_fit()
+
+def test_manipulation():
+    data = EDI12(file_path)
+    data.peak_fit(3.1, 0.25)
+    data.recentre((3, 5))
+    data.rotate()
+    data.reverse(rev_ind=1)
+
 #
 #
 # def test_EDXD_2D():
