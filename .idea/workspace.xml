@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="79f64a3a-2ace-42b3-b69d-12eac738394a" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyxe/test/test_EDXD_2D.py" afterPath="$PROJECT_DIR$/pyxe/test/test_EDXD_2D.py" />
     </list>
     <ignored path="pyxe.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -37,7 +37,7 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="test_EDXD_2D.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="test_EDXD_2D.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pyxe/test/test_EDXD_2D.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="222">
@@ -45,6 +45,16 @@
               <folding>
                 <element signature="e#85#120#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name=".gitignore" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/.gitignore">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="391">
+              <caret line="23" column="5" selection-start-line="23" selection-start-column="5" selection-end-line="23" selection-end-column="5" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -60,6 +70,7 @@
         <option value="$PROJECT_DIR$/pyxe/requirements.txt" />
         <option value="$PROJECT_DIR$/pyxe/edi12_analysis.py" />
         <option value="$PROJECT_DIR$/pyxe/test/test_EDXD_2D.py" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
@@ -574,6 +585,14 @@
           <folding>
             <element signature="e#85#120#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="391">
+          <caret line="23" column="5" selection-start-line="23" selection-start-column="5" selection-end-line="23" selection-end-column="5" />
+          <folding />
         </state>
       </provider>
     </entry>

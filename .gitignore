@@ -22,7 +22,3 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Extra
-
-pyxe/test/5*
