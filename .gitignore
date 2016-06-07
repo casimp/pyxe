@@ -8,6 +8,7 @@
 description
 
 # Distribution / packaging
+.idea/
 bin/
 build/
 develop-eggs/

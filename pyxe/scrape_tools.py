@@ -14,6 +14,7 @@ import re
 
 import pandas as pd
 
+
 def spec_scrape(folder, save=False):
     """
     Runs through a .spc file (located in folder with associated .edf files)
