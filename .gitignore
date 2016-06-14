@@ -1,24 +1,45 @@
 # Python files
+
 *.pyc
+
 *.ipynb
+
 .pypirc
 
+
+
 #Docs
+
 /docs/_*
-description
+
+
 
 # Distribution / packaging
+
 .idea/
+
 bin/
+
 build/
+
 develop-eggs/
+
 dist/
+
 eggs/
+
 lib/
-lib64/
+
+lib64
+/
 parts/
+
 sdist/
+
 var/
+
 *.egg-info/
+
 .installed.cfg
+
 *.egg

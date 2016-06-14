@@ -1,0 +1,15 @@
+PyXe is a package developed to address bottlenecks in the diffraction-strain
+analysis workflow. It is vital that X-ray diffraction data acquired during
+synchrotron beamtimes is analysed in as close to real time as is possible. This
+allows for a tight feedback loop and ensures that decisions regarding
+acquisition and experimental parameters are optimized.
+
+The pyXe package therefore aims to allow for the efficient analysis and
+visualization of diffraction data acquired from these large scale facilities. It
+achieves this through the extraction of strain from individual peaks
+(i.e. not a Reitveld type refinement). Peak fitting routines can be run over 1D,
+2D and 3D data sets. Peaks and strain are extracted as a function of azimuthal
+position (either detector position or caking angle). The resultant strain data
+is then further interrogated to facilitate the calculation of principal and
+shear strains. Analysed data is stored in the hdf5 file format and can be easily
+reloaded and visualised.
