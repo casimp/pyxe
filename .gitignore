@@ -14,10 +14,8 @@
 
 
 
-# Distribution / packaging
-
-.idea/
-
+# Distribution
+.idea
 bin/
 
 build/
