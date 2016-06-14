@@ -50,6 +50,7 @@ def test_ring_fit():
     data.peak_fit(3.1, 0.25)
     data.full_ring_fit()
 
+
 def test_manipulation():
     data = EDI12(file_path)
     data.peak_fit(3.1, 0.25)
@@ -57,6 +58,13 @@ def test_manipulation():
     data.rotate()
     data.reverse(rev_ind=1)
 
+
+def test_manipulation():
+    data = EDI12(file_path)
+    data.peak_fit(3.1, 0.25)
+    data.recentre((3, 5))
+    data.rotate()
+    data.reverse(rev_ind=1)
 #
 #
 # def test_EDXD_2D():

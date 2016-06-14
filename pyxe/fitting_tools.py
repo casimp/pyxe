@@ -72,7 +72,8 @@ def peak_fit(data, window, p0=None, func='gaussian'):
 def array_fit(q_array, I_array, peak_window, func='gaussian', 
               error_limit=10 ** -4, progress=True):
         
-    data = (np.zeros(I_array.shape[:-1]) * np.nan, ) * 4
+    # data = (np.zeros(I_array.shape[:-1]) * np.nan, ) * 4
+    data = [np.nan * np.ones(I_array.shape[:-1]) for i in range(4)]
     peaks, peaks_err, fwhm, fwhm_err = data 
     slices = [i for i in range(q_array.shape[0])]
 
