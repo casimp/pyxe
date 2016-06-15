@@ -2,40 +2,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def sigma_xx(K, r, theta, sigma_max=None):
+def sigma_xx(K, r, theta):
     sigma = (K / (2 * np.pi * r / 1000) ** 0.5) * np.cos(theta / 2) * (
              1 - np.sin(theta / 2) * np.sin(3 * theta / 2))
 
-    if sigma_max is not None:
-        sigma[sigma > sigma_max] = sigma_max
-        sigma[-sigma > sigma_max] = -sigma_max
     return sigma
 
 
-def sigma_yy(K, r, theta, sigma_max=None):
+def sigma_yy(K, r, theta):
     sigma = (K / (2 * np.pi * r / 1000) ** 0.5) * np.cos(theta / 2) * (
              1 + np.sin(theta / 2) * np.sin(3 * theta / 2))
 
-    if sigma_max is not None:
-        sigma[sigma > sigma_max] = sigma_max
-        sigma[-sigma > sigma_max] = -sigma_max
     return sigma
 
 
-def sigma_xy(K, r, theta, sigma_max=None):
+def sigma_xy(K, r, theta):
     sigma = (K / (2 * np.pi * r / 1000) ** 0.5) * np.cos(theta / 2) * np.sin(
              theta / 2) * np.sin(3 * theta / 2)
     sigma[theta < 0] = -sigma[theta < 0]
-    if sigma_max is not None:
-        sigma[sigma > sigma_max] = sigma_max
-        sigma[-sigma > sigma_max] = -sigma_max
     return sigma
 
 
 def cart2pol(x, y):
-    rho = np.sqrt(x**2 + y**2)
-    phi = np.arctan2(y, x)
-    return rho, phi
+    r = np.sqrt(x**2 + y**2)
+    theta = np.arctan2(y, x)
+    return r, theta
 
 
 if __name__ == "__main__":
