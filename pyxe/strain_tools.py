@@ -13,7 +13,7 @@ from __future__ import unicode_literals
 import numpy as np
 
 from pyxe.plotting_tools import line_ext, az90
-from pyxe.fitting_functions import cos_
+from pyxe.fitting_functions import strain_transformation, shear_transformation
 
 
 class StrainTools(object):
@@ -156,7 +156,7 @@ class StrainTools(object):
                 
             for idx in np.ndindex(fwhm.shape):
                 p = params[idx]
-                fwhm[idx] = cos_(phi, *p)
+                fwhm[idx] = strain_transformation(phi, *p)
         
         if len(self.dims) == 1:
             return self.co_ords[self.dims[0]], fwhm
@@ -204,9 +204,9 @@ class StrainTools(object):
             for idx in np.ndindex(e.shape):
                 p = params[idx]
                 if shear:
-                    e[idx] = -np.sin(2 * (p[1] + phi)) * p[0]
+                    e[idx] = shear_transformation(phi, *p)
                 else:
-                    e[idx] = cos_(phi, *p)
+                    e[idx] = strain_transformation(phi, *p)
         if len(self.dims) == 1:
             return self.co_ords[self.dims[0]], e
         elif len(self.dims) == 3:

@@ -15,7 +15,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 from pyxe.fitting_tools import array_fit
-from pyxe.fitting_functions import cos_
+from pyxe.fitting_functions import strain_transformation
 from pyxe.strain_tools import StrainTools
 from pyxe.plotting import StrainPlotting
 from pyxe.analysis_tools import dimension_fill
@@ -102,7 +102,7 @@ class EDI12(StrainTools, StrainPlotting):
                     # Estimate curve parameters
                     p0 = [np.nanmean(data), 3 * np.nanstd(data)/(2**0.5), 0]
                     try:
-                        a, b = curve_fit(cos_, self.phi[not_nan],
+                        a, b = curve_fit(strain_transformation, self.phi[not_nan],
                                          data[not_nan], p0)
                         param[idx] = a
                     except (TypeError, RuntimeError):
