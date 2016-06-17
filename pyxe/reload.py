@@ -11,6 +11,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import h5py
+import numpy as np
+from pyxe.fitting_functions import strain_transformation
+from scipy.optimize import curve_fit
+
 
 from pyxe.plotting import StrainPlotting
 from pyxe.strain_tools import StrainTools
@@ -57,6 +61,34 @@ class Reload(StrainTools, StrainPlotting):
             pass
         self.strain_err = group['strain_err'][:]
         self.strain_param = group['strain_param'][:]
+        
+    def full_ring_fit(self):
+        """
+        Fits a sinusoidal curve to the strain information from each detector. 
+        """
+        data_shape = self.peaks.shape[:-2] + self.peaks.shape[-1:] + (3, )
+        self.strain_param = np.nan * np.ones(data_shape)
+        name = 'peaks'
+        raw_data = self.strain[..., :-1, :]
+        param = self.strain_param
+            
+        for idx in np.ndindex(data_shape[:-1]):
+            data = raw_data[idx[:-1]][..., idx[-1]]
+            not_nan = ~np.isnan(data)
+            count = 0
+            if self.phi[not_nan].size > 2:
+                # Estimate curve parameters
+                p0 = [np.nanmean(data), 3 * np.nanstd(data)/(2**0.5), 0]
+                try:
+                    a, b = curve_fit(strain_transformation, self.phi[not_nan],
+                                     data[not_nan], p0)
+                    param[idx] = a
+                except (TypeError, RuntimeError):
+                    count += 1
+            else:
+                count += 1
+        print('\nUnable to fit full ring (%s) data %i out of %i points'
+              % (name, count, np.size(self.peaks[:, 0, 0])))
 
     def save_to_nxs(self, fname=None):
         """
