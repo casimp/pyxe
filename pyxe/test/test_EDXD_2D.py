@@ -5,66 +5,66 @@ Created on Thu May 26 22:25:14 2016
 @author: casim
 """
 
-from nose.tools import assert_equal
-import numpy as np
-import os
-from mock import patch
-
-from pyxe.edi12_analysis import EDI12
-from pyxe.reload import Reload
-from pyxe.merge import Merge
-
-work_dir = os.path.dirname(os.path.abspath(__file__))
-file_path = os.path.join(work_dir, r'50418.nxs')
-
-
-def test_load():
-    """
-    Check that the correct number of files is being loaded.
-    """
-    data = EDI12(file_path)
-
-
-def test_add_params():
-    """
-    Check that the correct number of files is being loaded.
-    """
-    data = EDI12(file_path)
-    data.define_matprops(E=200*10**9, v=.3, G=None, state='plane strain')
-    data.define_matprops(E=200*10**9, v=.3, G=60*10**9, state='plane stress')
-
-
-def test_fit():
-    """
-    Check that the correct number of files is being loaded.
-    """
-    data = EDI12(file_path)
-    data.peak_fit(3.1, 0.25)
-
-
-def test_ring_fit():
-    """
-    Check that the correct number of files is being loaded.
-    """
-    data = EDI12(file_path)
-    data.peak_fit(3.1, 0.25)
-    data.full_ring_fit()
-
-
-def test_manipulation():
-    data = EDI12(file_path)
-    data.peak_fit(3.1, 0.25)
-    data.recentre((3, 5))
-    data.rotate()
-    data.reverse(rev_ind=1)
-
-
-def test_manipulation():
-    data = EDI12(file_path)
-    data.peak_fit(3.1, 0.25)
-    data.recentre((3, 5))
-    data.rotate()
-    data.reverse(rev_ind=1)
+# from nose.tools import assert_equal
+# import numpy as np
+# import os
+# from mock import patch
+#
+# from pyxe.edi12_analysis import EDI12
+# from pyxe.reload import Reload
+# from pyxe.merge import Merge
+#
+# work_dir = os.path.dirname(os.path.abspath(__file__))
+# file_path = os.path.join(work_dir, r'50418.nxs')
+#
+#
+# def test_load():
+#     """
+#     Check that the correct number of files is being loaded.
+#     """
+#     data = EDI12(file_path)
+#
+#
+# def test_add_params():
+#     """
+#     Check that the correct number of files is being loaded.
+#     """
+#     data = EDI12(file_path)
+#     data.define_matprops(E=200*10**9, v=.3, G=None, state='plane strain')
+#     data.define_matprops(E=200*10**9, v=.3, G=60*10**9, state='plane stress')
+#
+#
+# def test_fit():
+#     """
+#     Check that the correct number of files is being loaded.
+#     """
+#     data = EDI12(file_path)
+#     data.peak_fit(3.1, 0.25)
+#
+#
+# def test_ring_fit():
+#     """
+#     Check that the correct number of files is being loaded.
+#     """
+#     data = EDI12(file_path)
+#     data.peak_fit(3.1, 0.25)
+#     data.full_ring_fit()
+#
+#
+# def test_manipulation():
+#     data = EDI12(file_path)
+#     data.peak_fit(3.1, 0.25)
+#     data.recentre((3, 5))
+#     data.rotate()
+#     data.reverse(rev_ind=1)
+#
+#
+# def test_manipulation():
+#     data = EDI12(file_path)
+#     data.peak_fit(3.1, 0.25)
+#     data.recentre((3, 5))
+#     data.rotate()
+#     data.reverse(rev_ind=1)
 #
 #
 # def test_EDXD_2D():
