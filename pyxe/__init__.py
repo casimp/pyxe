@@ -6,5 +6,6 @@ Created on Mon Nov 30 13:38:59 2015
 """
 
 from pyxe.edi12_analysis import EDI12
-from pyxe.merge import Merge
-from pyxe.strain_tools import StrainTools
+from pyxe.area_analysis import Mono
+from pyxe.merge import MergeIntensity
+from pyxe.peak_analysis import PeakAnalysis
