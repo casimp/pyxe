@@ -13,6 +13,7 @@ import h5py
 import numpy as np
 
 from pyxe.analysis_tools import dimension_fill, pyxe_to_nxs
+from pyxe.peak_analysis import PeakAnalysis
 
 
 class EDI12(PeakAnalysis):

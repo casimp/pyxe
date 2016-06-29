@@ -10,6 +10,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import matplotlib.pyplot as plt
 import os
 import fabio
 import numpy as np
@@ -17,16 +18,21 @@ import pyFAI
 import h5py
 import sys
 
-from pyxe.analysis_tools import dimension_fill, pyxe_to_nxs
+from pyxe.analysis_tools import dim_fill, dimension_fill, pyxe_to_nxs
+from pyxe.peak_analysis import PeakAnalysis
 
+
+def extract_fnames(folder, f_ext):
+    fnames = sorted([x for x in os.listdir(folder) if x.endswith(f_ext)])
+    return fnames
 
 class Mono(PeakAnalysis):
     """
     Takes a folder containing image files from area detectors and cakes the 
     data while associating it with spatial information. The caked data can then
-    be analysed (peak_fit/strain calculations). 
+    be analysed (peak_fit/strain calculations).
     """
-   
+
     def __init__(self, folder, co_ords, params, f_ext='.edf', progress=True,
                  npt_rad=1024, npt_az=36, az_range=(-180, 180)):
         """
@@ -54,22 +60,20 @@ class Mono(PeakAnalysis):
             ai = pyFAI.AzimuthalIntegrator()
             ai.setFit2D(*params[:-1])
             ai.set_wavelength(params[-1])
-        
-        fnames = sorted([x for x in os.listdir(folder) if x.endswith(f_ext)])
+        fnames = extract_fnames(folder, f_ext)
 
         error = ('Number of positions not equal to number of files (pos = %s,'
-                 ' files = %s)' % (positions.shape[0], len(fnames)))
+                 ' files = %s)' % (co_ords.shape[0], len(fnames)))
         assert co_ords.shape[0] == len(fnames), error
-        (self.d1, self.d2, self.d3), self.dims = dim_fill(positions)
+        (self.d1, self.d2, self.d3), self.dims = dim_fill(co_ords)
               
-        self.I = np.nan * np.ones((positions.shape[0], npt_az, npt_rad))
+        self.I = np.nan * np.ones((co_ords.shape[0], npt_az, npt_rad))
 
         print('\nLoading files and carrying out azimuthal integration:\n')
         for fidx, fname in enumerate(fnames):
             img = fabio.open(os.path.join(folder, fname)).data
-            I, q_, phi = ai.integrate2d(img, npt_rad=npt_rad, npt_azim=npt_az, 
-                                        azimuth_range=az_range,
-                                        unit=pyFAI.units.Q_A)
+            I, q_, phi = ai.integrate2d(img, npt_rad=npt_rad, npt_azim=npt_az,
+                                        azimuth_range=az_range, unit='q_A^-1')
             self.I[fidx] = I 
             if progress:
                 sys.stdout.write('\rProgress: [{0:20s}] {1:.0f}%'.format('#' *
