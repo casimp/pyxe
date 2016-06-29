@@ -10,7 +10,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import matplotlib.pyplot as plt
 import os
 import fabio
 import numpy as np
@@ -54,6 +53,8 @@ class Mono(PeakAnalysis):
         error = 'Azimuthal range must be less than or equal to 360deg'
         assert abs(np.max(az_range) - np.min(az_range)) <= 360, error
 
+        # Allow for use of pyFAI or Fit2D detector params
+        # Currently checking if folder string - perhaps not the best method!
         if isinstance(params, ("".__class__, u"".__class__)):
             ai = pyFAI.load(params)  # CORRECT??
         else:
@@ -80,7 +81,8 @@ class Mono(PeakAnalysis):
                                  int(20*(fidx + 1) / len(fnames)),
                                  100*((fidx + 1)/len(fnames))))
                 sys.stdout.flush()
-            
+
+        # Create az_slice 'specific' q values - to work with edxd data
         self.q = np.repeat(q_[None, :], npt_az, axis=0)
         self.phi = phi * np.pi / 180
 
