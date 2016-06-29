@@ -12,8 +12,8 @@ from scipy.optimize import curve_fit
 
 from pyxe.fitting_tools import array_fit
 from pyxe.fitting_functions import strain_transformation
-from pyxe.strain_tools import StrainTools
-from pyxe.plotting import StrainPlotting
+#from pyxe.strain_tools import StrainTools
+#from pyxe.plotting import StrainPlotting
 from pyxe.analysis_tools import dimension_fill, full_ring_fit
 
 
@@ -31,9 +31,8 @@ class PeakAnalysis(object):
             self.n_dims = data['n_dims']
             self.d1, self.d2, self.d3 = data['d1'], data['d2'], data['d3']
             self.q, self.I, self.phi = data['q'], data['I'], data['phi']
-        # self.q0_approx, self.q0 = (None,) * 2
-        # self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = (None,) * 4
-        # self.strain, self.strain_err, self.strain_tensor = (None,) * 3
+
+        self.analysis_state = 0
 
     def peak_fit(self, q0_approx, window_width, func='gaussian',
                  err_lim=10**-4, progress=True):
@@ -53,11 +52,11 @@ class PeakAnalysis(object):
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = fit
 
         # Import peak plotting and peak extraction
-        # self.plot_peaks_slice = plot_peak_slice
-        # self.plot_peaks_line = plot_peak_line
-        # self.extract_peak_slice = extract_peak_slice
-        # self.extract_peak_line = extract_peak_line
+        #self._extract_peaks = None
+        #self.plot_peaks = PeakPlotting(self)
+        self.analysis_state = 1
 
+    # Must calculate peaks first
     def calculate_strain(self, q0, tensor_fit=True):
         """
         Ideally pass in a pyxe data object containing
@@ -72,10 +71,16 @@ class PeakAnalysis(object):
             self.strain_tensor = full_ring_fit(self.peaks, self.phi)
 
         # Import strain plotting and strain extraction
-        # self.plot_peaks_slice = plot_peak_slice
-        # self.plot_peaks_line = plot_peak_line
-        # self.extract_peak_slice = extract_peak_slice
-        # self.extract_peak_line = extract_peak_line
+        #self._extract_strain = None
+        #self.plot_strain = StrainPlotting(self)
+        self.analysis_state = 2
+
+    # Must calculate strain first
+    def define_material(self, E, v, G, stress_state='plane_strain'):
+        #self._extract_stress = None
+        #self.plot_stress = StressPlotting(self)
+        self.analysis_state = 3
+
 
     def save_to_nxs(self, fpath=None, overwrite=False):
         """
