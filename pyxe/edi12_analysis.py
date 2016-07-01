@@ -23,7 +23,7 @@ class EDI12(PeakAnalysis):
     associated error. 
     """
    
-    def __init__(self, file, unused_detector=23, phi=None):
+    def __init__(self, file, unused_detector=23, phi=None, progress=True):
         """
         Extract useful data from raw .nxs file. Removes data from unused 
         detector. Allows definition of az_angle (phi) if the unused detector is

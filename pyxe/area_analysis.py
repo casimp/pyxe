@@ -67,6 +67,7 @@ class Mono(PeakAnalysis):
                  ' files = %s)' % (co_ords.shape[0], len(fnames)))
         assert co_ords.shape[0] == len(fnames), error
         (self.d1, self.d2, self.d3), self.dims = dim_fill(co_ords)
+        ## self.n_dims = len(dims)
               
         self.I = np.nan * np.ones((co_ords.shape[0], npt_az, npt_rad))
 
@@ -85,6 +86,7 @@ class Mono(PeakAnalysis):
         # Create az_slice 'specific' q values - to work with edxd data
         self.q = np.repeat(q_[None, :], npt_az, axis=0)
         self.phi = phi * np.pi / 180
+        self.analysis_state = 0
 
     def save_to_nxs(self, fpath=None, overwrite=False):
         """
