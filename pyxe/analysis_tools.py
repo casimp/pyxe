@@ -11,6 +11,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import numpy as np
+from scipy.optimize import curve_fit
+from pyxe.fitting_functions import strain_transformation
 
 
 def full_ring_fit(strain, phi):
@@ -36,8 +38,8 @@ def full_ring_fit(strain, phi):
                 error_count += 1
         else:
             error_count += 1
-    print('\nUnable to fit full ring (%s) data %i out of %i points'
-          % (name, error_count, np.size(strain[..., 0])))
+    print('\nUnable to fit full ring at %i out of %i points'
+          % (error_count, np.size(strain[..., 0])))
 
     return strain_tensor
 
