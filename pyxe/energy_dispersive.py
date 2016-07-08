@@ -11,6 +11,7 @@ import re
 
 import h5py
 import numpy as np
+import os
 
 from pyxe.analysis_tools import dimension_fill, pyxe_to_nxs
 from pyxe.peak_analysis import PeakAnalysis
@@ -50,6 +51,7 @@ class EDI12(PeakAnalysis):
         self.I = self.f['entry1/EDXD_elements/data'][:]
         self.I = np.delete(self.I, unused_detector, -2)
         self.phi = np.linspace(-np.pi, 0, 23) if phi is None else phi
+        self.analysis_state = 'integrated'
 
     def save_to_nxs(self, fpath=None, overwrite=False):
         """
