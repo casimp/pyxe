@@ -28,7 +28,10 @@ def full_ring_fit(strain, phi):
         data = strain[idx]
         not_nan = ~np.isnan(data)
 
-        if phi[not_nan].size > 2: # Nope use sampling theory to define minimum
+        phi_range = np.max(phi) - np.min(phi)
+        # nyquist - twice the frequency response (strain freq = 2 * ang freq)
+        nyquist_sampling = 1 + 2 * np.ceil(2 * phi_range / np.pi)
+        if phi[not_nan].size >= nyquist_sampling:
             # Estimate curve parameters
             p0 = [np.nanmean(data), 3 * np.nanstd(data) / (2 ** 0.5), 0]
             try:
