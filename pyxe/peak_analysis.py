@@ -11,55 +11,14 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
+from pyxe.command_parsing import analysis_check
 from pyxe.fitting_tools import array_fit
 from pyxe.fitting_functions import strain_transformation
 from pyxe.analysis_tools import full_ring_fit, pyxe_to_nxs
+from pyxe.plotting import DataViz
 
 
-
-def analysis_state_check(required_state):
-    def dec_check(func):
-        def wrapper(*args, **kwargs):
-            state_dict = {1:'peak_fit', 2:'calculate_strain',
-                          3: 'define_material_properties'}
-            s_ids = range(args[0].analysis_state + 1, required_state + 1)
-            c = '\n'.join([state_dict[i] for i in s_ids])
-            error = '\nPlease run the following commands first:\n{}'.format(c)
-            try:
-                assert args[0].analysis_state >= required_state
-                return func(*args, **kwargs)
-            except AssertionError:
-                print(error)
-
-        return wrapper
-    return dec_check
-
-
-def plot_fitted(phi, strain, strain_tensor, pnt=(), figsize=(7, 5), ax=False):
-    """
-    Plots fitted in-plane strain field for given data point.
-
-    # point:      Define point (index) from which to plot fitted in-plane
-                  strain field.
-    # q_idx:      0 based indexing - 0 (default) to 23 - detector 23 empty.
-    # figsize:    Figure dimensions
-    """
-    pnt = (0,) * (strain.ndim - 1) if pnt == () else pnt
-
-    if not ax:
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_subplot(111)
-
-    p = strain_tensor[pnt]
-    ax.plot(phi, strain[pnt], 'k*')
-    phi_2 = np.linspace(phi[0], phi[-1], 1000)
-    ax.plot(phi_2, strain_transformation(phi_2, *p), 'k-')
-    ax.set_xlabel(r'$\phi$ (rad)', size=14)
-    ax.set_ylabel(r'$\epsilon$', size=14)
-    ax.ticklabel_format(axis='both', style='sci', scilimits=(-3, 3))
-
-
-class PeakAnalysis(object):
+class PeakAnalysis(DataViz):
     """
     """
     def __init__(self, fpath):
@@ -74,7 +33,7 @@ class PeakAnalysis(object):
             self.d1, self.d2, self.d3 = data['d1'], data['d2'], data['d3']
             self.q, self.I, self.phi = data['q'], data['I'], data['phi']
 
-        self.analysis_state = 0
+        self.analysis_state = 'integrated'
 
     def peak_fit(self, q0_approx, window_width, func='gaussian',
                  err_lim=10**-4, progress=True):
@@ -92,9 +51,9 @@ class PeakAnalysis(object):
         fit = array_fit(self.q, self.I, peak_window, func, err_lim, progress)
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = fit
 
-        self.analysis_state = 1
+        self.analysis_state = 'peaks'
 
-    @analysis_state_check(1)
+    @analysis_check('peaks')
     def calculate_strain(self, q0, tensor_fit=True):
         """
         Ideally pass in a pyxe data object containing
@@ -107,18 +66,14 @@ class PeakAnalysis(object):
         self.strain_err = (self.q0 / self.peaks_err) - 1
         if tensor_fit:
             self.strain_tensor = full_ring_fit(self.peaks, self.phi)
+            self.analysis_state = 'strain fit'
+        else:
+            self.analysis_state = 'strain'
 
-        self.analysis_state = 2
-
-    @analysis_state_check(2)
+    @analysis_check('strain')
     def define_material(self, E, v, G, stress_state='plane_strain'):
-        self.analysis_state = 3
 
-    # @analysis_state_check(1)
-    # def plot_fitted(self, pnt=(), figsize=(7, 5), ax=False):
-    #     plot_fitted(self.phi, self.strain, self.strain_tensor, pnt=pnt,
-    #                 figsize=figsize, ax=ax)
-
+        self.analysis_state = self.analysis_state.replace('strain', 'stress')
 
     def save_to_nxs(self, fpath=None, overwrite=False):
         """
