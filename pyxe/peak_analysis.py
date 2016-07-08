@@ -3,17 +3,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import re
-import shutil
-
 import h5py
 import numpy as np
 import os
-import matplotlib.pyplot as plt
 
 from pyxe.command_parsing import analysis_check
 from pyxe.fitting_tools import array_fit
-from pyxe.fitting_functions import strain_transformation
 from pyxe.analysis_tools import full_ring_fit, pyxe_to_nxs
 from pyxe.plotting import DataViz
 
@@ -32,8 +27,13 @@ class PeakAnalysis(DataViz):
             self.n_dims = data['n_dims']
             self.d1, self.d2, self.d3 = data['d1'], data['d2'], data['d3']
             self.q, self.I, self.phi = data['q'], data['I'], data['phi']
-
-        self.analysis_state = 'integrated'
+            self.peaks, self.peaks_err = data['strain'], data['strain_err']
+            self.fwhm, self.fwhm_err = data['fwhm'], data['fwhm_err']
+            self.strain, self.strain_err = data['strain'], data['strain_err']
+            self.strain_tensor = data['strain_tensor']
+            self.stress_state = data['stress_state']
+            self.E, self.v, self.G = data['E'], data['v'], data['G']
+            self.analysis_state = data['analysis_state']
 
     def peak_fit(self, q0_approx, window_width, func='gaussian',
                  err_lim=10**-4, progress=True):
@@ -50,7 +50,8 @@ class PeakAnalysis(DataViz):
 
         fit = array_fit(self.q, self.I, peak_window, func, err_lim, progress)
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = fit
-
+        # Reset strain to None after peak fitting...
+        self.strain, self.strain_err, self.strain_tensor = None, None, None
         self.analysis_state = 'peaks'
 
     @analysis_check('peaks')
@@ -72,7 +73,7 @@ class PeakAnalysis(DataViz):
 
     @analysis_check('strain')
     def define_material(self, E, v, G, stress_state='plane_strain'):
-
+        self.E, self.v, self.G, self.stress_state = E, v, G, stress_state
         self.analysis_state = self.analysis_state.replace('strain', 'stress')
 
     def save_to_nxs(self, fpath=None, overwrite=False):
@@ -88,3 +89,6 @@ class PeakAnalysis(DataViz):
             fpath = '%s_pyxe.nxs' % os.path.splitext(self.fpath)[0]
 
         pyxe_to_nxs(fpath, self, overwrite)
+
+
+Reload = PeakAnalysis
