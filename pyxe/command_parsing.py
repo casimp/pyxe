@@ -149,16 +149,31 @@ def analysis_state_comparison(current, required):
         print(base_error.format(commands))
         return False
 
-#
+
 # # step 7: bring this all together!
-# def validate_comm(request_command, phi, az_idx, current_level):
+# def command_check_old(request_command, phi, az_idx, current_level):
 #
 #     # validate command syntax
 #     valid = validate_command(request_command, phi, az_idx)
 #
 #     if valid:
 #         # check analysis level
-#         required_level = convert_request_to_level(request_command)
+#         cleaned_command = text_cleaning(request_command)
+#         required_level = convert_request_to_level(cleaned_command)
+#
 #         return analysis_state_comparison(current_level, required_level)
 
+# step 7: bring this all together into decorator!
+def command_check(func):
+    def wrapper(*args, **kwargs):
+        current_level = args[0].analysis_state
+        request_command, phi, az_idx = args[1:4]
+        valid = validate_command(request_command, phi, az_idx)
 
+        if valid:
+            # check analysis level
+            cleaned_command = text_cleaning(request_command)
+            required_level = convert_request_to_level(cleaned_command)
+            if analysis_state_comparison(current_level, required_level):
+                return func(*args, **kwargs)
+    return wrapper
