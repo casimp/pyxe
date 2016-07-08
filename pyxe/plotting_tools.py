@@ -7,36 +7,39 @@ Created on Wed Nov 18 16:34:59 2015
 import numpy as np
 import matplotlib.pyplot as plt 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy.interpolate import griddata
 
 
-def line_extract(X, Y, point, theta, npoints=10):
-    """
-    Draw line through an x, y point cloud. Line is defined by a point and an 
-    angle. The user defined point must lie within the point cloud.
-    """
-    if theta % np.pi/2 == 0:
+def line_extract(X, Y, pnt, theta, res=0.05):
+    x_valid = np.logical_and(pnt[0] >= np.min(X), pnt[1] <= np.max(X))
+    y_valid = np.logical_and(pnt[0] >= np.min(Y), pnt[1] <= np.max(Y))
+    error = "Specified point (pnt) doesn't lie within data limits."
+    assert x_valid and y_valid, error
+
+    if theta % np.pi / 2 == 0:
         if theta % np.pi != 0:
-            y = np.linspace(np.min(Y), np.max(Y), npoints)
-            x = y * 0 + point[0]
+            npnts = 1 + (np.max(Y) - np.min(Y)) // res
+            y = np.linspace(np.min(Y), np.max(Y), npnts)
+            x = y * 0 + pnt[0]
         else:
-            x = np.linspace(np.min(X), np.max(X), npoints)
-            y = x * 0 + point[1]            
+            npnts = 1 + (np.max(X) - np.min(X)) // res
+            x = np.linspace(np.min(X), np.max(X), npnts)
+            y = x * 0 + pnt[1]
     else:
         m = np.tan(theta)
-        c = point[1] - m * point[0]
-        
+        c = pnt[1] - m * pnt[0]
+
         y_lim = [m * np.min(X) + c, m * np.max(X) + c]
-        
-        assert min(y_lim) < np.max(Y), "Line does not intersect data."
-        assert max(y_lim) > np.min(Y), "Line does not intersect data."
         y_min = np.min(Y) if min(y_lim) < np.min(Y) else min(y_lim)
         y_max = np.max(Y) if max(y_lim) > np.max(Y) else max(y_lim)
-            
-        y = np.linspace(y_min, y_max, npoints)
+
+        x_1, x_2 = (y_min - c) / m, (y_min - c) / m
+        d = ((x_2 - x_1)**2 + (y_max - y_min)**2)**0.5
+        npnts = 1 + d // res
+
+        y = np.linspace(y_min, y_max, npnts)
         x = (y - c) / m
 
-    return x, y
+    return x, y, np.linspace(0, d, npnts)
 
 
 def az90(phi, idx):
@@ -50,29 +53,6 @@ def az90(phi, idx):
             return np.argmax(find_ind)
     raise ValueError('No cake segment found perpendicular to given index.', 
                      'Number of cake segments must be divisable by 4.')
-
-
-def line_ext(positions, data, pnt, npnts, line_angle, method):
-    """
-    Not yet working function to take line from data
-    """
-    not_nan = np.isfinite(data)
-    assert np.sum(not_nan) > 0, "Can't extract data from empty (nan) slice."
-    if len(positions) == 1:
-        d1 = positions[0]
-    else:
-        d1, d2 = positions        
-        d1_e, d2_e = line_extract(d1, d2, pnt, line_angle, npnts)
-
-    if len(positions) == 2:
-        try:
-            data = griddata((d1[not_nan], d2[not_nan]), data[not_nan], 
-                            (d1_e, d2_e), method = method)
-            return [d1_e, d2_e], data
-        except ValueError:
-            pass
-    else:
-        return d1[not_nan], data[not_nan]
 
 
 def meshgrid_res(d1, d2, spatial_resolution):
@@ -115,11 +95,3 @@ def plot_complex(x, y, X, Y, Z, lvls=11, figsize=(10, 10),
         cbar = plt.colorbar(cf_back, cax=cax)
         cbar.add_lines(c)
     return ax
-
-
-def plot_simple(x, y, X, Y, Z, cmap='RdBu_r', lvls=11):
-    f, ax = plt.subplots()
-    cf = ax.contourf(X, Y, Z, lvls, cmap=cmap)
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", "3%", pad="3%")
-    plt.colorbar(cf, cax=cax)
