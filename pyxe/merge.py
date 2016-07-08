@@ -13,8 +13,8 @@ from __future__ import unicode_literals
 import h5py
 import numpy as np
 
-from pyxe.plotting import StrainPlotting
-from pyxe.strain_tools import StrainTools
+# from pyxe.plotting import StrainPlotting
+# from pyxe.strain_tools import StrainTools
 from pyxe.merge_tools import find_limits, mask_generator, masked_merge
 
 
