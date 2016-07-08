@@ -87,55 +87,6 @@ def meshgrid_res(d1, d2, spatial_resolution):
     return D1, D2
 
 
-def mohrs_dec(func):
-    def func_wrapper(*args):
-        e_xx, e_yy, e_xy, e_1, e_2, fig = func(*args)
-        r, mean = (e_1 - e_2) / 2, (e_1 + e_2) / 2
-
-        plt.axis('equal')
-        ax = fig.add_subplot(1, 1, 1)
-        circle = plt.Circle((mean, 0), radius=r, color='k', fill=False)
-        ax.add_patch(circle)
-
-        plt.xlim([mean - abs(2 * r), mean + abs(2 * r)])
-        plt.plot([e_1, e_2], [0, 0], 'ko', markersize=3)
-        
-        plt.plot(e_xx, e_xy, 'ko', label=r'$(\epsilon_{xx}$, '
-                                         r'$\epsilon_{xy})$')
-        plt.plot(e_yy, -e_xy, 'wo', label=r'$(\epsilon_{yy}$, '
-                                          r'$-\epsilon_{xy})$')
-        
-        plt.legend(numpoints=1, frameon=False, handletextpad=0.2)
-        plt.plot([e_xx, e_yy], [e_xy, -e_xy], 'k-.')
-        ax.annotate('  %s' % r'$\epsilon_{1}$', xy=(e_1, 0), 
-                    textcoords='offset points', xytext=(e_1, 0))
-        ax.annotate('  %s' % r'$\epsilon_{2}$', xy=(e_2, 0), 
-                    textcoords='offset points', xytext=(e_2, 0))
-        plt.xlabel(r'$\epsilon$', size=14)
-        plt.ylabel(r'$\gamma$', size=14)
-    
-    return func_wrapper
-    
-
-def plot_line(func):
-    def func_wrapper(*args):
-        pnt, axis, dims, data = func(*args)
-        if len(dims) == 1:
-                plt.plot(dims, data, '-*')
-        else:
-            d1, d2 = dims
-                                    
-            if d1[0] > d1[-1]:
-                d1, d2, data = d1[::-1], d2[::-1], data[::-1]
-                
-            zero = ((pnt[0] - d1[0])**2 + (pnt[1] - d2[0])**2)**0.5
-            scalar_ext = ((d1 - d1[0])**2 + (d2 - d2[0])**2)**0.5 - zero
-    
-            x = {'d1': d1, 'd2': d2, 'scalar': scalar_ext}
-            plt.plot(x[axis], data, '-x')
-    return func_wrapper
-
-
 def plot_complex(x, y, X, Y, Z, lvls=11, figsize=(10, 10),
                  ax=False, cbar=True, **kwargs):
     

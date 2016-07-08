@@ -119,34 +119,3 @@ def array_fit(q_array, I_array, peak_window, func='gaussian',
            run_error, err_exceed))                  
     
     return peaks, peaks_err, fwhm, fwhm_err
-    
-    
-def q0_analysis(fname, q0_approx, window=0.25, func='gaussian'):
-    
-    f = h5py.File(fname, 'r')
-    group = f['entry1']['EDXD_elements']
-    q, I = group['edxd_q'], group['data']
-
-    q_type = type(q0_approx)
-    if q_type == int or q_type == float or q_type == np.float64:
-        q0_approx = [q0_approx]    
-    
-    peak_windows = np.array([[q_-window/2, q_+window/2] for q_ in q0_approx])
-    
-    # Create empty arrays to store peaks and their stdevs 
-    array_shape = I.shape[:-1] + (len(q0_approx),)
-    peaks = np.nan * np.ones(array_shape)
-    peaks_err = np.nan * np.ones(array_shape)
-    
-    # Iterate across q0 values and fit peaks for all detectors
-    for idx, window in enumerate(peak_windows):
-        fit_data = array_fit(q, I, window, func)     
-        peaks[..., idx], peaks_err[..., idx] = fit_data[0], fit_data[1]
-        
-    q0_mean = np.nan * np.ones(peaks.shape[-2:])
-    q0_mean_err = np.nan * np.ones(peaks.shape[-2:])
-    for detector, q_app in np.ndindex(q0_mean.shape):
-        q0_mean[detector, q_app] = np.mean(peaks[..., detector, q_app])
-        q0_mean_err[detector, q_app] = np.mean(peaks_err[..., detector, q_app])
-
-    return q0_mean, q0_mean_err

@@ -34,15 +34,6 @@ def shear_transformation(x, *p):
     return - np.sin(2 * x) * (p[0] - p[1]) / 2 + p[2] * np.cos(2 * x)
 
 
-def cos_(x, *p):
-    """
-    #   Amplitude                    : p[0]
-    #   Angle (rad)                  : p[1]
-    #   Mean                         : p[2]
-    """
-    return p[0]*np.cos(2 * (x + p[1])) + p[2]
-
-
 def gaussian(x, *p):
     """
     Guassian curve fit for diffraction data.
