@@ -48,7 +48,6 @@ def check_none(phi, az_idx):
     error = 'Must define either an azimuthal angle or azimuthal segment index.'
     assert not (phi is None and az_idx is None), error
     assert not (phi is not None and az_idx is not None), error
-    return True
 
 
 # step 4: check whether valid combo of command and phi/az_idx request
@@ -73,16 +72,10 @@ def validate_azimuthal_selection(request_command, phi, az_idx):
                  "individual az slices). You must define the angle - phi "
                  "(and use the full strain tensor).".format(request_command))
 
-    if check_none(phi, az_idx):
-        az_command = 'phi' if phi is not None else 'az_idx'
-        error = error_phi if az_command == 'phi' else error_az_
-        if az_command in requests[request_command]:
-            return True
-        else:
-            print(error)
-            return False
-    else:
-        return False
+    check_none(phi, az_idx)
+    az_command = 'phi' if phi is not None else 'az_idx'
+    error = error_phi if az_command == 'phi' else error_az_
+    assert az_command in requests[request_command], error
 
 
 # step 5: bring together to check command validity

@@ -34,7 +34,11 @@ def test_valid_entry():
                 ' shear stress': False}
 
     for example in examples:
-        valid = cp.validate_entry(example)
+        try:
+            cp.validate_entry(example)
+            valid = True
+        except AssertionError:
+            valid = False
         answer = examples[example]
         assert valid == answer, 'Check: {}, Ans: {}'.format(valid, answer)
 
@@ -58,7 +62,11 @@ def test_az_command():
 
         for phi, az_idx, answer in zip(a, b, c):
             print(phi, az_idx, answer)
-            valid = cp.validate_azimuthal_selection(example, phi, az_idx)
+            try:
+                cp.validate_azimuthal_selection(example, phi, az_idx)
+                valid = True
+            except AssertionError:
+                valid = False
             error = 'Test: {} - {}, Ans: {}'.format(example, valid, answer)
             assert valid == answer, error
 
@@ -83,7 +91,11 @@ def test_validate_command():
 
         for phi, az_idx, answer in zip(a, b, c):
             print(phi, az_idx, answer)
-            valid = cp.validate_command(example, phi, az_idx)
+            try:
+                cp.validate_command(example, phi, az_idx)
+                valid = True
+            except AssertionError:
+                valid=False
             error = 'Test: {} - {}, Ans: {}'.format(example, valid, answer)
             assert valid == answer, error
 
