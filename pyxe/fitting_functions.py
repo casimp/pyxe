@@ -14,14 +14,15 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 
-def strain_transformation(x, *p):
+def strain_transformation(phi, *p):
     """
+    # x phi
     #   e_xx                  : p[0]
     #   e_yy                  : p[1]
     #   e_xy                  : p[2]
     """
 
-    return (p[0] + p[1]) / 2 + np.cos(2 * x) * (p[0] - p[1]) / 2 + p[2] * np.sin(2 * x)
+    return (p[0] + p[1]) / 2 + np.cos(2 * phi) * (p[0] - p[1]) / 2 + p[2] * np.sin(2 * phi)
 
 
 def shear_transformation(x, *p):

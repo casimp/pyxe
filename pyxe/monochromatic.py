@@ -17,7 +17,7 @@ import pyFAI
 import h5py
 import sys
 
-from pyxe.analysis_tools import dim_fill, dimension_fill, pyxe_to_nxs
+from pyxe.analysis_tools import dim_fill, pyxe_to_nxs
 from pyxe.peak_analysis import PeakAnalysis
 
 
@@ -67,13 +67,14 @@ class Mono(PeakAnalysis):
                  ' files = %s)' % (co_ords.shape[0], len(fnames)))
         assert co_ords.shape[0] == len(fnames), error
         (self.d1, self.d2, self.d3), self.dims = dim_fill(co_ords)
-        ## self.n_dims = len(dims)
+        self.n_dims = len(self.dims)
               
         self.I = np.nan * np.ones((co_ords.shape[0], npt_az, npt_rad))
 
         print('\nLoading files and carrying out azimuthal integration:\n')
         for fidx, fname in enumerate(fnames):
             img = fabio.open(os.path.join(folder, fname)).data
+            npt_rad, npt_az = int(npt_rad), int(npt_az)
             I, q_, phi = ai.integrate2d(img, npt_rad=npt_rad, npt_azim=npt_az,
                                         azimuth_range=az_range, unit='q_A^-1')
             self.I[fidx] = I 
