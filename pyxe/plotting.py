@@ -100,10 +100,15 @@ class DataViz(object):
             line = f(x, y)
             return x, y, d, line
 
-    @complex_check
+    # @complex_check
     def extract_slice(self, data='strain', phi=None, az_idx=None, z_idx=None):
+        complex_check(data, self.analysis_state, phi, az_idx)
         command = text_cleaning(data)
         az_command = 'phi' if phi is not None else 'az_idx'
+        #
+        # validate_command(data, phi, az_idx)
+        # required = convert_request_to_level(data, az_command)
+        # analysis_state_comparison(self.analysis_state, required)
 
         if az_command == 'az_idx':
 
@@ -117,22 +122,23 @@ class DataViz(object):
             data = data_command[command][..., az_idx]
         else:
             tensor = self.strain_tensor
+            tensor = tensor[:, 0], tensor[:, 1], tensor[:, 2]
             shear = True if 'shear' in command else False
             stress = True if 'stress' in command else False
 
             if shear:
-                e_xy = shear_transformation(tensor, phi)
+                e_xy = shear_transformation(phi, *tensor)
                 data = self.G * e_xy if stress else e_xy
 
             elif stress:
-                e_xx = strain_transformation(tensor, phi)
-                e_yy = strain_transformation(tensor, phi + np.pi / 2)
+                e_xx = strain_transformation(phi, *tensor)
+                e_yy = strain_transformation(phi + np.pi / 2, *tensor)
                 data = self.stress_eqn(e_xx, e_yy)
 
             else:
-                data = strain_transformation(tensor, phi)
-
-        return data[z_idx] if z_idx is not None else data
+                data = strain_transformation(phi, *tensor)
+        data = data[z_idx] if z_idx is not None else data
+        return data
 
     def plot_line(self, data='strain', phi=None, az_idx=None, z_idx=0,
                   pnt=(0, 0), theta=0, res=0.1, pos_value='d', ax=False):
@@ -150,11 +156,10 @@ class DataViz(object):
         ax.set_ylabel(data)
         return ax
 
-    def plot_slice(self, data='strain', phi=None, az_idx=None, z_idx=0,
+    def plot_slice(self, data='strain', phi=None, az_idx=None, z_idx=None,
                      plot_func=None, **kwargs):
         data = self.extract_slice(data, phi, az_idx, z_idx)
         plot_func = plot_complex if plot_func is None else plot_func
-
         if data.ndim == 1:
             d1_, d2_ = meshgrid_res(self.d1, self.d2, spatial_resolution=0.1)
             z = griddata((self.d1.flatten(), self.d2.flatten()),

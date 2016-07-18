@@ -39,26 +39,16 @@ def validate_entry(request_command):
                       'strain', 'shear strain', 'strain error',
                       'stress', 'shear stress', 'stress error']
 
-    try:
-        assert request_command in valid_requests
-        return True
-    except AssertionError:
-        error = 'Unknown data request command! Valid requests:\n\n{}'
-        print(error.format('\n'.join(valid_requests)))
-        return False
+    error = 'Unknown data request command! Valid requests:\n\n{}'
+    assert request_command in valid_requests, error.format('\n'.join(valid_requests))
 
 
 # step 3: check that either phi/az_idx has been entered
 def check_none(phi, az_idx):
     error = 'Must define either an azimuthal angle or azimuthal segment index.'
-    if phi is None and az_idx is None:
-        print(error)
-        return False
-    elif phi is not None and az_idx is not None:
-        print(error)
-        return False
-    else:
-        return True
+    assert not (phi is None and az_idx is None), error
+    assert not (phi is not None and az_idx is not None), error
+    return True
 
 
 # step 4: check whether valid combo of command and phi/az_idx request
@@ -97,14 +87,12 @@ def validate_azimuthal_selection(request_command, phi, az_idx):
 
 # step 5: bring together to check command validity
 def validate_command(request_command, phi, az_idx):
-
+    print(request_command)
     request_command = text_cleaning(request_command)
-    valid_entry = validate_entry(request_command)
+    validate_entry(request_command)
 
-    if valid_entry:
-        return validate_azimuthal_selection(request_command, phi, az_idx)
-    else:
-        return False
+    return validate_azimuthal_selection(request_command, phi, az_idx)
+
 
 
 # step 6: convert request command to analysis level
@@ -154,19 +142,26 @@ def analysis_state_comparison(current, required):
         return False
 
 
-def complex_check(func):
-    def wrapper(*args, **kwargs):
-        current_level = args[0].analysis_state
-        request_command, phi, az_idx = args[1:4]
-        valid = validate_command(request_command, phi, az_idx)
+def complex_check(request_command, analysis_state, phi, az_idx):
+    az_command = 'phi' if phi is not None else 'az_idx'
+    validate_command(request_command, phi, az_idx)
+    required = convert_request_to_level(request_command, az_command)
+    analysis_state_comparison(analysis_state, required)
 
-        if valid:
-            # check analysis level
-            cleaned_command = text_cleaning(request_command)
-            required_level = convert_request_to_level(cleaned_command)
-            if analysis_state_comparison(current_level, required_level):
-                return func(*args, **kwargs)
-    return wrapper
+# def complex_check(func):
+#     def wrapper(*args, **kwargs):
+#         current_level = args[0].analysis_state
+#         request_command, phi, az_idx = args[1:4]
+#         print(request_command, phi, az_idx)
+#         valid = validate_command(request_command, phi, az_idx)
+#
+#         if valid:
+#             # check analysis level
+#             cleaned_command = text_cleaning(request_command)
+#             required_level = convert_request_to_level(cleaned_command)
+#             if analysis_state_comparison(current_level, required_level):
+#                 return func(*args, **kwargs)
+#     return wrapper
 
 
 def analysis_check(required_state):
