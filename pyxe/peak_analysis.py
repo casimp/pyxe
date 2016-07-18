@@ -11,6 +11,7 @@ from pyxe.command_parsing import analysis_check
 from pyxe.fitting_tools import array_fit
 from pyxe.analysis_tools import full_ring_fit, pyxe_to_nxs
 from pyxe.plotting import DataViz
+from pyxe.merge import basic_merge
 
 
 class PeakAnalysis(DataViz):
@@ -60,13 +61,13 @@ class PeakAnalysis(DataViz):
         Ideally pass in a pyxe data object containing
         """
         if isinstance(q0, PeakAnalysis):
-            assert q0.phi == self.phi
+            assert np.array_equal(q0.phi, self.phi)
             q0 = q0.peaks.mean(axis=tuple(range(0, q0.n_dims)))
         self.q0 = q0
         self.strain = (self.q0 / self.peaks) - 1
         self.strain_err = (self.q0 / self.peaks_err) - 1
         if tensor_fit:
-            self.strain_tensor = full_ring_fit(self.peaks, self.phi)
+            self.strain_tensor = full_ring_fit(self.strain, self.phi)
             self.analysis_state = 'strain fit'
         else:
             self.analysis_state = 'strain'
@@ -90,5 +91,7 @@ class PeakAnalysis(DataViz):
 
         pyxe_to_nxs(fpath, self, overwrite)
 
+    def __add__(self, other):
+        return basic_merge([self, other])
 
 Reload = PeakAnalysis
