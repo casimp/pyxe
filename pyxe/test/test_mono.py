@@ -4,6 +4,12 @@ Created on Thu May 26 22:25:14 2016
 
 @author: casim
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+
 from nose.tools import assert_raises
 import numpy as np
 from mock import patch
@@ -125,3 +131,15 @@ class TestMono(object):
 
 if __name__ == '__main__':
     data, q0 = test_integration()
+    data.peak_fit(3.1, 1.)
+    q0.peak_fit(3.1, 1.)
+    data.calculate_strain(q0)
+    # Compare positions, same angle
+    for a_idx in [0, 7, 12, 26, 32]:
+        i = strain_transformation(data.phi[a_idx], *(e_xx, e_yy, e_xy))
+        p_1 = data.strain[..., a_idx]
+        p_2 = data.extract_slice(phi=data.phi[a_idx])
+        for p in [p_1, p_2]:
+            abs_max = np.max(np.abs(i - p))
+            print(abs_max)
+            assert abs_max < 10 ** -4, (a_idx, abs_max)

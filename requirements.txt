@@ -1,5 +1,6 @@
 h5py
-mose
+nose
+mock
 numpy
 scipy
 pyFAI
