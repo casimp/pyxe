@@ -32,8 +32,9 @@ class Mono(PeakAnalysis):
     be analysed (peak_fit/strain calculations).
     """
 
-    def __init__(self, folder, co_ords, params, f_ext='.edf', progress=True,
-                 npt_rad=1024, npt_az=36, az_range=(-180, 180)):
+    def __init__(self, folder, co_ords, detector, wavelength=None,
+                 f_ext='.edf', progress=True, npt_rad=1024, npt_az=36,
+                 az_range=(-180, 180)):
         """
         # folder:     Folder containing the image files for analysis
         # co_ords:   1D/2D/3D numpy array containing data point co_ords
@@ -55,12 +56,13 @@ class Mono(PeakAnalysis):
 
         # Allow for use of pyFAI or Fit2D detector params
         # Currently checking if folder string - perhaps not the best method!
-        if isinstance(params, ("".__class__, u"".__class__)):
-            ai = pyFAI.load(params)  # CORRECT??
+        if isinstance(detector, ("".__class__, u"".__class__)):
+            ai = pyFAI.load(detector)  # CORRECT??
+            # check if wavelength exists?
         else:
             ai = pyFAI.AzimuthalIntegrator()
-            ai.setFit2D(*params[:-1])
-            ai.set_wavelength(params[-1])
+            ai.setFit2D(*detector)
+            ai.set_wavelength(wavelength)
         fnames = extract_fnames(folder, f_ext)
 
         error = ('Number of positions not equal to number of files (pos = %s,'
@@ -68,7 +70,6 @@ class Mono(PeakAnalysis):
         assert co_ords.shape[0] == len(fnames), error
         (self.d1, self.d2, self.d3), self.dims = dim_fill(co_ords)
         self.n_dims = len(self.dims)
-              
         self.I = np.nan * np.ones((co_ords.shape[0], npt_az, npt_rad))
 
         print('\nLoading files and carrying out azimuthal integration:\n')
