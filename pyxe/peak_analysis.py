@@ -73,7 +73,8 @@ class PeakAnalysis(DataViz):
             self.analysis_state = 'strain'
 
     @analysis_check('strain')
-    def define_material(self, E, v, G, stress_state='plane_strain'):
+    def define_material(self, E, v, G=None, stress_state='plane_strain'):
+        G = E / (2 * (1-v)) if G is None else G
         self.E, self.v, self.G, self.stress_state = E, v, G, stress_state
         self.analysis_state = self.analysis_state.replace('strain', 'stress')
 

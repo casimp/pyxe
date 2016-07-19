@@ -1,5 +1,7 @@
 h5py
+mose
 numpy
 scipy
 pyFAI
 fabio
+xrdpb

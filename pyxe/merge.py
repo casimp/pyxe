@@ -82,18 +82,18 @@ def basic_merge(data):
     for d in data:
         error = 'Trying to merge incompatible data - %s'
         assert new.n_dims == d.n_dims, error % 'e.g. 2D with 3D'
-        assert new.phi == d.phi, error % 'different number of az bins'
-        assert new.q == d.q, error % 'different number of q bins'
+        assert np.array_equal(new.phi, d.phi), error % 'number of az bins'
+        assert np.array_equal(new.q, d.q), error % 'number of q bins'
 
-    new.d1 = np.append([d.d1 for d in data]) if new.n_dims > 0 else None
-    new.d2 = np.append([d.d2 for d in data]) if new.n_dims > 1 else None
-    new.d3 = np.append([d.d3 for d in data]) if new.n_dims > 2 else None
+    new.d1 = np.append(*[d.d1 for d in data]) if new.n_dims > 0 else None
+    new.d2 = np.append(*[d.d2 for d in data]) if new.n_dims > 1 else None
+    new.d3 = np.append(*[d.d3 for d in data]) if new.n_dims > 2 else None
 
     state = state_compare([d.analysis_state for d in data])
 
     for i in data:
-        valid = all(new.E == i.E, new.v == i.v, new.G == i.G,
-                    new.stress_state == i.stress_state)
+        valid = all([new.E == i.E, new.v == i.v, new.G == i.G,
+                    new.stress_state == i.stress_state])
         if not valid:
             print('Material properties inconsistent - resetting all.')
             new.E, new.v, new.G, new.stress_state = None, None, None, None
@@ -101,11 +101,11 @@ def basic_merge(data):
 
     new.analysis_state = state
 
-    new.I = none_merge([d.I for d in data], state, 'intensity', axis=-2)
+    new.I = none_merge([d.I for d in data], state, 'integrated', axis=-2)
     new.peaks = none_merge([d.peaks for d in data], state, 'peaks')
     new.peaks_err = none_merge([d.peaks_err for d in data], state, 'peaks')
     new.fwhm = none_merge([d.fwhm for d in data], 'peaks', state)
-    new.fwhm_err = none_merge([d.fwgm_err for d in data], state, 'peaks')
+    new.fwhm_err = none_merge([d.fwhm_err for d in data], state, 'peaks')
     new.strain = none_merge([d.strain for d in data], state, 'strain')
     new.strain_err = none_merge([d.strain_err for d in data], state, 'strain')
     strain_tensor = [d.strain_tensor for d in data]
