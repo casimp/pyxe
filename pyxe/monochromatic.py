@@ -77,8 +77,7 @@ class Mono(PeakAnalysis):
             img = fabio.open(os.path.join(folder, fname)).data
             npt_rad, npt_az = int(npt_rad), int(npt_az)
             I, q_, phi = ai.integrate2d(img, npt_rad=npt_rad, npt_azim=npt_az,
-                                        azimuth_range=az_range, unit='q_A^-1',
-                                        method='splitBBox')
+                                        azimuth_range=az_range, unit='q_A^-1')
             self.I[fidx] = I 
             if progress:
                 sys.stdout.write('\rProgress: [{0:20s}] {1:.0f}%'.format('#' *

@@ -40,7 +40,7 @@ def test_tensor_array(pnts=(8, 8), max_strain=1e-2, flat=True):
     return X, Y, e_xx, e_yy, e_xy
 
 
-def create_ring_array(detector, pnts=(8, 8), max_strain=1e-2, exclude=0.1,
+def create_ring_array(detector, pnts=(8, 8), max_strain=1e-3, exclude=0.1,
                       crop=0.6, background=0):
     # Create a strain (tensor) maps, find co-ords and image 'names'
     X, Y, e_xx, e_yy, e_xy = test_tensor_array(pnts, max_strain)
@@ -56,6 +56,39 @@ def create_ring_array(detector, pnts=(8, 8), max_strain=1e-2, exclude=0.1,
         images.append(FakeFabIO(img))
 
     return fnames, co_ords, images, (e_xx, e_yy, e_xy)
+
+
+def data_dict(X, Y, q, I):
+        d = {'entry1/scan_command': [b'ss2_x ss2_y'],
+             'entry1/EDXD_elements/edxd_q': q,
+             'entry1/EDXD_elements/data': I,
+             'entry1/EDXD_elements/ss2_x': X,
+             'entry1/EDXD_elements/ss2_y': Y}
+        return d
+
+
+def create_intensity_array(detector, pnts=(8, 8),
+                           max_strain=1e-3, background=0):
+
+    # Create a strain (tensor) maps, find co-ords and image 'names'
+    X, Y, e_xx, e_yy, e_xy = test_tensor_array(pnts, max_strain, flat=False)
+
+    # Create Debye-Scherrer rings for each point
+    intensity = np.zeros(X.shape + (detector.phi.size, detector.q.size))
+    print(intensity.shape)
+    for idx in np.ndindex(e_xx.shape):
+        # Representative detector but the s_to_d is small so we crop
+        tensor = (e_xx[idx], e_yy[idx], e_xy[idx])
+
+        data = detector.intensity(background=background,
+                                  strain_tensor=tensor)[1]['total']
+        intensity[idx] = data
+
+    return data_dict(X, Y, data[0], intensity), (e_xx, e_yy, e_xy)
+
+
+
+# pass [] as unused detector
 
 
 class FakeFabIO(object):

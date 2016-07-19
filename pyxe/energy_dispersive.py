@@ -38,6 +38,7 @@ class EDI12(PeakAnalysis):
         scan_command = self.f['entry1/scan_command'][0]
         dims = re.findall(b'ss2_\w+', scan_command)
         self.n_dims = len(dims)
+        dims = dims + [dim for dim in [b'ss2_x', b'ss2_y', b'ss2_z'] if dim not in dims]
         co_ords = []
         for dim in dims:
             co_ords.append(dimension_fill(self.f, dim.decode("utf-8")))
