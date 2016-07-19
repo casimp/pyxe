@@ -49,7 +49,7 @@ def create_ring_array(detector, pnts=(8, 8), max_strain=1e-2, exclude=0.1,
                              strain_tensor=(e_xx[idx], e_yy[idx], e_xy[idx]))
         images.append(FakeFabIO(img))
 
-    return fnames, co_ords, images
+    return fnames, co_ords, images, (e_xx, e_yy, e_xy)
 
 
 class FakeFabIO(object):

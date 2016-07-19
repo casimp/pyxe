@@ -29,10 +29,12 @@ fit2Dparams = (sample_detector, crop_shape[0] / 2, crop_shape[1] / 2, 0, 0,
 mono = MonoDetector(shape, pixel_size, sample_detector, energy, energy_sigma)
 mono.add_peaks('Fe')
 
+max = 1e-2
 # Create the test data from that setup
-fnames, co_ords, images = create_ring_array(mono, crop=crop)
+fnames, co_ords, images, tensor = create_ring_array(mono, crop=crop, max_strain=1e-3)
+e_xx, e_yy, e_xy = tensor
 q0 = create_ring_array(mono, crop=crop, pnts=(1, 1), max_strain=0)
-q0_fnames, q0_co_ords, q0_images = q0
+q0_fnames, q0_co_ords, q0_images, _ = q0
 
 
 class TestMono(object):
@@ -71,9 +73,36 @@ class TestMono(object):
         self.data.calculate_strain(self.q0)
         self.data.extract_slice('strain', phi=0)
         assert_raises(AssertionError, self.data.extract_slice, 'strain err', 0)
-        self.data.extract_slice('shear strain', phi=5*np.pi)
-        self.data.extract_slice('strain', phi=np.pi/3)
+        self.data.extract_slice('shear strain', phi=5 * np.pi)
+        self.data.extract_slice('strain', phi=np.pi / 3)
         self.data.extract_slice('strain', az_idx=3)
+
+    def test_positions(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+        # Compare angles, same position
+        for idx in [0, 7, 12, 26, 32]:
+            initial = strain_transformation(self.data.phi[idx],
+                                            e_xx, e_yy, e_xy)
+            processed_1 = self.data.strain[..., idx]
+            processed_2 = self.data.extract_slice(phi=self.data.phi[idx])
+            assert np.allclose(processed_1, initial, atol=1e-5, rtol=0), idx
+            assert np.allclose(processed_2, initial, atol=1e-5, rtol=0), idx
+
+
+    def test_angles(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+        # Compare angles, same position
+        for p_idx in [0, 7, 12, 26, 39, 45, 52, 60]:
+            initial = strain_transformation(self.data.phi, e_xx[p_idx],
+                                            e_yy[p_idx], e_xy[p_idx])
+            processed = self.data.strain[p_idx]
+            assert np.allclose(initial, processed, atol=1e-5, rtol=0), p_idx
+
+
 
 # def test_import(extract_fnames, fabio_open):
 #     """
