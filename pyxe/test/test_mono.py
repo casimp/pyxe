@@ -5,109 +5,113 @@ Created on Thu May 26 22:25:14 2016
 @author: casim
 """
 import matplotlib.pyplot as plt
-
+from nose.tools import assert_raises
 import numpy as np
 from mock import patch
 from xrdpb.detectors import MonoDetector
 from xrdpb.conversions import e_to_w
-from pyxe.fitting_functions import gaussian
 from pyxe.monochromatic import Mono
-
-
-def gaussian_2d(height=1, centre=(0., -0.), sigma=(0.5, 0.5), pnts=8):
-
-    x = np.linspace(-1, 1, pnts)
-    y = np.linspace(-1, 1, pnts)
-    X, Y = np.meshgrid(x, y)
-
-    Z = (gaussian(X, *(0, height, centre[0], sigma[0])) *
-         gaussian(Y, *(0, height, centre[1], sigma[1])))
-    return X, Y, Z
-
-
-class FakeFabIO(object):
-    def __init__(self, img):
-        self.data = img
+from pyxe.fitting_functions import strain_transformation
+from pyxe.test.data_create import create_ring_array
 
 # Detector parameters
-shape = (2000, 2000)
-crop = 0.825
-cropped_shape = (shape[0] - shape[0] * crop, shape[1] - shape[1] * crop)
-pixel_size = 0.2
-sample_detector = 300
-centerX = (cropped_shape[0] - 1) / 2
-centerY = (cropped_shape[1] - 1) / 2
-tilt=0
-tiltPlanRotation=0
-fit2Dparams = (sample_detector, centerX, centerY, tilt, tiltPlanRotation,
-               pixel_size*1000, pixel_size*1000, e_to_w(100))
+shape = (2000, 2000)  # pixels
+crop = 0.6  # relative
+pixel_size = 0.2  # mm
+sample_detector = 1000  # mm
+energy = 100  # keV
+energy_sigma = 1  # keV
+crop_shape = ((1 - crop) * shape[0], (1 - crop) * shape[1])
+fit2Dparams = (sample_detector, crop_shape[0] / 2, crop_shape[1] / 2, 0, 0,
+               pixel_size*1000, pixel_size*1000)
 
-# Lets create a detector...
-mono = MonoDetector(shape, pixel_size, sample_detector,
-                    energy=100, energy_sigma=0.75)
-
-# And add material/peak positions...
+# Lets create a detector and add peaks...
+mono = MonoDetector(shape, pixel_size, sample_detector, energy, energy_sigma)
 mono.add_peaks('Fe')
 
-# Create a test strain tensor map
-X, Y, e_xx = gaussian_2d(height=0.2, centre=(0.25, -0.25), sigma=(0.5, 0.5))
-e_yy = -gaussian_2d(height=0.2, centre=(-0.25, 0.25), sigma=(0.5, 0.5))[2]
-e_xy = gaussian_2d(height=0.02, centre=(0., 0.), sigma=(0.5, 0.5))[2]
+# Create the test data from that setup
+fnames, co_ords, images = create_ring_array(mono, crop=crop)
+q0 = create_ring_array(mono, crop=crop, pnts=(1, 1), max_strain=0)
+q0_fnames, q0_co_ords, q0_images = q0
 
-X, Y = X.reshape(X.size, 1), Y.reshape(X.size, 1)
-e_xx, e_yy, e_xy = e_xx.flatten(), e_yy.flatten(), e_xy.flatten()
 
-co_ords = np.hstack((X, Y))
-fnames = ['{}.tif'.format(num) for num in range(e_xx.size)]
+class TestMono(object):
 
-# Create Debye-Scherrer rings for each point.
-images = []
-for idx, i in enumerate(e_xx):
-    # Representative detector but the s_to_d is small so we crop
-    img = mono.rings(exclude_criteria=0.1, crop=crop, background=0,
-                             strain_tensor=(e_xx[idx], e_yy[idx], e_xy[idx]))
-    images.append(FakeFabIO(img))
+    @patch("fabio.open")
+    @patch("pyxe.monochromatic.extract_fnames")
+    def setUp(self, extract_fnames, fabio_open):
+        fabio_open.side_effect = images
+        extract_fnames.return_value = fnames
 
-q0_image = [FakeFabIO(mono.rings(exclude_criteria=0.1, crop=crop, background=0,
-                      strain_tensor=(0, 0, 0)))]
-q0_name = ['q0.tif']
-q0_co_ord = np.array([[0,0]])
+        self.data = Mono('', co_ords, fit2Dparams, e_to_w(energy),
+                         f_ext='.tif', progress=False,
+                         npt_rad=crop_shape[0] / 2)
 
-@patch("fabio.open")
-@patch("pyxe.monochromatic.extract_fnames")
-def test_import(extract_fnames, fabio_open):
-    """
-    Check that the correct number of files is being loaded.
-    """
-    # Will now return or yield a different im for each call to mock
-    fabio_open.side_effect = images
-    extract_fnames.return_value = fnames
+        fabio_open.side_effect = q0_images
+        extract_fnames.return_value = q0_fnames
 
-    data = Mono('', co_ords, fit2Dparams, f_ext='.tif', progress=False,
-                npt_rad=cropped_shape[0]//2)
+        self.q0 = Mono('', q0_co_ords, fit2Dparams, e_to_w(energy),
+                       f_ext='.tif', progress=False, npt_rad=crop_shape[0] / 2)
 
-    fabio_open.side_effect = q0_image
-    extract_fnames.return_value = q0_name
 
-    q0 = Mono('', q0_co_ord, fit2Dparams, f_ext='.tif', progress=False,
-                npt_rad=cropped_shape[0]//2)
-    return q0, data
+    def tearDown(self):
+        pass
 
-if __name__ == '__main__':
-    q0, data = test_import()
-    data.peak_fit(3.1, 0.3)
-    q0.peak_fit(3.1, 0.3)
-    data.calculate_strain(q0)
-    plt.figure()
-    data.plot_slice(data='shear strain', phi=0)
-    plt.show()
-    # d = data.extract_slice(phi=0)
-    # plt.figure()
-    # data.plot_slice(phi=0)
-    # plt.show()
-    # plt.figure()
-    # data.plot_slice(phi=np.pi/2)
-    # plt.show()
-    # plt.figure()
-    # data.plot_slice(data='shear strain', phi=np.pi / 2)
-    # plt.show()
+    def test_peak_fit(self):
+        self.data.peak_fit(3.1, 1.)
+
+    def test_strain_calc(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+
+    def test_extract_slice(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+        self.data.extract_slice('strain', phi=0)
+        assert_raises(AssertionError, self.data.extract_slice, 'strain err', 0)
+        self.data.extract_slice('shear strain', phi=5*np.pi)
+        self.data.extract_slice('strain', phi=np.pi/3)
+        self.data.extract_slice('strain', az_idx=3)
+
+# def test_import(extract_fnames, fabio_open):
+#     """
+#     Check that the correct number of files is being loaded.
+#     """
+#     # Will now return or yield a different im for each call to mock
+#     fabio_open.side_effect = images
+#     extract_fnames.return_value = fnames
+#
+#     data = Mono('', co_ords, fit2Dparams, f_ext='.tif', progress=False,
+#                 npt_rad=crop_shape[0] / 2)
+#
+#     fabio_open.side_effect = q0_images
+#     extract_fnames.return_value = q0_fnames
+#
+#     q0 = Mono('', q0_co_ords, fit2Dparams, f_ext='.tif', progress=False,
+#               npt_rad=crop_shape[0] / 2)
+#     return q0, data
+#
+# if __name__ == '__main__':
+#     q0, data = test_import()
+#     data.peak_fit(3.1, 1.)
+#     q0.peak_fit(3.1, 1.)
+#     data.calculate_strain(q0)
+#
+#     # Compare positions, same angle
+#     idx = 13
+#     plt.plot(data.extract_slice(phi=data.phi[idx]), label='{}_phi'.format(idx))
+#     plt.plot(data.strain[..., idx], label='{}_raw'.format(idx))
+#     plt.plot(data.extract_slice(az_idx=idx), label='{}_raw_b'.format(idx))
+#     plt.plot(strain_transformation(data.phi[idx], e_xx, e_yy, e_xy), label='{}trans_tensor'.format(idx))
+#     plt.legend()
+#     plt.show()
+#
+#     p_idx=39
+#     # Compare angles, same position
+#     plt.plot(data.strain[p_idx], label='posn_{}_raw'.format(p_idx))
+#     plt.plot(strain_transformation(data.phi, e_xx[p_idx], e_yy[p_idx], e_xy[p_idx]),
+#                                    label='posn_{}trans_tensor'.format(p_idx))
+#     plt.legend()
+#     plt.show()
