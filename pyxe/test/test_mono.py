@@ -40,27 +40,20 @@ q0_fnames, q0_co_ords, q0_images, _ = q0
 def test_integration(extract_fnames, fabio_open):
     fabio_open.side_effect = images
     extract_fnames.return_value = fnames
-    data = Mono('', co_ords, fit2Dparams, e_to_w(energy), f_ext='.tif',
-                progress=False, npt_rad=crop_shape[0] / 2)
+    data_ = Mono('', co_ords, fit2Dparams, e_to_w(energy), f_ext='.tif',
+                 progress=False, npt_rad=crop_shape[0] / 2)
 
     fabio_open.side_effect = q0_images
     extract_fnames.return_value = q0_fnames
-    q0 = Mono('', q0_co_ords, fit2Dparams, e_to_w(energy), f_ext='.tif',
-              progress=False, npt_rad=crop_shape[0] / 2)
+    q0_ = Mono('', q0_co_ords, fit2Dparams, e_to_w(energy), f_ext='.tif',
+               progress=False, npt_rad=crop_shape[0] / 2)
 
-    return data, q0
-
-data, q0 = test_integration()
+    return data_, q0_
 
 
 class TestMono(object):
 
-    def setUp(self):
-        self.data = data
-        self.q0 = q0
-
-    def tearDown(self):
-        pass
+    data, q0 = test_integration()
 
     def test_peak_fit(self):
         self.data.peak_fit(3.1, 1.)
@@ -103,8 +96,9 @@ class TestMono(object):
             initial = strain_transformation(self.data.phi[idx], *tensor)
             processed_1 = self.data.strain[..., idx]
             processed_2 = self.data.extract_slice(phi=self.data.phi[idx])
-            assert np.allclose(processed_1, initial, atol=1e-5, rtol=0), idx
-            assert np.allclose(processed_2, initial, atol=1e-5, rtol=0), idx
+            for processed in [processed_1, processed_2]:
+                max_diff = np.max(initial - processed)
+                assert max_diff < 10**-5, (idx, max_diff)
 
     def test_angles(self):
         self.data.peak_fit(3.1, 1.)
@@ -112,10 +106,11 @@ class TestMono(object):
         self.data.calculate_strain(self.q0)
         # Compare angles, same position
         for p_idx in [0, 7, 12, 26, 39, 45]:
-            tensor =  e_xx[p_idx], e_yy[p_idx], e_xy[p_idx]
+            tensor = e_xx[p_idx], e_yy[p_idx], e_xy[p_idx]
             initial = strain_transformation(self.data.phi, *tensor)
             processed = self.data.strain[p_idx]
-            assert np.allclose(initial, processed, atol=1e-5, rtol=0), p_idx
+            max_diff = np.max(initial - processed)
+            assert max_diff < 10**-5, (p_idx, max_diff)
 
     def test_plotting(self):
         self.data.peak_fit(3.1, 1.)
@@ -126,3 +121,7 @@ class TestMono(object):
         self.data.plot_slice('strain', phi=np.pi/3)
         self.data.plot_slice('shear stress', phi=5*np.pi)
         self.data.plot_slice('peaks err', az_idx=3)
+
+
+if __name__ == '__main__':
+    data, q0 = test_integration()
