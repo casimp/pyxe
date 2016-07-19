@@ -114,10 +114,10 @@ class DataViz(object):
 
             data_command = {'peaks': self.peaks,
                             'peaks error': self.peaks_err,
-                            'fwhm': self.peaks,
-                            'fwhm error': self.peaks_err,
-                            'strain': self.peaks,
-                            'strain error': self.peaks_err}
+                            'fwhm': self.fwhm,
+                            'fwhm error': self.fwhm_err,
+                            'strain': self.strain,
+                            'strain error': self.strain_err}
 
             data = data_command[command][..., az_idx]
         else:
