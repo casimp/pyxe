@@ -21,6 +21,7 @@ from pyxe.energy_dispersive import EDI12
 from pyxe.fitting_functions import strain_transformation
 from pyxpb.array_create import intensity_array
 from pyxe.merge import ordered_merge
+from pyxe.peak_analysis import PeakAnalysis
 
 
 def i12_dict(X, Y, q, I):
@@ -191,65 +192,24 @@ class TestEnergy(object):
         for d2, name, az in product(d_, az_names, az_):
             d2.plot_slice(name, az_idx=az)
             plt.close()
-    #
-    # def test_plot_slice(self):
-    #     self.data.peak_fit(3.1, 1.)
-    #     self.q0.peak_fit(3.1, 1.)
-    #     self.data.calculate_strain(self.q0)
-    #     self.data.define_material(E=200 * 10 ** 9, v=0.3)
-    #     # Try a few slice extract options
-    #     self.data.plot_slice('strain', phi=np.pi/3)
-    #     plt.close()
-    #     self.data.plot_slice('shear stress', phi=5*np.pi)
-    #     plt.close()
-    #     self.data.plot_slice('peaks err', az_idx=3)
-    #     plt.close()
-    #
-    # def test_merged_plot_slice(self):
-    #     self.data.peak_fit(3.1, 1.)
-    #     self.q0.peak_fit(3.1, 1.)
-    #     self.data.calculate_strain(self.q0)
-    #
-    #     data2 = copy.deepcopy(self.data)
-    #     shift = 1.00001
-    #     data2.d1 += shift
-    #     merged = ordered_merge([self.data, data2], [0, 1])
-    #     merged.plot_slice('strain', phi=np.pi/3)
-    #     plt.close()
-    #     merged.plot_slice('shear stress', phi=5*np.pi)
-    #     plt.close()
-    #     merged.plot_slice('peaks err', az_idx=3)
-    #     plt.close()
-    #
-    # def test_plot_line(self):
-    #     self.data.peak_fit(3.1, 1.)
-    #     self.q0.peak_fit(3.1, 1.)
-    #     self.data.calculate_strain(self.q0)
-    #     self.data.define_material(E=200 * 10 ** 9, v=0.3)
-    #     # Try a few slice extract options
-    #     self.data.plot_line('strain', phi=np.pi / 3)
-    #     plt.close()
-    #     self.data.plot_slice('shear stress', phi=5*np.pi, pnt=(0,0), theta=np.pi/3)
-    #     plt.close()
-    #     self.data.plot_slice('peaks err', az_idx=3, pnt=(0.2,0.1), theta=-np.pi/3)
-    #     plt.close()
-    #
-    # def test_merged_plot_line(self):
-    #     self.data.peak_fit(3.1, 1.)
-    #     self.q0.peak_fit(3.1, 1.)
-    #     self.data.calculate_strain(self.q0)
-    #
-    #     data2 = copy.deepcopy(self.data)
-    #     shift = 1.00001
-    #     data2.d1 += shift
-    #     merged = ordered_merge([self.data, data2], [0, 1])
-    #     merged.plot_slice('strain', phi=np.pi / 3)
-    #     plt.close()
-    #     merged.plot_slice('shear stress', phi=5*np.pi, pnt=(0,0), theta=np.pi/3)
-    #     plt.close()
-    #     merged.plot_slice('peaks err', az_idx=3, pnt=(0.2,0.1), theta=-np.pi/3)
-    #     plt.close()
-    #
+
+    def test_save_reload(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+
+        data2 = copy.deepcopy(self.data)
+        data2.d1 += 1.00001
+        merged = ordered_merge([self.data, data2], [0, 1], 0.1)
+        merged.plot_slice('shear strain', phi=np.pi / 3)
+        plt.close()
+        merged.save_to_hdf5(fpath='energy_test_pyxe.h5', overwrite=True)
+        merged_reload = PeakAnalysis(fpath='energy_test_pyxe.h5')
+        merged_reload.plot_slice('shear strain', phi=np.pi/3)
+        plt.close()
+
+        assert np.array_equal(merged.peaks, merged_reload.peaks)
+
 
 if __name__ == '__main__':
     data, q0 = test_integration()
@@ -263,5 +223,10 @@ if __name__ == '__main__':
     data2 = copy.deepcopy(data)
     data2.d1 += shift
     merged = ordered_merge([data, data2], [0, 1], 0)
-    merged.plot_slice('fwhm', az_idx=0)
+    merged.plot_slice('shear strain', phi=0)
+    #plt.show()
+    merged.save_to_hdf5(overwrite=True)
+    merged_reload = PeakAnalysis('_pyxe.h5')
+    #print(merged_reload.analysis_state.decode())
+    merged_reload.plot_slice('shear strain', phi=0)
     plt.show()

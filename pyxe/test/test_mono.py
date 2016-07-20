@@ -20,6 +20,7 @@ from pyxe.fitting_functions import strain_transformation
 from pyxpb.array_create import ring_array
 from pyxe.merge import ordered_merge
 import matplotlib.pyplot as plt
+from pyxe.peak_analysis import PeakAnalysis
 
 from itertools import product
 
@@ -223,77 +224,22 @@ class TestMono(object):
             d2.plot_slice(name, az_idx=az)
             plt.close()
 
-    # def test_merged_plot_slice(self):
-    #     self.data.peak_fit(3.1, 1.)
-    #     self.q0.peak_fit(3.1, 1.)
-    #     self.data.calculate_strain(self.q0)
-    #     self.data.define_material(E=200 * 10 ** 9, v=0.3)
-    #     # Try a few slice extract options
-    #     names = ['peaks', 'fwhm', 'strain', 'stress']
-    #     shear_names = ['shear strain', 'shear stress']
-    #     error_names = ['peak err', 'fwhm err', 'strain err']
-    #     phi_ = [0, np.pi/2, -2*np.pi]
-    #     az_ = [0, 10, 12, 20]
-    #     for name, phi in product(names + shear_names, phi_):
-    #         self.data.plot_slice(name, phi=phi)
-    #         plt.close()
-    #     for name, az in product(names + error_names, az_):
-    #         self.data.plot_slice(name, az_idx=az)
-    #         plt.close()
-    #
-    # def test_merged_plot_line(self):
-    #     self.data.peak_fit(3.1, 1.)
-    #     self.q0.peak_fit(3.1, 1.)
-    #     self.data.calculate_strain(self.q0)
-    #     self.data.define_material(E=200 * 10 ** 9, v=0.3)
-    #     # Try a few slice extract options
-    #     names = ['peaks', 'fwhm', 'strain', 'stress']
-    #     shear_names = ['shear strain', 'shear stress']
-    #     error_names = ['peak err', 'fwhm err', 'strain err']
-    #     phi_, az_ = [0, -2 * np.pi], [0, 20]
-    #     pnt_, theta_ = [(0, 0), (-0.2, 0.2)], [0, -np.pi / 3]
-    #     iterator = product(names + shear_names, phi_, pnt_, theta_)
-    #     for name, phi, pnt, theta in iterator:
-    #         self.data.plot_line(name, phi=phi, pnt=pnt, theta=theta)
-    #         plt.close()
-    #     iterator = product(names + error_names, az_, pnt_, theta_)
-    #     for name, az in iterator:
-    #         self.data.plot_line(name, az_idx=az, pnt=pnt, theta=theta)
-    #         plt.close()
-    #
-    #
-    # def test_merged_plot_slice(self):
-    #     self.data.peak_fit(3.1, 1.)
-    #     self.q0.peak_fit(3.1, 1.)
-    #     self.data.calculate_strain(self.q0)
-    #
-    #     data2 = copy.deepcopy(self.data)
-    #     shift = 1.00001
-    #     data2.d1 += shift
-    #     merged = ordered_merge([self.data, data2], [0, 1])
-    #     merged.plot_slice('strain', phi=np.pi / 3)
-    #     merged.plot_slice('shear stress', phi=5 * np.pi)
-    #     merged.plot_slice('peaks err', az_idx=3)
-    #     plt.close()
-    #
-    #
-    #
-    #
-    #
-    # def test_merged_plot_line(self):
-    #     self.data.peak_fit(3.1, 1.)
-    #     self.q0.peak_fit(3.1, 1.)
-    #     self.data.calculate_strain(self.q0)
-    #
-    #     data2 = copy.deepcopy(self.data)
-    #     shift = 1.00001
-    #     data2.d1 += shift
-    #     merged = ordered_merge([self.data, data2], [0, 1])
-    #     merged.plot_slice('strain', phi=np.pi / 3)
-    #     merged.plot_slice('shear stress', phi=5 * np.pi, pnt=(0, 0),
-    #                       theta=np.pi / 3)
-    #     merged.plot_slice('peaks err', az_idx=3, pnt=(0.2, 0.1), theta=-np.pi/3)
-    #     plt.close()
+    def test_save_reload(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+
+        data2 = copy.deepcopy(self.data)
+        data2.d1 += 1.00001
+        merged = ordered_merge([self.data, data2], [0, 1], 0.1)
+        merged.plot_slice('shear strain', phi=np.pi / 3)
+        plt.close()
+        merged.save_to_hdf5(fpath='mono_test_pyxe.h5', overwrite=True)
+        merged_reload = PeakAnalysis(fpath='mono_test_pyxe.h5')
+        merged_reload.plot_slice('shear strain', phi=np.pi/3)
+        plt.close()
+
+        assert np.array_equal(merged.peaks, merged_reload.peaks), (merged.peaks.shape, merged_reload.peaks.shape)
 
 if __name__ == '__main__':
     data, q0 = test_integration()

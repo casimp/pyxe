@@ -10,6 +10,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from six import string_types
 import h5py
 import numpy as np
 from scipy.optimize import curve_fit
@@ -48,7 +49,7 @@ def full_ring_fit(strain, phi):
     return strain_tensor
 
 
-def pyxe_to_nxs(fname, pyxe_object, overwrite=False):
+def pyxe_to_hdf5(fname, pyxe_object, overwrite=False):
     """
     Saves all data back into an expanded .nxs file. Contains all original
     data plus q0, peak locations and strain.
@@ -56,30 +57,24 @@ def pyxe_to_nxs(fname, pyxe_object, overwrite=False):
     # fname:      File name/location - default is to save to parent
                   directory (*_pyxe.nxs)
     """
-    data_ids = ['d1', 'd2', 'd3', 'phi', 'q', 'I', 'n_dims']
-    data_array = [pyxe_object.d1, pyxe_object.d2, pyxe_object.d3,
-                  pyxe_object.phi, pyxe_object.q, pyxe_object.I,
-                  pyxe_object.n_dims]
-
-    if pyxe_object.analysis_stage > 0:
-        data_ids += ['peaks', 'peaks_err', 'fwhm', 'fwhm_err']
-        data_array += [pyxe_object.peaks, pyxe_object.peaks_err,
-                       pyxe_object.fwhm, pyxe_object.fwhm_err]
-    if pyxe_object.analysis_stage == 2:
-        data_ids += ['strain', 'strain_err', 'strain_tensor', 'q0']
-        data_array += [pyxe_object.strain, pyxe_object.strain_err,
-                       pyxe_object.strain_tensor]
+    data_ids = ['ndim', 'd1', 'd2', 'd3', 'q', 'I', 'phi',
+                'peaks', 'peaks_err', 'fwhm', 'fwhm_err',
+                'strain', 'strain_err', 'strain_tensor',
+                'E', 'v', 'G', 'stress_state', 'analysis_state']
 
     write = 'w' if overwrite else 'w-'
     with h5py.File(fname, write) as f:
 
-        for data_id, data in zip(data_ids, data_array):
-            d_path = 'entry1/pyxe_simplified/%s' % data_id
-
-            if data_id == 'I':
-                f.create_dataset(d_path, data=data, compression='gzip')
-            else:
-                f.create_dataset(d_path, data=data)
+        for name in data_ids:
+            #print('Saving: ', name)
+            d_path = 'pyxe_analysis/%s' % name
+            data = getattr(pyxe_object, name)
+            data = data.encode() if isinstance(data, string_types) else data
+            if data is not None:
+                if name == 'I':
+                    f.create_dataset(d_path, data=data, compression='gzip')
+                else:
+                    f.create_dataset(d_path, data=data)
 
 
 def dim_fill(data):

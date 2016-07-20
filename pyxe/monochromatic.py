@@ -14,10 +14,9 @@ import os
 import fabio
 import numpy as np
 import pyFAI
-import h5py
 import sys
 
-from pyxe.analysis_tools import dim_fill, pyxe_to_nxs
+from pyxe.analysis_tools import dim_fill
 from pyxe.peak_analysis import PeakAnalysis
 
 
@@ -49,7 +48,8 @@ class Mono(PeakAnalysis):
         # az_range:   Range of azimuthal values to investigate - note that 0
                       degrees is defined at the eastern edge of the circle.
         """
-        self.folder = folder
+        fname = '{}.h5'.format(os.path.split(folder)[1])
+        self.fpath = os.path.join(folder, fname)
 
         error = 'Azimuthal range must be less than or equal to 360deg'
         assert abs(np.max(az_range) - np.min(az_range)) <= 360, error
@@ -69,7 +69,7 @@ class Mono(PeakAnalysis):
                  ' files = %s)' % (co_ords.shape[0], len(fnames)))
         assert co_ords.shape[0] == len(fnames), error
         (self.d1, self.d2, self.d3), self.dims = dim_fill(co_ords)
-        self.n_dims = len(self.dims)
+        self.ndim = len(self.dims)
         self.I = np.nan * np.ones((co_ords.shape[0], npt_az, npt_rad))
 
         print('\nLoading files and carrying out azimuthal integration:\n')
@@ -90,18 +90,18 @@ class Mono(PeakAnalysis):
         self.phi = phi * np.pi / 180
         self.E, self.v, self.G, self.stress_state = None, None, None, None
         self.analysis_state = 'integrated'
-
-    def save_to_nxs(self, fpath=None, overwrite=False):
-        """
-        Saves all data back into an expanded .nxs file. Contains all original
-        data plus q0, peak locations and strain.
-
-        # fpath:      Abs. path for new file - default is to save to parent
-                      directory (*/folder/folder_pyxe.nxs)
-        # overwrite:  Overwrite file if it already exists (True/[False])
-        """
-        if fpath is None:
-            fname = '%s_pyxe.nxs' % os.path.split(self.folder)[1]
-            fpath = os.path.join(self.folder, fname)
-
-        pyxe_to_nxs(fpath, self, overwrite)
+    #
+    # def save_to_nxs(self, fpath=None, overwrite=False):
+    #     """
+    #     Saves all data back into an expanded .nxs file. Contains all original
+    #     data plus q0, peak locations and strain.
+    #
+    #     # fpath:      Abs. path for new file - default is to save to parent
+    #                   directory (*/folder/folder_pyxe.nxs)
+    #     # overwrite:  Overwrite file if it already exists (True/[False])
+    #     """
+    #     if fpath is None:
+    #         fname = '%s_pyxe.nxs' % os.path.split(self.folder)[1]
+    #         fpath = os.path.join(self.folder, fname)
+    #
+    #     pyxe_to_nxs(fpath, self, overwrite)
