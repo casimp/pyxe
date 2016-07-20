@@ -31,25 +31,25 @@ class EDI12(PeakAnalysis):
         not 23.
         """
         self.fpath = fpath
-        self.f = h5py.File(fpath, 'r')
+        f = h5py.File(fpath, 'r')
 
         # Use scan command to find number of dimensions and the order in which
         # they were acquired. Important/useful for plotting!
-        scan_command = self.f['entry1/scan_command'][0]
+        scan_command = f['entry1/scan_command'][()][0]
         dims = re.findall(b'ss2_\w+', scan_command)
         self.ndim = len(dims)
         dims = dims + [dim for dim in [b'ss2_x', b'ss2_y', b'ss2_z'] if dim not in dims]
         co_ords = []
         for dim in dims:
-            co_ords.append(dimension_fill(self.f, dim.decode("utf-8")))
+            co_ords.append(dimension_fill(f, dim.decode("utf-8")))
         self.d1, self.d2, self.d3 = co_ords
 
         # Remove unused detector - resulting detector array is almost certainly
         # arrayed in ascending order from from -np.pi to 0 (phi). Option exists
         # to specify the order if this isn't true.
-        self.q = self.f['entry1/EDXD_elements/edxd_q'][:]
+        self.q = f['entry1/EDXD_elements/edxd_q'][()]
         self.q = np.delete(self.q, unused_detector, 0)
-        self.I = self.f['entry1/EDXD_elements/data'][:]
+        self.I = f['entry1/EDXD_elements/data'][()]
         self.I = np.delete(self.I, unused_detector, -2)
         self.phi = np.linspace(-np.pi, 0, 23) if phi is None else phi
         self.E, self.v, self.G, self.stress_state = None, None, None, None

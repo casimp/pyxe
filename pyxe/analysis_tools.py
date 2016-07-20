@@ -114,7 +114,7 @@ def dimension_fill(data, dim_ID):
     # dim_ID:     Dimension ID (ss_x, ss2_y or ss2_z)
     """
     try:
-        dimension_data = data['entry1/EDXD_elements/' + dim_ID][:]
+        dimension_data = data['entry1/EDXD_elements/' + dim_ID][()]
     except KeyError:
         dimension_data = None
     return dimension_data
