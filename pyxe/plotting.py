@@ -10,6 +10,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from six import binary_type
+
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt 
@@ -32,18 +34,21 @@ class DataViz(object):
                       file or a pyxe data object (inc. merged object)
         """
         self.fpath = fpath
+
+        data_ids = ['ndim', 'd1', 'd2', 'd3', 'q', 'I', 'phi',
+                    'peaks', 'peaks_err', 'fwhm', 'fwhm_err',
+                    'strain', 'strain_err', 'strain_tensor',
+                    'E', 'v', 'G', 'stress_state', 'analysis_state']
+
         with h5py.File(fpath, 'r') as f:
-            data = f['entry1/pyxe_analysis']
-            self.n_dims = data['n_dims']
-            self.d1, self.d2, self.d3 = data['d1'], data['d2'], data['d3']
-            self.q, self.I, self.phi = data['q'], data['I'], data['phi']
-            self.peaks, self.peaks_err = data['strain'], data['strain_err']
-            self.fwhm, self.fwhm_err = data['fwhm'], data['fwhm_err']
-            self.strain, self.strain_err = data['strain'], data['strain_err']
-            self.strain_tensor = data['strain_tensor']
-            self.stress_state = data['stress_state']
-            self.E, self.v, self.G = data['E'], data['v'], data['G']
-            self.analysis_state = data['analysis_state']
+            data = f['pyxe_analysis']
+            for name in data_ids:
+                try:
+                    d = data[name][()]
+                    d = d.decode() if isinstance(d, binary_type) else d
+                    setattr(self, name, d)
+                except KeyError:
+                    setattr(self, name, None)
 
     def plot_intensity(self, pnt=None, az_idx=0, figsize=(7, 5), ax=False):
         """
@@ -92,7 +97,7 @@ class DataViz(object):
     def extract_line(self, data='strain', phi=None, az_idx=None,
                      pnt=None, theta=0, z_idx=None, res=0.1):
         data = self.extract_slice(data, phi, az_idx, z_idx)
-        if self.n_dims == 1:
+        if self.ndim == 1:
             return self.d1, data
         else:
             ## or merged??
@@ -109,6 +114,7 @@ class DataViz(object):
         az_command = 'phi' if phi is not None else 'az_idx'
 
         if az_command == 'az_idx':
+            az_idx = int(az_idx)
             if 'stress' not in command:
                 data_command = {'peaks': self.peaks,
                                 'peaks error': self.peaks_err,
@@ -120,7 +126,7 @@ class DataViz(object):
                 data = data_command[command][..., az_idx]
             else:
                 d = self.strain if 'err' not in command else self.strain_err
-                e_xx, e_yy = d[..., az_idx],  d[..., az90(self.phi, az_idx)]
+                e_xx, e_yy = d[..., az_idx], d[..., az90(self.phi, az_idx)]
                 data = self.stress_eqn(e_xx, e_yy, self.E, self.v)
 
         else:

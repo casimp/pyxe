@@ -91,13 +91,13 @@ def basic_merge(data):
 
     for d in data:
         error = 'Trying to merge incompatible data - %s'
-        assert new.n_dims == d.n_dims, error % 'e.g. 2D with 3D'
+        assert new.ndim == d.ndim, error % 'e.g. 2D with 3D'
         assert np.array_equal(new.phi, d.phi), error % 'number of az bins'
         assert np.array_equal(new.q, d.q), error % 'number of q bins'
 
-    new.d1 = np.append(*[d.d1 for d in data]) if new.n_dims > 0 else None
-    new.d2 = np.append(*[d.d2 for d in data]) if new.n_dims > 1 else None
-    new.d3 = np.append(*[d.d3 for d in data]) if new.n_dims > 2 else None
+    new.d1 = np.append(*[d.d1 for d in data]) if new.ndim > 0 else None
+    new.d2 = np.append(*[d.d2 for d in data]) if new.ndim > 1 else None
+    new.d3 = np.append(*[d.d3 for d in data]) if new.ndim > 2 else None
 
     state = state_compare([d.analysis_state for d in data])
 

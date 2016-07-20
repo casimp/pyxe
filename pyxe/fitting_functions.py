@@ -72,69 +72,69 @@ def psuedo_voigt(x, *p):
     return (1 - p[4]) * gaussian(x, *p) + p[4] * lorentzian(x, *p)
 
 
-class FittingTests(unittest.TestCase):
-    """
-    Our basic test class
-    """
-
-    def test_gaussian(self):
-        """
-        The actual test.
-        Any method which starts with ``test_`` will considered as a test case.
-        """
-        p0 = np.array([100, 1, 1, 1])
-        x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
-        I = gaussian(x, *p0)
-        coeff, var_matrix = curve_fit(gaussian, x, I, p0)
-        
-        self.assertEqual(sum(p0), sum(coeff)) 
-        
-    def test_lorentzian(self):
-        """
-        The actual test.
-        Any method which starts with ``test_`` will considered as a test case.
-        """
-        p0 = np.array([100, 1, 1, 1])
-        x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
-        I = lorentzian(x, *p0)
-        coeff, var_matrix = curve_fit(lorentzian, x, I, p0)
-        
-        self.assertEqual(sum(p0), sum(coeff)) 
-        
-    def test_psuedo_voigt1(self):
-        """
-        The actual test.
-        Any method which starts with ``test_`` will considered as a test case.
-        """
-        p0 = np.array([100, 1, 1, 1, 0.5])
-        x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
-        I = psuedo_voigt(x, *p0)
-        coeff, var_matrix = curve_fit(psuedo_voigt, x, I, p0)
-        
-        self.assertEqual(sum(p0), sum(coeff))      
-        
-    def test_psuedo_voigt_gaussian(self):
-        """
-        The actual test.
-        Any method which starts with ``test_`` will considered as a test case.
-        """
-        p0 = np.array([100, 1, 1, 1])
-        pg = np.array([100, 1, 1, 1, 0])
-        x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
-
-        self.assertEqual(sum(gaussian(x, *p0)), sum(psuedo_voigt(x, *pg)))
-        
-    def test_psuedo_voigt_lorentzian(self):
-        """
-        The actual test.
-        Any method which starts with ``test_`` will considered as a test case.
-        """
-        p0 = np.array([100, 1, 1, 1])
-        pl = np.array([100, 1, 1, 1, 1])
-        x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
-
-        self.assertEqual(sum(lorentzian(x, *p0)), sum(psuedo_voigt(x, *pl)))
-
-
-if __name__ == '__main__':
-    unittest.main()
+# class FittingTests(unittest.TestCase):
+#     """
+#     Our basic test class
+#     """
+#
+#     def test_gaussian(self):
+#         """
+#         The actual test.
+#         Any method which starts with ``test_`` will considered as a test case.
+#         """
+#         p0 = np.array([100, 1, 1, 1])
+#         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
+#         I = gaussian(x, *p0)
+#         coeff, var_matrix = curve_fit(gaussian, x, I, p0)
+#
+#         self.assertEqual(sum(p0), sum(coeff))
+#
+#     def test_lorentzian(self):
+#         """
+#         The actual test.
+#         Any method which starts with ``test_`` will considered as a test case.
+#         """
+#         p0 = np.array([100, 1, 1, 1])
+#         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
+#         I = lorentzian(x, *p0)
+#         coeff, var_matrix = curve_fit(lorentzian, x, I, p0)
+#
+#         self.assertEqual(sum(p0), sum(coeff))
+#
+#     def test_psuedo_voigt1(self):
+#         """
+#         The actual test.
+#         Any method which starts with ``test_`` will considered as a test case.
+#         """
+#         p0 = np.array([100, 1, 1, 1, 0.5])
+#         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
+#         I = psuedo_voigt(x, *p0)
+#         coeff, var_matrix = curve_fit(psuedo_voigt, x, I, p0)
+#
+#         self.assertEqual(sum(p0), sum(coeff))
+#
+#     def test_psuedo_voigt_gaussian(self):
+#         """
+#         The actual test.
+#         Any method which starts with ``test_`` will considered as a test case.
+#         """
+#         p0 = np.array([100, 1, 1, 1])
+#         pg = np.array([100, 1, 1, 1, 0])
+#         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
+#
+#         self.assertEqual(sum(gaussian(x, *p0)), sum(psuedo_voigt(x, *pg)))
+#
+#     def test_psuedo_voigt_lorentzian(self):
+#         """
+#         The actual test.
+#         Any method which starts with ``test_`` will considered as a test case.
+#         """
+#         p0 = np.array([100, 1, 1, 1])
+#         pl = np.array([100, 1, 1, 1, 1])
+#         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
+#
+#         self.assertEqual(sum(lorentzian(x, *p0)), sum(psuedo_voigt(x, *pl)))
+#
+#
+# if __name__ == '__main__':
+#     unittest.main()
