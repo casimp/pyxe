@@ -13,8 +13,8 @@ from __future__ import unicode_literals
 from nose.tools import assert_raises
 import numpy as np
 from mock import patch
-from xrdpb.detectors import MonoDetector
-from xrdpb.conversions import e_to_w
+from pyxpb.detectors import MonoDetector
+from pyxpb.conversions import e_to_w
 from pyxe.monochromatic import Mono
 from pyxe.fitting_functions import strain_transformation
 from pyxe.test.data_create import create_ring_array

@@ -13,8 +13,8 @@ from __future__ import unicode_literals
 from nose.tools import assert_raises
 import numpy as np
 from mock import patch
-from xrdpb.detectors import i12_energy
-from xrdpb.conversions import e_to_w
+from pyxpb.detectors import i12_energy
+from pyxpb.conversions import e_to_w
 from pyxe.energy_dispersive import EDI12
 from pyxe.fitting_functions import strain_transformation
 from pyxe.test.data_create import create_intensity_array
@@ -26,8 +26,8 @@ i12_energy.add_peaks('Fe')
 data = create_intensity_array(i12_energy, pnts=(7, 7), max_strain=1e-3)
 data_dict,(e_xx, e_yy, e_xy) = data
 
-q0 = create_intensity_array(i12_energy, pnts=(1, 1), max_strain=0)
-q0_data_dict, _ = q0
+q0_ = create_intensity_array(i12_energy, pnts=(1, 1), max_strain=0)
+q0_data_dict, _ = q0_
 
 
 @patch("h5py.File")
@@ -37,68 +37,68 @@ def test_integration(h5py_file):
     h5py_file.return_value = q0_data_dict
     q0 = EDI12('', [])
     return data, q0
-#
-#
-# class TestMono(object):
-#
-#     data, q0 = test_integration()
-#
-#     def test_peak_fit(self):
-#         self.data.peak_fit(3.1, 1.)
-#
-#     def test_basic_merge(self):
-#         self.data.peak_fit(3.1, 1.)
-#         merged = self.data + self.data
-#         assert np.array_equal(merged.phi, self.data.phi)
-#         assert merged.peaks.size == 2 * self.data.peaks.size
-#
-#     def test_strain_calc(self):
-#         self.data.peak_fit(3.1, 1.)
-#         self.q0.peak_fit(3.1, 1.)
-#         self.data.calculate_strain(self.q0)
-#
-#     def test_stress_calc(self):
-#         self.data.peak_fit(3.1, 1.)
-#         self.q0.peak_fit(3.1, 1.)
-#         self.data.calculate_strain(self.q0)
-#         self.data.define_material(E=200*10**9, v=0.3)
-#
-#     def test_extract_slice(self):
-#         self.data.peak_fit(3.1, 1.)
-#         self.q0.peak_fit(3.1, 1.)
-#         self.data.calculate_strain(self.q0)
-#         self.data.define_material(E=200 * 10 ** 9, v=0.3)
-#         # Try a few slice extract options
-#         self.data.extract_slice('strain', phi=np.pi/3)
-#         assert_raises(AssertionError, self.data.extract_slice, 'strain err', 0)
-#         self.data.extract_slice('shear stress', phi=5*np.pi)
-#         self.data.extract_slice('peaks err', az_idx=3)
-#
-#     def test_positions(self):
-#         self.data.peak_fit(3.1, 1.)
-#         self.q0.peak_fit(3.1, 1.)
-#         self.data.calculate_strain(self.q0)
-#         # Compare positions, same angle
-#         for idx in [0, 7, 12, 26, 32]:
-#             tensor = e_xx, e_yy, e_xy
-#             initial = strain_transformation(self.data.phi[idx], *tensor)
-#             processed_1 = self.data.strain[..., idx]
-#             processed_2 = self.data.extract_slice(phi=self.data.phi[idx])
-#             for processed in [processed_1, processed_2]:
-#                 max_diff = np.abs(np.max(initial - processed))
-#                 assert max_diff < 10**-4, (idx, max_diff)  # Brittle (linux)?!
-#
-#     def test_angles(self):
-#         self.data.peak_fit(3.1, 1.)
-#         self.q0.peak_fit(3.1, 1.)
-#         self.data.calculate_strain(self.q0)
-#         # Compare angles, same position
-#         for p_idx in [0, 7, 12, 26, 39, 45]:
-#             tensor = e_xx[p_idx], e_yy[p_idx], e_xy[p_idx]
-#             initial = strain_transformation(self.data.phi, *tensor)
-#             processed = self.data.strain[p_idx]
-#             max_diff = np.abs(np.max(initial - processed))
-#             assert max_diff < 10**-4, (p_idx, max_diff)  # Brittle (linux)?!
+
+
+class TestEnergy(object):
+
+    data, q0 = test_integration()
+
+    def test_peak_fit(self):
+        self.data.peak_fit(3.1, 1.)
+
+    def test_basic_merge(self):
+        self.data.peak_fit(3.1, 1.)
+        merged = self.data + self.data
+        assert np.array_equal(merged.phi, self.data.phi)
+        assert merged.peaks.size == 2 * self.data.peaks.size
+
+    def test_strain_calc(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+
+    def test_stress_calc(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+        self.data.define_material(E=200*10**9, v=0.3)
+
+    def test_extract_slice(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+        self.data.define_material(E=200 * 10 ** 9, v=0.3)
+        # Try a few slice extract options
+        self.data.extract_slice('strain', phi=np.pi/3)
+        assert_raises(AssertionError, self.data.extract_slice, 'strain err', 0)
+        self.data.extract_slice('shear stress', phi=5*np.pi)
+        self.data.extract_slice('peaks err', az_idx=3)
+
+    def test_positions(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+        # Compare positions, same angle
+        for idx in [0, 7, 12, 17, 22]:
+            tensor = e_xx, e_yy, e_xy
+            initial = strain_transformation(self.data.phi[idx], *tensor)
+            processed_1 = self.data.strain[..., idx]
+            processed_2 = self.data.extract_slice(phi=self.data.phi[idx])
+            for processed in [processed_1, processed_2]:
+                max_diff = np.abs(np.max(initial - processed))
+                assert max_diff < 10**-4, (idx, max_diff)  # Brittle (linux)?
+
+    def test_angles(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+        # Compare angles, same position
+        for p_idx in [(0, 0), (4, 4), (3, 5), (1, 2), (0, 4)]:
+            tensor = e_xx[p_idx], e_yy[p_idx], e_xy[p_idx]
+            initial = strain_transformation(self.data.phi, *tensor)
+            processed = self.data.strain[p_idx]
+            max_diff = np.abs(np.max(initial - processed))
+            assert max_diff < 10**-4, (p_idx, max_diff)  # Brittle (linux)?!
 #
 #     def test_plotting(self):
 #         self.data.peak_fit(3.1, 1.)
@@ -112,16 +112,16 @@ def test_integration(h5py_file):
 #
 
 if __name__ == '__main__':
-    data, qo = test_integration()
-    # data.peak_fit(3.1, 1.)
-    # q0.peak_fit(3.1, 1.)
-    # data.calculate_strain(q0)
-    # # Compare positions, same angle
-    # for a_idx in [0, 7, 12, 26, 32]:
-    #     i = strain_transformation(data.phi[a_idx], *(e_xx, e_yy, e_xy))
-    #     p_1 = data.strain[..., a_idx]
-    #     p_2 = data.extract_slice(phi=data.phi[a_idx])
-    #     for p in [p_1, p_2]:
-    #         abs_max = np.max(np.abs(i - p))
-    #         print(abs_max)
-    #         assert abs_max < 10 ** -4, (a_idx, abs_max)
+    data, q0 = test_integration()
+    data.peak_fit(3.1, 1.)
+    q0.peak_fit(3.1, 1.)
+    data.calculate_strain(q0)
+    # Compare positions, same angle
+    for a_idx in [0, 7, 12, 17, 22]:
+        i = strain_transformation(data.phi[a_idx], *(e_xx, e_yy, e_xy))
+        p_1 = data.strain[..., a_idx]
+        p_2 = data.extract_slice(phi=data.phi[a_idx])
+        for p in [p_1, p_2]:
+            abs_max = np.max(np.abs(i - p))
+            print(abs_max)
+            assert abs_max < 10 ** -4, (a_idx, abs_max)

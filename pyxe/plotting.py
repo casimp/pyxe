@@ -122,7 +122,7 @@ class DataViz(object):
             data = data_command[command][..., az_idx]
         else:
             tensor = self.strain_tensor
-            tensor = tensor[:, 0], tensor[:, 1], tensor[:, 2]
+            tensor = tensor[..., 0], tensor[..., 1], tensor[..., 2]
             shear = True if 'shear' in command else False
             stress = True if 'stress' in command else False
 

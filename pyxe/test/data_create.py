@@ -81,10 +81,11 @@ def create_intensity_array(detector, pnts=(8, 8),
         tensor = (e_xx[idx], e_yy[idx], e_xy[idx])
 
         data = detector.intensity(background=background,
-                                  strain_tensor=tensor)[1]['total']
-        intensity[idx] = data
+                                  strain_tensor=tensor)
+        intensity[idx] = data[1]['total']
+    q = np.repeat(data[0][None, :], 23, axis=0)
 
-    return data_dict(X, Y, data[0], intensity), (e_xx, e_yy, e_xy)
+    return data_dict(X, Y, q, intensity), (e_xx, e_yy, e_xy)
 
 
 
