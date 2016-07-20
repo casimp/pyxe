@@ -76,6 +76,13 @@ class TestMono(object):
         self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
 
+    def test_basic_plot(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+        self.data.plot_intensity()
+        self.data.plot_strain_fit()
+
     def test_stress_calc(self):
         self.data.peak_fit(3.1, 1.)
         self.q0.peak_fit(3.1, 1.)
@@ -146,6 +153,46 @@ class TestMono(object):
         assert merged.d1.size == added + self.data.d1.size, (
         merged.d1.size, added, self.data.d1.size)
 
+    def test_merged_plot_slice(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+
+        data2 = copy.deepcopy(self.data)
+        shift = 1.00001
+        data2.d1 += shift
+        merged = ordered_merge([self.data, data2], [0, 1])
+        merged.plot_slice('strain', phi=np.pi / 3)
+        merged.plot_slice('shear stress', phi=5 * np.pi)
+        merged.plot_slice('peaks err', az_idx=3)
+
+
+    def test_plot_line(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+        self.data.define_material(E=200 * 10 ** 9, v=0.3)
+        # Try a few slice extract options
+        self.data.plot_line('strain', phi=np.pi / 3)
+        self.data.plot_slice('shear stress', phi=5 * np.pi, pnt=(0, 0),
+                             theta=np.pi / 3)
+        self.data.plot_slice('peaks err', az_idx=3, pnt=(0.2, 0.1),
+                             theta=-np.pi / 3)
+
+
+    def test_merged_plot_line(self):
+        self.data.peak_fit(3.1, 1.)
+        self.q0.peak_fit(3.1, 1.)
+        self.data.calculate_strain(self.q0)
+
+        data2 = copy.deepcopy(self.data)
+        shift = 1.00001
+        data2.d1 += shift
+        merged = ordered_merge([self.data, data2], [0, 1])
+        merged.plot_slice('strain', phi=np.pi / 3)
+        merged.plot_slice('shear stress', phi=5 * np.pi, pnt=(0, 0),
+                          theta=np.pi / 3)
+        merged.plot_slice('peaks err', az_idx=3, pnt=(0.2, 0.1), theta=-np.pi / 3)
 
 if __name__ == '__main__':
     data, q0 = test_integration()

@@ -20,10 +20,12 @@ def line_extract(X, Y, pnt, theta, res=0.05):
             npnts = 1 + (np.max(Y) - np.min(Y)) // res
             y = np.linspace(np.min(Y), np.max(Y), npnts)
             x = y * 0 + pnt[0]
+            d = np.max(y) - np.min(y)
         else:
             npnts = 1 + (np.max(X) - np.min(X)) // res
             x = np.linspace(np.min(X), np.max(X), npnts)
             y = x * 0 + pnt[1]
+            d = np.max(x) - np.min(x)
     else:
         m = np.tan(theta)
         c = pnt[1] - m * pnt[0]
@@ -40,19 +42,19 @@ def line_extract(X, Y, pnt, theta, res=0.05):
         x = (y - c) / m
 
     return x, y, np.linspace(0, d, npnts)
-
-
-def az90(phi, idx):
-    
-    for i in [-np.pi/2, np.pi/2]:
-        if phi[idx] < -np.pi:
-            find_ind = np.isclose(phi, np.pi - phi[idx] + i)
-        else:
-            find_ind = np.isclose(phi, phi[idx] + i)
-        if np.sum(find_ind) == 1:
-            return np.argmax(find_ind)
-    raise ValueError('No cake segment found perpendicular to given index.', 
-                     'Number of cake segments must be divisable by 4.')
+#
+#
+# def az90(phi, idx):
+#
+#     for i in [-np.pi/2, np.pi/2]:
+#         if phi[idx] < -np.pi:
+#             find_ind = np.isclose(phi, np.pi - phi[idx] + i)
+#         else:
+#             find_ind = np.isclose(phi, phi[idx] + i)
+#         if np.sum(find_ind) == 1:
+#             return np.argmax(find_ind)
+#     raise ValueError('No cake segment found perpendicular to given index.',
+#                      'Number of cake segments must be divisable by 4.')
 
 
 def meshgrid_res(d1, d2, spatial_resolution):

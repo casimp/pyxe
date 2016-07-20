@@ -78,7 +78,7 @@ class DataViz(object):
 
         if not ax:
             fig = plt.figure(figsize=figsize)
-            ax = fig.add_subplot()
+            ax = fig.add_subplot(1, 1, 1)
 
         p = self.strain_tensor[pnt]
         ax.plot(self.phi, self.strain[pnt], 'k*')
@@ -95,20 +95,18 @@ class DataViz(object):
         if self.n_dims == 1:
             return self.d1, data
         else:
+            ## or merged??
             x, y, d = line_extract(self.d1, self.d2, pnt, theta, res)
-            f = interp2d(self.d1, self.d2, data)
-            line = f(x, y)
+            print(x.shape, y.shape, d.shape)
+            co_ords = (self.d1.flatten(), self.d2.flatten())
+            line = griddata(co_ords, data.flatten(), (x, y))
+            print(line.shape)
             return x, y, d, line
 
-    # @complex_check
     def extract_slice(self, data='strain', phi=None, az_idx=None, z_idx=None):
         complex_check(data, self.analysis_state, phi, az_idx)
         command = text_cleaning(data)
         az_command = 'phi' if phi is not None else 'az_idx'
-        #
-        # validate_command(data, phi, az_idx)
-        # required = convert_request_to_level(data, az_command)
-        # analysis_state_comparison(self.analysis_state, required)
 
         if az_command == 'az_idx':
 
@@ -138,21 +136,21 @@ class DataViz(object):
             else:
                 data = strain_transformation(phi, *tensor)
         data = data[z_idx] if z_idx is not None else data
+        print('data', data.shape)
         return data
 
-    def plot_line(self, data='strain', phi=None, az_idx=None, z_idx=0,
+    def plot_line(self, data='strain', phi=None, az_idx=None, z_idx=None,
                   pnt=(0, 0), theta=0, res=0.1, pos_value='d', ax=False):
 
         x, y, d, line = self.extract_line(data, phi, az_idx, pnt,
                                           theta, z_idx, res)
-        position = {'x': x, 'y': y, 'd':d}
+        position = {'x': x, 'y': y, 'd': d}
 
         if not ax:
             fig = plt.figure(figsize=(7, 5))
             ax = fig.add_subplot(1, 1, 1)
-
         ax.plot(position[pos_value], line, 'k-')
-        ax.set_xlabel('Position ({})')
+        ax.set_xlabel('Position ({})'.format('mm'))
         ax.set_ylabel(data)
         return ax
 
