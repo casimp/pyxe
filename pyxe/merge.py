@@ -114,7 +114,7 @@ def basic_merge(data):
     new.I = none_merge([d.I for d in data], state, 'integrated', axis=-2)
     new.peaks = none_merge([d.peaks for d in data], state, 'peaks')
     new.peaks_err = none_merge([d.peaks_err for d in data], state, 'peaks')
-    new.fwhm = none_merge([d.fwhm for d in data], 'peaks', state)
+    new.fwhm = none_merge([d.fwhm for d in data], state, 'peaks')
     new.fwhm_err = none_merge([d.fwhm_err for d in data], state, 'peaks')
     new.strain = none_merge([d.strain for d in data], state, 'strain')
     new.strain_err = none_merge([d.strain_err for d in data], state, 'strain')
