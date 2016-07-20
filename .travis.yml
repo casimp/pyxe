@@ -24,7 +24,7 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pip mock h5py lxml nose numpy scipy scikit-image matplotlib pandas
   - source activate test-environment
   - pip install python-coveralls
-  - pip install git+git://github.com/casimp/xrdpb
+  - pip install git+git://github.com/casimp/pyxpb
   - pip install pyFAI
 
   - python setup.py install
