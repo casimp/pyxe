@@ -17,8 +17,31 @@ from pyxpb.detectors import MonoDetector
 from pyxpb.conversions import e_to_w
 from pyxe.monochromatic import Mono
 from pyxe.fitting_functions import strain_transformation
-from pyxe.test.data_create import create_ring_array
+from pyxpb.array_create import ring_array
 from pyxe.merge import ordered_merge
+import matplotlib.pyplot as plt
+
+from itertools import product
+
+
+class FakeFabIO(object):
+    def __init__(self, img):
+        self.data = img
+
+
+def faked_data(detector, pnts=(7, 7), max_strain=1e-3, crop=0.5):
+    d_ = ring_array(detector, pnts, max_strain=max_strain, crop=crop)
+    x, y, ims, (e_xx, e_yy, e_xy) = d_
+    fnames_ = ['{}.tif'.format(num) for num in range(e_xx.size)]
+    co_ords_ = np.hstack((x.reshape(x.size, 1), y.reshape(y.size, 1)))
+    images_ = []
+    for idx in np.ndindex(e_xx.shape):
+        images_.append(FakeFabIO(ims[idx]))
+    # Need to convert nd image array to list of faked images
+    # images_ = images.reshape(-1, images.shape[-2], images.shape[-1])
+    # images_ = [FakeFabIO(img[0]) for img in images]
+    tensor_ = (e_xx.flatten(), e_yy.flatten(), e_xy.flatten())
+    return fnames_, co_ords_, images_, tensor_
 
 # Detector parameters
 shape = (2000, 2000)  # pixels
@@ -36,10 +59,13 @@ mono = MonoDetector(shape, pixel_size, sample_detector, energy, energy_sigma)
 mono.add_peaks('Fe')
 
 # Create the test data from that setup
-data = create_ring_array(mono, pnts=(7, 7), max_strain=1e-3, crop=crop)
-fnames, co_ords, images, (e_xx, e_yy, e_xy) = data
-q0 = create_ring_array(mono, crop=crop, pnts=(1, 1), max_strain=0)
-q0_fnames, q0_co_ords, q0_images, _ = q0
+fnames, co_ords, images, tensor = faked_data(mono, (7,7), crop=crop,
+                                             max_strain=1e-3)
+e_xx, e_yy, e_xy = tensor
+
+# Create associated q0 data
+q0_fnames, q0_co_ords, q0_images, _ = faked_data(mono, (1,1), crop=crop,
+                                                 max_strain=0)
 
 
 @patch("fabio.open")
@@ -82,6 +108,7 @@ class TestMono(object):
         self.data.calculate_strain(self.q0)
         self.data.plot_intensity()
         self.data.plot_strain_fit()
+        plt.close()
 
     def test_stress_calc(self):
         self.data.peak_fit(3.1, 1.)
@@ -126,16 +153,6 @@ class TestMono(object):
             max_diff = np.abs(np.max(initial - processed))
             assert max_diff < 10**-4, (p_idx, max_diff)  # Brittle (linux)?!
 
-    def test_plotting(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
-        self.data.calculate_strain(self.q0)
-        self.data.define_material(E=200 * 10 ** 9, v=0.3)
-        # Try a few slice extract options
-        self.data.plot_slice('strain', phi=np.pi/3)
-        self.data.plot_slice('shear stress', phi=5*np.pi)
-        self.data.plot_slice('peaks err', az_idx=3)
-
     def test_ordered_merge(self):
         self.data.peak_fit(3.1, 1.)
         self.q0.peak_fit(3.1, 1.)
@@ -153,46 +170,130 @@ class TestMono(object):
         assert merged.d1.size == added + self.data.d1.size, (
         merged.d1.size, added, self.data.d1.size)
 
-    def test_merged_plot_slice(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
-        self.data.calculate_strain(self.q0)
-
-        data2 = copy.deepcopy(self.data)
-        shift = 1.00001
-        data2.d1 += shift
-        merged = ordered_merge([self.data, data2], [0, 1])
-        merged.plot_slice('strain', phi=np.pi / 3)
-        merged.plot_slice('shear stress', phi=5 * np.pi)
-        merged.plot_slice('peaks err', az_idx=3)
-
-
     def test_plot_line(self):
         self.data.peak_fit(3.1, 1.)
         self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         self.data.define_material(E=200 * 10 ** 9, v=0.3)
+        data2 = copy.deepcopy(self.data)
+        data2.d1 += 1.0001
+        merged = ordered_merge([self.data, data2], [0, 1])
+
         # Try a few slice extract options
-        self.data.plot_line('strain', phi=np.pi / 3)
-        self.data.plot_slice('shear stress', phi=5 * np.pi, pnt=(0, 0),
-                             theta=np.pi / 3)
-        self.data.plot_slice('peaks err', az_idx=3, pnt=(0.2, 0.1),
-                             theta=-np.pi / 3)
+        phi_names = ['strain', 'stress', 'shear strain', 'shear stress']
+        az_names = ['peaks', 'fwhm', 'strain', 'stress', 'peak err',
+                    'fwhm err', 'strain err']
+        phi_, az_ = [0, -2 * np.pi], [0, 20]
+        pnt_, theta_ = [(0, 0), (-0.2, 0.2)], [0, -np.pi / 3]
+        d_ = [self.data, merged]
 
+        iterator = product(d_, phi_names, phi_, pnt_, theta_)
+        for d1, name, phi, pnt, theta in iterator:
+            d1.plot_line(name, phi=phi, pnt=pnt, theta=theta)
+            plt.close()
 
-    def test_merged_plot_line(self):
+        iterator = product(d_, az_names, phi_, pnt_, theta_)
+        for d2, name, az, pnt, theta in iterator:
+            d2.plot_line(name, az_idx=az, pnt=pnt, theta=theta)
+            plt.close()
+
+    def test_plot_slice(self):
         self.data.peak_fit(3.1, 1.)
         self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
-
+        self.data.define_material(E=200 * 10 ** 9, v=0.3)
         data2 = copy.deepcopy(self.data)
-        shift = 1.00001
-        data2.d1 += shift
+        data2.d1 += 1.0001
         merged = ordered_merge([self.data, data2], [0, 1])
-        merged.plot_slice('strain', phi=np.pi / 3)
-        merged.plot_slice('shear stress', phi=5 * np.pi, pnt=(0, 0),
-                          theta=np.pi / 3)
-        merged.plot_slice('peaks err', az_idx=3, pnt=(0.2, 0.1), theta=-np.pi / 3)
+
+        # Try a few slice extract options
+
+        phi_names = ['strain', 'stress', 'shear strain', 'shear stress']
+        az_names = ['peaks', 'fwhm', 'strain', 'stress', 'peak err',
+                    'fwhm err', 'strain err']
+
+        phi_ = [0, np.pi/2, -2*np.pi]
+        az_ = [0, 10, 12, 20]
+        d_ = [self.data, merged]
+
+        for d1, name, phi in product(d_, phi_names, phi_):
+            d1.plot_slice(name, phi=phi)
+            plt.close()
+        for d2, name, az in product(d_, az_names, az_):
+            d2.plot_slice(name, az_idx=az)
+            plt.close()
+
+    # def test_merged_plot_slice(self):
+    #     self.data.peak_fit(3.1, 1.)
+    #     self.q0.peak_fit(3.1, 1.)
+    #     self.data.calculate_strain(self.q0)
+    #     self.data.define_material(E=200 * 10 ** 9, v=0.3)
+    #     # Try a few slice extract options
+    #     names = ['peaks', 'fwhm', 'strain', 'stress']
+    #     shear_names = ['shear strain', 'shear stress']
+    #     error_names = ['peak err', 'fwhm err', 'strain err']
+    #     phi_ = [0, np.pi/2, -2*np.pi]
+    #     az_ = [0, 10, 12, 20]
+    #     for name, phi in product(names + shear_names, phi_):
+    #         self.data.plot_slice(name, phi=phi)
+    #         plt.close()
+    #     for name, az in product(names + error_names, az_):
+    #         self.data.plot_slice(name, az_idx=az)
+    #         plt.close()
+    #
+    # def test_merged_plot_line(self):
+    #     self.data.peak_fit(3.1, 1.)
+    #     self.q0.peak_fit(3.1, 1.)
+    #     self.data.calculate_strain(self.q0)
+    #     self.data.define_material(E=200 * 10 ** 9, v=0.3)
+    #     # Try a few slice extract options
+    #     names = ['peaks', 'fwhm', 'strain', 'stress']
+    #     shear_names = ['shear strain', 'shear stress']
+    #     error_names = ['peak err', 'fwhm err', 'strain err']
+    #     phi_, az_ = [0, -2 * np.pi], [0, 20]
+    #     pnt_, theta_ = [(0, 0), (-0.2, 0.2)], [0, -np.pi / 3]
+    #     iterator = product(names + shear_names, phi_, pnt_, theta_)
+    #     for name, phi, pnt, theta in iterator:
+    #         self.data.plot_line(name, phi=phi, pnt=pnt, theta=theta)
+    #         plt.close()
+    #     iterator = product(names + error_names, az_, pnt_, theta_)
+    #     for name, az in iterator:
+    #         self.data.plot_line(name, az_idx=az, pnt=pnt, theta=theta)
+    #         plt.close()
+    #
+    #
+    # def test_merged_plot_slice(self):
+    #     self.data.peak_fit(3.1, 1.)
+    #     self.q0.peak_fit(3.1, 1.)
+    #     self.data.calculate_strain(self.q0)
+    #
+    #     data2 = copy.deepcopy(self.data)
+    #     shift = 1.00001
+    #     data2.d1 += shift
+    #     merged = ordered_merge([self.data, data2], [0, 1])
+    #     merged.plot_slice('strain', phi=np.pi / 3)
+    #     merged.plot_slice('shear stress', phi=5 * np.pi)
+    #     merged.plot_slice('peaks err', az_idx=3)
+    #     plt.close()
+    #
+    #
+    #
+    #
+    #
+    # def test_merged_plot_line(self):
+    #     self.data.peak_fit(3.1, 1.)
+    #     self.q0.peak_fit(3.1, 1.)
+    #     self.data.calculate_strain(self.q0)
+    #
+    #     data2 = copy.deepcopy(self.data)
+    #     shift = 1.00001
+    #     data2.d1 += shift
+    #     merged = ordered_merge([self.data, data2], [0, 1])
+    #     merged.plot_slice('strain', phi=np.pi / 3)
+    #     merged.plot_slice('shear stress', phi=5 * np.pi, pnt=(0, 0),
+    #                       theta=np.pi / 3)
+    #     merged.plot_slice('peaks err', az_idx=3, pnt=(0.2, 0.1), theta=-np.pi/3)
+    #     plt.close()
 
 if __name__ == '__main__':
     data, q0 = test_integration()
@@ -200,16 +301,11 @@ if __name__ == '__main__':
     q0.peak_fit(3.1, 1.)
     data.calculate_strain(q0)
 
-    data2 = copy.deepcopy(data)
+    d2 = copy.deepcopy(data)
 
-    if data2.d1[0].size % 2 == 0:
-        data2.d1[0] += 1
-        added = data2.d1[0].size / 2
-    else:
-        data2.d1 += 1 + 1 / (data2.d1[0].size - 1)
-        added = data2.d1[0].size // 2
+    d2.d1 += 1.0001
 
-    merged = ordered_merge([data, data2], [0, 1])
+    merged = ordered_merge([data, d2], [0, 1])
     #
     # # Compare positions, same angle
     # for a_idx in [0, 7, 12, 26, 32]:

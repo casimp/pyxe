@@ -41,3 +41,5 @@ var/
 .installed.cfg
 
 *.egg
+
+.coverage
