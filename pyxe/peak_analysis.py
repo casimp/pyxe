@@ -14,6 +14,14 @@ from pyxe.plotting import DataViz
 from pyxe.merge import basic_merge
 
 
+def plane_strain(e_xx, e_yy, E, v):
+    return (E / (1 - v ** 2)) * (e_xx + v * e_yy)
+
+
+def plane_stress(e_xx, e_yy, E, v):
+    return E * ((1 - v) * e_xx + v * e_yy) / ((1 + v) * (1 - 2 * v))
+
+
 class PeakAnalysis(DataViz):
     """
     """
@@ -76,6 +84,8 @@ class PeakAnalysis(DataViz):
     def define_material(self, E, v, G=None, stress_state='plane_strain'):
         G = E / (2 * (1-v)) if G is None else G
         self.E, self.v, self.G, self.stress_state = E, v, G, stress_state
+        eqn = plane_strain if stress_state == 'plane strain' else plane_stress
+        self.stress_eqn = eqn
         self.analysis_state = self.analysis_state.replace('strain', 'stress')
 
     def save_to_nxs(self, fpath=None, overwrite=False):
