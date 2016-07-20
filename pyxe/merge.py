@@ -40,17 +40,27 @@ def extract_limits(data):
 
 def remove_data(data, limit):
 
+    # print(data.d1)
     mask = np.ones_like(data.d1, dtype='bool')
     for lim, d in zip(limit, [data.d1, data.d2, data.d3]):
         try:
-            mask = np.logical_and(mask, np.logical_and(d > lim[0], d < lim[1]))
+            # Checking whether points lie WITHIN limits (i.e. to be removed)
+            mask_temp = np.logical_and(d >= lim[0], d <= lim[1])
+            # Must be within limits wrt. all dimensions
+            mask = np.logical_and(mask, mask_temp)
         except TypeError:
             pass
-    all_data = [data.d1, data.d2, data.d3, data.I, data.peaks, data.peaks_err,
-                data.fwhm, data.fwhm_err, data.strain, data.strain_err,
-                data.strain_tensor]
-    for d in all_data:
-        d = d[mask] if d is not None else d
+
+    # Creating a mask, so inverse (not) of values calculated
+    mask = np.logical_not(mask)
+
+    all_data = ['d1', 'd2', 'd3', 'I', 'peaks', 'peaks_err', 'fwhm',
+                'fwhm_err', 'strain', 'strain_err', 'strain_tensor']
+
+    for name in all_data:
+        d = getattr(data, name)
+        masked = d[mask] if d is not None else d
+        setattr(data, name, masked)
 
     return data # potentially not needed (change in place)
 
@@ -114,13 +124,15 @@ def basic_merge(data):
     return new
 
 
-def ordered_merge(data, order=None, padding=0.1):
+def ordered_merge(data, order=None, pad=0.01):
 
     if order is None:
         return basic_merge(data)
 
     # use default dict to group key/value pairs
-    order_data = defaultdict(zip(order, data))
+    order_data = defaultdict(list)
+    for k, v in zip(order, data):
+        order_data[k].append(v)
 
     # merge all data of same order level
     keys = sorted(order_data.keys())
@@ -128,10 +140,17 @@ def ordered_merge(data, order=None, padding=0.1):
     for key in keys:
         basic_merged.append(basic_merge(order_data[key]))
 
-    # merge levels
     new = basic_merged[0]
-    for idx in range(len(basic_merged) - 1):
+    for idx in range(1, len(basic_merged)):
         limits = extract_limits(new)
-        new = basic_merge(new, remove_data(basic_merged[idx], limits))
+        padded_limits = []
+        for lim in limits:
+            try:
+                padded_limits.append([lim[0] - pad, lim[1] + pad])
+            except TypeError:
+                padded_limits.append([None, None])
+
+        cropped_data = remove_data(basic_merged[idx], padded_limits)
+        new = basic_merge([new, cropped_data])
 
     return new

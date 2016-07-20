@@ -1,1 +1,2 @@
-recursive-include pyxe/data *.py
+recursive-include pyxe/data *.csv
+recursive-include pyxe/test *.py
