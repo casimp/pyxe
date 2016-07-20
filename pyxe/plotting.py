@@ -17,7 +17,7 @@ from scipy.interpolate import griddata, interp2d
 
 from pyxe.command_parsing import analysis_check
 from pyxe.fitting_functions import strain_transformation, shear_transformation
-from pyxe.plotting_tools import plot_complex, meshgrid_res, line_extract
+from pyxe.plotting_tools import plot_complex, meshgrid_res, line_extract, az90
 from pyxe.command_parsing import complex_check, text_cleaning
 
 
@@ -109,15 +109,20 @@ class DataViz(object):
         az_command = 'phi' if phi is not None else 'az_idx'
 
         if az_command == 'az_idx':
+            if 'stress' not in command:
+                data_command = {'peaks': self.peaks,
+                                'peaks error': self.peaks_err,
+                                'fwhm': self.fwhm,
+                                'fwhm error': self.fwhm_err,
+                                'strain': self.strain,
+                                'strain error': self.strain_err}
 
-            data_command = {'peaks': self.peaks,
-                            'peaks error': self.peaks_err,
-                            'fwhm': self.fwhm,
-                            'fwhm error': self.fwhm_err,
-                            'strain': self.strain,
-                            'strain error': self.strain_err}
+                data = data_command[command][..., az_idx]
+            else:
+                d = self.strain if 'err' not in command else self.strain_err
+                e_xx, e_yy = d[..., az_idx],  d[..., az90(self.phi, az_idx)]
+                data = self.stress_eqn(e_xx, e_yy, self.E, self.v)
 
-            data = data_command[command][..., az_idx]
         else:
             tensor = self.strain_tensor
             tensor = tensor[..., 0], tensor[..., 1], tensor[..., 2]
@@ -131,7 +136,7 @@ class DataViz(object):
             elif stress:
                 e_xx = strain_transformation(phi, *tensor)
                 e_yy = strain_transformation(phi + np.pi / 2, *tensor)
-                data = self.stress_eqn(e_xx, e_yy)
+                data = self.stress_eqn(e_xx, e_yy, self.E, self.v)
 
             else:
                 data = strain_transformation(phi, *tensor)
