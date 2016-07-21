@@ -217,6 +217,7 @@ class TestMono(object):
         plt.close()
         merged.save_to_hdf5(fpath='pyxe/data/mono_test_pyxe.h5', overwrite=True)
         merged_reload = PeakAnalysis(fpath='pyxe/data/mono_test_pyxe.h5')
+        print('Anlaysis State:', merged_reload.analysis_state)
         merged_reload.plot_slice('shear strain', phi=np.pi/3)
         plt.close()
 

@@ -10,17 +10,17 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from six import binary_type
-
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt 
-from scipy.interpolate import griddata, interp2d
+from scipy.interpolate import griddata
 
 from pyxe.command_parsing import analysis_check
 from pyxe.fitting_functions import strain_transformation, shear_transformation
 from pyxe.plotting_tools import plot_complex, meshgrid_res, line_extract, az90
-from pyxe.command_parsing import complex_check, text_cleaning
+from pyxe.command_parsing import complex_check, text_cleaning, name_convert
+from pyxe.analysis_tools import data_extract
+from pyxe.fitting_functions import plane_stress, plane_strain
 
 
 class DataViz(object):
@@ -35,20 +35,20 @@ class DataViz(object):
         """
         self.fpath = fpath
 
-        data_ids = ['ndim', 'd1', 'd2', 'd3', 'q', 'I', 'phi',
-                    'peaks', 'peaks_err', 'fwhm', 'fwhm_err',
-                    'strain', 'strain_err', 'strain_tensor',
-                    'E', 'v', 'G', 'stress_state', 'analysis_state']
-
         with h5py.File(fpath, 'r') as f:
-            data = f['pyxe_analysis']
-            for name in data_ids:
-                try:
-                    d = data[name][()]
-                    d = d.decode() if isinstance(d, binary_type) else d
-                    setattr(self, name, d)
-                except KeyError:
-                    setattr(self, name, None)
+            self.ndim, self.d1, self.d2, self.d3 = data_extract(f, 'dims')
+            self.q, self.I, self.phi = data_extract(f, 'raw')
+            self.peaks, self.peaks_err = data_extract(f, 'peaks')
+            self.fwhm, self.fwhm_err = data_extract(f, 'fwhm')
+            self.strain, self.strain_err = data_extract(f, 'strain')
+            self.strain_tensor = data_extract(f, 'tensor')[0]
+            self.E, self.v, self.G = data_extract(f, 'material')
+            self.stress_state, self.analysis_state = data_extract(f, 'state')
+            if self.stress_state is None:
+                self.stress_eqn = None
+            else:
+                p_strain = self.stress_state == 'plane strain'
+                self.stress_eqn = plane_strain if p_strain else plane_stress
 
     def plot_intensity(self, pnt=None, az_idx=0, figsize=(7, 5), ax=False):
         """
@@ -65,7 +65,7 @@ class DataViz(object):
         pnt = (0,) * len(self.I[..., 0, 0].shape) if pnt is None else pnt
 
         ax.plot(self.q[az_idx], self.I[pnt][az_idx], 'k-')
-        ax.set_xlabel('q (rad)')
+        ax.set_xlabel('q (A$^{-1}$)')
         ax.set_ylabel('Intensity')
         return ax
 
@@ -74,9 +74,8 @@ class DataViz(object):
         """
             Plots fitted in-plane strain field for given data point.
 
-            # point:      Define point (index) from which to plot fitted in-plane
+            # pnt:      Define point (index) from which to plot fitted in-plane
                           strain field.
-            # q_idx:      0 based indexing - 0 (default) to 23 - detector 23 empty.
             # figsize:    Figure dimensions
             """
         pnt = (0,) * (self.strain.ndim - 1) if pnt is None else pnt
@@ -100,7 +99,6 @@ class DataViz(object):
         if self.ndim == 1:
             return self.d1, data
         else:
-            ## or merged??
             x, y, d = line_extract(self.d1, self.d2, pnt, theta, res)
             print(x.shape, y.shape, d.shape)
             co_ords = (self.d1.flatten(), self.d2.flatten())
@@ -130,6 +128,7 @@ class DataViz(object):
                 data = self.stress_eqn(e_xx, e_yy, self.E, self.v)
 
         else:
+            print(self.strain_tensor.shape)
             tensor = self.strain_tensor
             tensor = tensor[..., 0], tensor[..., 1], tensor[..., 2]
             shear = True if 'shear' in command else False
@@ -166,7 +165,7 @@ class DataViz(object):
         return ax
 
     def plot_slice(self, data='strain', phi=None, az_idx=None, z_idx=None,
-                     plot_func=None, **kwargs):
+                   plot_func=None, **kwargs):
         data = self.extract_slice(data, phi, az_idx, z_idx)
         plot_func = plot_complex if plot_func is None else plot_func
         if data.ndim == 1:
@@ -179,3 +178,24 @@ class DataViz(object):
         ax_ = plot_func(self.d1, self.d2, d1_, d2_, z, **kwargs)
 
         return ax_
+
+    def save_to_txt(self, fname, data, phi=None, az_idx=None, perp=True):
+        n_lst = [d for d in ['d1', 'd2', 'd3'] if getattr(self, d) is not None]
+        d_lst = [getattr(self, d) for d in n_lst]
+
+        for d in data:
+            print(d)
+            name = name_convert(d, phi, az_idx)
+            d_lst.append(self.extract_slice(d, phi=phi, az_idx=az_idx))
+            n_lst.append(name)
+
+            if perp:
+
+                a90 = az90(self.phi, az_idx) if az_idx is not None else az_idx
+                p90 = phi + np.pi/2 if phi is not None else phi
+                name = name_convert(d, p90, a90, perp)
+                d_lst.append(self.extract_slice(d, phi=p90, az_idx=a90))
+                n_lst.append(name)
+        data = np.hstack([d.reshape(d.size, 1) for d in d_lst])
+        headers = ','.join(n_lst)
+        np.savetxt(fname, data, delimiter=',', header=headers)

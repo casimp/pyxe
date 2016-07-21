@@ -131,7 +131,11 @@ def test_analysis_stage():
 
     for example in examples:
         current, required = example[0], example[1]
-        valid = cp.analysis_state_comparison(current, required)
+        try:
+            cp.analysis_state_comparison(current, required)
+            valid = True
+        except AssertionError:
+            valid = False
         answer = example[2]
         error = '{} v {} - {} ({})'.format(current, required, valid, answer)
         assert valid == answer, error

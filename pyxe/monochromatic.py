@@ -24,6 +24,7 @@ def extract_fnames(folder, f_ext):
     fnames = sorted([x for x in os.listdir(folder) if x.endswith(f_ext)])
     return fnames
 
+
 class Mono(PeakAnalysis):
     """
     Takes a folder containing image files from area detectors and cakes the 

@@ -25,6 +25,8 @@ def text_cleaning(text):
              'shears': 'shear',
              'stresses': 'stress'}
 
+    primary = ['peaks', 'strain', 'stress']
+
     split_text = text.split(' ')
     for idx, word in enumerate(split_text):
         split_text[idx] = remap[word] if word in remap else word
@@ -80,7 +82,6 @@ def validate_azimuthal_selection(request_command, phi, az_idx):
 
 # step 5: bring together to check command validity
 def validate_command(request_command, phi, az_idx):
-    print(request_command)
     request_command = text_cleaning(request_command)
     validate_entry(request_command)
 
@@ -124,16 +125,11 @@ def analysis_state_comparison(current, required):
     c = analysis_order.index(current.split(' ')[0])
     r = analysis_order.index(required.split(' ')[0])
 
-    try:
-        assert c >= r
-        return True
-    except AssertionError:
-        base_error = '\nPlease run the following commands first:\n{}'
-        command_keys = analysis_order[c + 1: r + 1]
-        commands = '\n'.join([state_funcs[key] for key in command_keys])
-        print(base_error.format(commands))
-        return False
-
+    base_error = '\nPlease run the following commands first:\n{}'
+    command_keys = analysis_order[c + 1: r + 1]
+    commands = '\n'.join([state_funcs[key] for key in command_keys])
+    assert c >= r, base_error.format(commands)
+    return True
 
 def complex_check(request_command, analysis_state, phi, az_idx):
     az_command = 'phi' if phi is not None else 'az_idx'
@@ -168,3 +164,26 @@ def analysis_check(required_state):
 
     return dec_check
 
+# Name conversion for column headers (save_to_csv)
+def name_convert(name, phi, az_idx, perp=False):
+    name = text_cleaning(name)
+    validate_command(name, phi, az_idx)
+
+    data = ['fwhm', 'peaks', 'strain', 'stress']
+    n_0 = [n for n in name.split(' ') if n in data]
+    convert = {'peaks': 'peaks_', 'fwhm': 'fwhm_',
+               'strain': 'e_', 'stress': 'sigma_'}
+    n_start = convert[n_0[0]]
+    if 'shear' in name:
+        n_shear = 'xy' if not perp else 'yx'
+    else:
+        n_shear = 'xx' if not perp else 'yy'
+
+    n_err = '_err' if 'error' in name else ''
+
+    if phi is not None:
+        n_end = 'phi={:.4}'.format(float(phi))
+    else:
+        n_end = 'az_idx={}'.format(az_idx)
+
+    return '{}{}{} ({})'.format(n_start, n_shear, n_err, n_end)
