@@ -60,7 +60,7 @@ mono = MonoDetector(shape, pixel_size, sample_detector, energy, energy_sigma)
 mono.add_peaks('Fe')
 
 # Create the test data from that setup
-fnames, co_ords, images, tensor = faked_data(mono, (7,7), crop=crop,
+fnames, co_ords, images, tensor = faked_data(mono, (6, 6), crop=crop,
                                              max_strain=1e-3)
 e_xx, e_yy, e_xy = tensor
 
@@ -71,7 +71,7 @@ q0_fnames, q0_co_ords, q0_images, _ = faked_data(mono, (1,1), crop=crop,
 
 @patch("fabio.open")
 @patch("pyxe.monochromatic.extract_fnames")
-def test_integration(extract_fnames, fabio_open):
+def integration(extract_fnames, fabio_open):
     fabio_open.side_effect = images
     extract_fnames.return_value = fnames
     data_ = Mono('', co_ords, fit2Dparams, e_to_w(energy), f_ext='.tif',
@@ -84,42 +84,36 @@ def test_integration(extract_fnames, fabio_open):
 
     return data_, q0_
 
+def peak_fit():
+    data, q0 = integration()
+    data.peak_fit(3.1, 1.)
+    q0.peak_fit(3.1, 1.)
+    return data, q0
+
 
 class TestMono(object):
 
-    data, q0 = test_integration()
-
-    def test_peak_fit(self):
-        self.data.peak_fit(3.1, 1.)
+    data, q0 = peak_fit()
 
     def test_basic_merge(self):
-        self.data.peak_fit(3.1, 1.)
         merged = self.data + self.data
         assert np.array_equal(merged.phi, self.data.phi)
         assert merged.peaks.size == 2 * self.data.peaks.size
 
     def test_strain_calc(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
 
     def test_basic_plot(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         self.data.plot_intensity()
         self.data.plot_strain_fit()
         plt.close()
 
     def test_stress_calc(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         self.data.define_material(E=200*10**9, v=0.3)
 
     def test_extract_slice(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         self.data.define_material(E=200 * 10 ** 9, v=0.3)
         # Try a few slice extract options
@@ -129,8 +123,6 @@ class TestMono(object):
         self.data.extract_slice('peaks err', az_idx=3)
 
     def test_positions(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         # Compare positions, same angle
         for idx in [0, 7, 12, 26, 32]:
@@ -143,11 +135,9 @@ class TestMono(object):
                 assert max_diff < 10**-4, (idx, max_diff)  # Brittle (linux)?!
 
     def test_angles(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         # Compare angles, same position
-        for p_idx in [0, 7, 12, 26, 39, 45]:
+        for p_idx in [0, 7, 12, 26, 32]:
             tensor = e_xx[p_idx], e_yy[p_idx], e_xy[p_idx]
             initial = strain_transformation(self.data.phi, *tensor)
             processed = self.data.strain[p_idx]
@@ -155,10 +145,7 @@ class TestMono(object):
             assert max_diff < 10**-4, (p_idx, max_diff)  # Brittle (linux)?!
 
     def test_ordered_merge(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
-
         data2 = copy.deepcopy(self.data)
 
         pad = 0.35
@@ -172,8 +159,6 @@ class TestMono(object):
         merged.d1.size, added, self.data.d1.size)
 
     def test_plot_line(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         self.data.define_material(E=200 * 10 ** 9, v=0.3)
         data2 = copy.deepcopy(self.data)
@@ -184,8 +169,8 @@ class TestMono(object):
         phi_names = ['strain', 'stress', 'shear strain', 'shear stress']
         az_names = ['peaks', 'fwhm', 'strain', 'stress', 'peak err',
                     'fwhm err', 'strain err']
-        phi_, az_ = [0, -2 * np.pi], [0, 20]
-        pnt_, theta_ = [(0, 0), (-0.2, 0.2)], [0, -np.pi / 3]
+        phi_, az_ = [-2 * np.pi], [20]
+        pnt_, theta_ = [(-0.2, 0.2)], [0, -np.pi / 3]
         d_ = [self.data, merged]
 
         iterator = product(d_, phi_names, phi_, pnt_, theta_)
@@ -199,8 +184,6 @@ class TestMono(object):
             plt.close()
 
     def test_plot_slice(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         self.data.define_material(E=200 * 10 ** 9, v=0.3)
         data2 = copy.deepcopy(self.data)
@@ -213,8 +196,8 @@ class TestMono(object):
         az_names = ['peaks', 'fwhm', 'strain', 'stress', 'peak err',
                     'fwhm err', 'strain err']
 
-        phi_ = [0, np.pi/2, -2*np.pi]
-        az_ = [0, 10, 12, 20]
+        phi_ = [-2.5*np.pi]
+        az_ = [20]
         d_ = [self.data, merged]
 
         for d1, name, phi in product(d_, phi_names, phi_):
@@ -225,8 +208,6 @@ class TestMono(object):
             plt.close()
 
     def test_save_reload(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
 
         data2 = copy.deepcopy(self.data)
@@ -234,31 +215,16 @@ class TestMono(object):
         merged = ordered_merge([self.data, data2], [0, 1], 0.1)
         merged.plot_slice('shear strain', phi=np.pi / 3)
         plt.close()
-        merged.save_to_hdf5(fpath='mono_test_pyxe.h5', overwrite=True)
-        merged_reload = PeakAnalysis(fpath='mono_test_pyxe.h5')
+        merged.save_to_hdf5(fpath='pyxe/data/mono_test_pyxe.h5', overwrite=True)
+        merged_reload = PeakAnalysis(fpath='pyxe/data/mono_test_pyxe.h5')
         merged_reload.plot_slice('shear strain', phi=np.pi/3)
         plt.close()
 
         assert np.array_equal(merged.peaks, merged_reload.peaks), (merged.peaks.shape, merged_reload.peaks.shape)
 
 if __name__ == '__main__':
-    data, q0 = test_integration()
-    data.peak_fit(3.1, 1.)
-    q0.peak_fit(3.1, 1.)
-    data.calculate_strain(q0)
-
-    d2 = copy.deepcopy(data)
-
-    d2.d1 += 1.0001
-
-    merged = ordered_merge([data, d2], [0, 1])
-    #
-    # # Compare positions, same angle
-    # for a_idx in [0, 7, 12, 26, 32]:
-    #     i = strain_transformation(data.phi[a_idx], *(e_xx, e_yy, e_xy))
-    #     p_1 = data.strain[..., a_idx]
-    #     p_2 = data.extract_slice(phi=data.phi[a_idx])
-    #     for p in [p_1, p_2]:
-    #         abs_max = np.max(np.abs(i - p))
-    #         print(abs_max)
-    #         assert abs_max < 10 ** -4, (a_idx, abs_max)
+    data, q0 = integration()
+    # data.calculate_strain(q0)
+    # d2 = copy.deepcopy(data)
+    # d2.d1 += 1.0001
+    # merged = ordered_merge([data, d2], [0, 1])

@@ -36,7 +36,7 @@ def i12_dict(X, Y, q, I):
 i12_energy.add_peaks('Fe')
 
 # Create the test data from that setup
-data_ = intensity_array(i12_energy, pnts=(7, 7), max_strain=1e-3)
+data_ = intensity_array(i12_energy, pnts=(6, 6), max_strain=1e-3)
 x, y, q, I,(e_xx, e_yy, e_xy) = data_
 data_dict=i12_dict(x, y, q, I)
 
@@ -45,7 +45,7 @@ x, y, q, I, _ = q0_
 q0_data_dict=i12_dict(x, y, q, I)
 
 @patch("h5py.File")
-def test_integration(h5py_file):
+def integration(h5py_file):
     h5py_file.return_value = data_dict
     data_ = EDI12('', [])
     h5py_file.return_value = q0_data_dict
@@ -53,27 +53,25 @@ def test_integration(h5py_file):
     return data_, q0_
 
 
+def peak_fit():
+    data, q0 = integration()
+    data.peak_fit(3.1, 1.)
+    q0.peak_fit(3.1, 1.)
+    return data, q0
+
 class TestEnergy(object):
 
-    data, q0 = test_integration()
-
-    def test_peak_fit(self):
-        self.data.peak_fit(3.1, 1.)
+    data, q0 = peak_fit()
 
     def test_basic_merge(self):
-        self.data.peak_fit(3.1, 1.)
         merged = self.data + self.data
         assert np.array_equal(merged.phi, self.data.phi)
         assert merged.peaks.size == 2 * self.data.peaks.size
 
     def test_strain_calc(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
 
     def test_basic_plot(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         self.data.plot_intensity()
         plt.close()
@@ -81,14 +79,10 @@ class TestEnergy(object):
         plt.close()
 
     def test_stress_calc(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         self.data.define_material(E=200*10**9, v=0.3)
 
     def test_extract_slice(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         self.data.define_material(E=200 * 10 ** 9, v=0.3)
         # Try a few slice extract options
@@ -98,8 +92,6 @@ class TestEnergy(object):
         self.data.extract_slice('peaks err', az_idx=3)
 
     def test_positions(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         # Compare positions, same angle
         for idx in [0, 7, 12, 17, 22]:
@@ -112,8 +104,6 @@ class TestEnergy(object):
                 assert max_diff < 10**-4, (idx, max_diff)
 
     def test_angles(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         # Compare angles, same position
         for p_idx in [(0, 0), (4, 4), (3, 5), (1, 2), (0, 4)]:
@@ -124,10 +114,7 @@ class TestEnergy(object):
             assert max_diff < 10**-4, (p_idx, max_diff)
 
     def test_ordered_merge(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
-
         data2 = copy.deepcopy(self.data)
 
         pad = 0.35
@@ -141,8 +128,6 @@ class TestEnergy(object):
         assert merged.d1.size == added + self.data.d1.size, err
 
     def test_plot_line(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         self.data.define_material(E=200 * 10 ** 9, v=0.3)
         data2 = copy.deepcopy(self.data)
@@ -153,8 +138,8 @@ class TestEnergy(object):
         phi_names = ['strain', 'stress', 'shear strain', 'shear stress']
         az_names = ['peaks', 'fwhm', 'strain', 'stress', 'peak err',
                     'fwhm err', 'strain err']
-        phi_, az_ = [0, -2 * np.pi], [0, 20]
-        pnt_, theta_ = [(0, 0), (-0.2, 0.2)], [0, -np.pi / 3]
+        phi_, az_ = [-2 * np.pi], [20]
+        pnt_, theta_ = [(-0.2, 0.2)], [0, -np.pi / 3]
         d_ = [self.data, merged]
 
         iterator = product(d_, phi_names, phi_, pnt_, theta_)
@@ -168,8 +153,6 @@ class TestEnergy(object):
             plt.close()
 
     def test_plot_slice(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
         self.data.define_material(E=200 * 10 ** 9, v=0.3)
         data2 = copy.deepcopy(self.data)
@@ -182,8 +165,8 @@ class TestEnergy(object):
         az_names = ['peaks', 'fwhm', 'strain', 'stress', 'peak err',
                     'fwhm err', 'strain err']
 
-        phi_ = [0, np.pi / 2, -2 * np.pi]
-        az_ = [0, 10, 12, 20]
+        phi_ = [-2.5*np.pi]
+        az_ = [20]
         d_ = [self.data, merged]
 
         for d1, name, phi in product(d_, phi_names, phi_):
@@ -194,8 +177,6 @@ class TestEnergy(object):
             plt.close()
 
     def test_save_reload(self):
-        self.data.peak_fit(3.1, 1.)
-        self.q0.peak_fit(3.1, 1.)
         self.data.calculate_strain(self.q0)
 
         data2 = copy.deepcopy(self.data)
@@ -203,8 +184,8 @@ class TestEnergy(object):
         merged = ordered_merge([self.data, data2], [0, 1], 0.1)
         merged.plot_slice('shear strain', phi=np.pi / 3)
         plt.close()
-        merged.save_to_hdf5(fpath='energy_test_pyxe.h5', overwrite=True)
-        merged_reload = PeakAnalysis(fpath='energy_test_pyxe.h5')
+        merged.save_to_hdf5(fpath='pyxe/data/energy_test_pyxe.h5', overwrite=True)
+        merged_reload = PeakAnalysis(fpath='pyxe/data/energy_test_pyxe.h5')
         merged_reload.plot_slice('shear strain', phi=np.pi/3)
         plt.close()
 
@@ -212,7 +193,7 @@ class TestEnergy(object):
 
 
 if __name__ == '__main__':
-    data, q0 = test_integration()
+    data, q0 = integration()
     data.peak_fit(3.1, 1.)
     q0.peak_fit(3.1, 1.)
     data.calculate_strain(q0)

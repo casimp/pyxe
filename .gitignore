@@ -12,6 +12,9 @@
 
 /docs/_*
 
+#Data
+/pyxe/data/*.h5
+
 
 
 # Distribution
