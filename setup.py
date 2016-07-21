@@ -1,8 +1,4 @@
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
-
+from setuptools import setup
 
 setup(
     name='pyxe',
@@ -10,6 +6,7 @@ setup(
     author='C. Simpson',
     author_email='c.a.simpson01@gmail.com',
     packages=['pyxe'],
+    include_package_data=True,
     url='https://github.com/casimp/pyxe',
     download_url = 'https://github.com/casimp/pyxe/tarball/v0.8.0',
     license='LICENSE.txt',
