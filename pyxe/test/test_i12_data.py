@@ -12,8 +12,9 @@ from pyxe.energy_dispersive import EDI12
 # base = r'C:\Users\casim\Dropbox\Python\pyxe\pyxe\test'
 # fpath_1 = os.path.join(base, '50418.nxs')
 # fpath_2 = os.path.join(base, '50414.nxs')
-fpath_1 = os.path.join(os.path.dirname(__file__), '50418.nxs')
-fpath_2 = os.path.join(os.path.dirname(__file__), '50414.nxs')
+folder = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'data')
+fpath_1 = os.path.join(folder, '50418.nxs')
+fpath_2 = os.path.join(folder, '50414.nxs')
 
 def test_real():
     fine = EDI12(fpath_1)

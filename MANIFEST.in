@@ -1,1 +1,1 @@
-recursive-include pyxe/test *.nxs
+recursive-include pyxe/data *.nxs
