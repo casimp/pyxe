@@ -22,6 +22,7 @@ from pyxe.fitting_functions import strain_transformation
 from pyxpb.array_create import intensity_array
 from pyxe.merge import ordered_merge
 from pyxe.peak_analysis import PeakAnalysis
+from pyxe.plotting import DataViz
 
 
 def i12_dict(X, Y, q, I):
@@ -186,10 +187,26 @@ class TestEnergy(object):
         plt.close()
         merged.save_to_hdf5(fpath='pyxe/data/energy_test_pyxe.h5', overwrite=True)
         merged_reload = PeakAnalysis(fpath='pyxe/data/energy_test_pyxe.h5')
+        merged_reload_b = DataViz(fpath='pyxe/data/energy_test_pyxe.h5')
         merged_reload.plot_slice('shear strain', phi=np.pi/3)
+        plt.close()
+        merged_reload_b.plot_slice('shear strain', phi=np.pi / 3)
         plt.close()
 
         assert np.array_equal(merged.peaks, merged_reload.peaks)
+
+    def test_save_to_text(self):
+        self.data.calculate_strain(self.q0)
+        self.data.define_material(200*10**9, 0.3)
+        data2 = copy.deepcopy(self.data)
+        data2.d1 += 1.00001
+        merged = ordered_merge([self.data, data2], [0, 1], 0.1)
+        merged.plot_slice('shear strain', phi=np.pi / 3)
+        az_lst = ['fwhm', 'fwhm error', 'peaks', 'peaks error',
+                  'strain', 'strain error', 'stress']
+        phi_lst = ['strain', 'shear strain', 'stress', 'shear stress']
+        merged.save_to_txt('pyxe/data/test.csv', az_lst, az_idx=2)
+        merged.save_to_txt('pyxe/data/test.csv', phi_lst, phi=-np.pi/3)
 
 
 if __name__ == '__main__':

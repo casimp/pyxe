@@ -70,7 +70,7 @@ class DataViz(object):
         return ax
 
     @analysis_check('strain fit')
-    def plot_strain_fit(self, pnt=None, figsize=(7, 5), ax=False):
+    def plot_strain_fit(self, pnt=None, figsize=(10,5)):
         """
             Plots fitted in-plane strain field for given data point.
 
@@ -80,18 +80,43 @@ class DataViz(object):
             """
         pnt = (0,) * (self.strain.ndim - 1) if pnt is None else pnt
 
-        if not ax:
-            fig = plt.figure(figsize=figsize)
-            ax = fig.add_subplot(1, 1, 1)
+        fig, (ax_1, ax_2) = plt.subplots(1, 2, figsize=figsize)
 
         p = self.strain_tensor[pnt]
-        ax.plot(self.phi, self.strain[pnt], 'k*')
+        ax_1.plot(self.phi, self.strain[pnt], 'k*')
         phi_2 = np.linspace(self.phi[0], self.phi[-1], 1000)
-        ax.plot(phi_2, strain_transformation(phi_2, *p), 'k-')
-        ax.set_xlabel(r'$\phi$ (rad)', size=14)
-        ax.set_ylabel(r'$\epsilon$', size=14)
-        ax.ticklabel_format(axis='both', style='sci', scilimits=(-3, 3))
-        # Include mohr!
+        ax_1.plot(phi_2, strain_transformation(phi_2, *p), 'k-', linewidth=0.5)
+        ax_1.set_xlabel(r'$\phi$ (rad)', size=14)
+        ax_1.set_ylabel(r'$\epsilon$', size=14)
+        ax_1.ticklabel_format(axis='both', style='sci', scilimits=(-3, 3))
+
+        ax_2.ticklabel_format(axis='both', style='sci', scilimits=(-3, 3))
+        ax_2.set_xlabel(r'$\epsilon$', size=14)
+        ax_2.set_ylabel(r'$\gamma}$', size=14)
+
+        e_xx, e_yy, e_xy = self.strain_tensor[pnt]
+        mean = (e_xx + e_yy) / 2
+        e_1 = mean + (e_xy**2 + ((e_xx - e_yy) / 2)**2)**0.5
+        e_2 = e_xx + e_yy - e_1
+        radius = (e_1 - e_2) / 2
+
+        for x, text in zip([self.phi[0], self.phi[0] + np.pi/2],
+                           [r'$\epsilon_{xx}$', r'$\epsilon_{yy}$']):
+            ax_1.axvline(x, ymax=0.93, linewidth=0.5, ls='--', color='k')
+            y = ax_1.get_ylim()[1] * 0.96
+            ax_1.text(x, y, text, ha='center', va='bottom')
+
+        circ = plt.Circle((mean, 0), radius=radius, color='k', fill=False)
+        ax_2.add_patch(circ)
+        for x, y, text in zip([e_1, e_2, e_xx, e_yy],
+                              [0, 0, e_xy, -e_xy],
+                              [r'$\epsilon_{1}$', r'$\epsilon_{2}$',
+                               r'$(\epsilon_{xx}$, $\epsilon_{xy})$',
+                               r'$(\epsilon_{yy}$, $\epsilon_{yx})$']):
+            ax_2.plot(x, y, 'k.')
+            ax_2.annotate('  %s' % text, xy=(x, y),  xytext=(x, y), ha='left')
+        ax_2.plot([e_xx, e_yy], [e_xy, -e_xy], 'k--', linewidth=0.5)
+        fig.tight_layout()
 
     def extract_line(self, data='strain', phi=None, az_idx=None,
                      pnt=None, theta=0, z_idx=None, res=0.1):

@@ -21,6 +21,7 @@ from pyxpb.array_create import ring_array
 from pyxe.merge import ordered_merge
 import matplotlib.pyplot as plt
 from pyxe.peak_analysis import PeakAnalysis
+from pyxe.plotting import DataViz
 
 from itertools import product
 
@@ -217,11 +218,29 @@ class TestMono(object):
         plt.close()
         merged.save_to_hdf5(fpath='pyxe/data/mono_test_pyxe.h5', overwrite=True)
         merged_reload = PeakAnalysis(fpath='pyxe/data/mono_test_pyxe.h5')
-        print('Anlaysis State:', merged_reload.analysis_state)
+        merged_reload_b = DataViz(fpath='pyxe/data/mono_test_pyxe.h5')
         merged_reload.plot_slice('shear strain', phi=np.pi/3)
         plt.close()
+        merged_reload_b.plot_slice('shear strain', phi=np.pi / 3)
+        plt.close()
 
-        assert np.array_equal(merged.peaks, merged_reload.peaks), (merged.peaks.shape, merged_reload.peaks.shape)
+        assert np.array_equal(merged.peaks, merged_reload.peaks), \
+            (merged.peaks.shape, merged_reload.peaks.shape)
+
+    def test_save_to_text(self):
+        self.data.calculate_strain(self.q0)
+        self.data.define_material(200*10**9, 0.3)
+        data2 = copy.deepcopy(self.data)
+        data2.d1 += 1.00001
+        merged = ordered_merge([self.data, data2], [0, 1], 0.1)
+        merged.plot_slice('shear strain', phi=np.pi / 3)
+        az_lst = ['fwhm', 'fwhm error', 'peaks', 'peaks error',
+                  'strain', 'strain error', 'stress']
+        phi_lst = ['strain', 'shear strain', 'stress', 'shear stress']
+        merged.save_to_txt('pyxe/data/test.csv', az_lst, az_idx=2)
+        merged.save_to_txt('pyxe/data/test.csv', phi_lst, phi=-np.pi/3)
+
+
 
 if __name__ == '__main__':
     data, q0 = integration()
