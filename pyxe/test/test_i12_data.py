@@ -25,8 +25,9 @@ def test_real():
         data.define_material(E=200*10**9, v=0.3)
     merged = ordered_merge([fine, coarse], [0, 1], pad=0.2)
     merged.plot_slice('stress', phi=np.pi/3)
-    plt.show()
-    return fine, coarse
+
+    return fine, coarse, merged
 
 if __name__ == '__main__':
-    f, c = test_real()
+    f, c, m = test_real()
+    plt.show()

@@ -25,7 +25,7 @@ from pyxe.peak_analysis import PeakAnalysis
 
 
 def i12_dict(X, Y, q, I):
-    d = {'entry1/scan_command': [b'ss2_x ss2_y'],
+    d = {'entry1/scan_command': np.array([b'ss2_x ss2_y']),
          'entry1/EDXD_elements/edxd_q': q,
          'entry1/EDXD_elements/data': I,
          'entry1/EDXD_elements/ss2_x': X,
