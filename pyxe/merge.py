@@ -71,7 +71,7 @@ def none_merge(data, current_state, required_state, axis=-1):
         if axis is None:
             merged_data = np.append(*data)
         else:
-            reshaped_data = [d.reshape(axis, d.shape[axis]) for d in data]
+            reshaped_data = [d.reshape(axis, *d.shape[axis:]) for d in data]
             merged_data = np.concatenate(reshaped_data)
         return merged_data
     else:
