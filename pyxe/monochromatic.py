@@ -78,7 +78,7 @@ class Mono(PeakAnalysis):
             npt_rad, npt_az = int(npt_rad), int(npt_az)
             I, q_, phi = ai.integrate2d(img, npt_rad=npt_rad, npt_azim=npt_az,
                                         azimuth_range=az_range, unit='q_A^-1')
-            self.I[fidx] = I 
+            self.I[fidx] = I
             if progress:
                 sys.stdout.write('\rProgress: [{0:20s}] {1:.0f}%'.format('#' *
                                  int(20*(fidx + 1) / len(fnames)),
@@ -90,18 +90,3 @@ class Mono(PeakAnalysis):
         self.phi = phi * np.pi / 180
         self.E, self.v, self.G, self.stress_state = None, None, None, None
         self.analysis_state = 'integrated'
-    #
-    # def save_to_nxs(self, fpath=None, overwrite=False):
-    #     """
-    #     Saves all data back into an expanded .nxs file. Contains all original
-    #     data plus q0, peak locations and strain.
-    #
-    #     # fpath:      Abs. path for new file - default is to save to parent
-    #                   directory (*/folder/folder_pyxe.nxs)
-    #     # overwrite:  Overwrite file if it already exists (True/[False])
-    #     """
-    #     if fpath is None:
-    #         fname = '%s_pyxe.nxs' % os.path.split(self.folder)[1]
-    #         fpath = os.path.join(self.folder, fname)
-    #
-    #     pyxe_to_nxs(fpath, self, overwrite)

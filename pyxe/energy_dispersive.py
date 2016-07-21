@@ -38,7 +38,8 @@ class EDI12(PeakAnalysis):
         scan_command = f['entry1/scan_command'][()][0]
         dims = re.findall(b'ss2_\w+', scan_command)
         self.ndim = len(dims)
-        dims = dims + [dim for dim in [b'ss2_x', b'ss2_y', b'ss2_z'] if dim not in dims]
+        all_dims = [b'ss2_x', b'ss2_y', b'ss2_z']
+        dims = dims + [dim for dim in all_dims if dim not in dims]
         co_ords = []
         for dim in dims:
             co_ords.append(dimension_fill(f, dim.decode("utf-8")))
@@ -54,17 +55,3 @@ class EDI12(PeakAnalysis):
         self.phi = np.linspace(-np.pi, 0, 23) if phi is None else phi
         self.E, self.v, self.G, self.stress_state = None, None, None, None
         self.analysis_state = 'integrated'
-    #
-    # def save_to_nxs(self, fpath=None, overwrite=False):
-    #     """
-    #     Saves all data back into an expanded .nxs file. Contains all original
-    #     data plus q0, peak locations and strain.
-    #
-    #     # fpath:      Abs. path for new file - default is to save to parent
-    #                   directory (*_pyxe.nxs)
-    #     # overwrite:  Overwrite file if it already exists (True/[False])
-    #     """
-    #     if fpath is None:
-    #         fpath = '%s_pyxe.nxs' % os.path.splitext(self.fpath)[0]
-    #
-    #     pyxe_to_nxs(fpath, self, overwrite)
