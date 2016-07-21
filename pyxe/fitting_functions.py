@@ -13,6 +13,14 @@ import unittest
 import numpy as np
 from scipy.optimize import curve_fit
 
+def plane_strain(e_xx, e_yy, E, v):
+    return (E / (1 - v ** 2)) * (e_xx + v * e_yy)
+
+
+def plane_stress(e_xx, e_yy, E, v):
+    return E * ((1 - v) * e_xx + v * e_yy) / ((1 + v) * (1 - 2 * v))
+
+
 
 def strain_transformation(phi, *p):
     """
