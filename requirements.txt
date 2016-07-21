@@ -6,3 +6,4 @@ scipy
 pyFAI
 fabio
 xrdpb
+six

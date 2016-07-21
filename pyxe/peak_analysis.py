@@ -10,18 +10,10 @@ import os
 
 from pyxe.command_parsing import analysis_check
 from pyxe.fitting_tools import array_fit
-from pyxe.analysis_tools import full_ring_fit, pyxe_to_hdf5
+from pyxe.analysis_tools import full_ring_fit, pyxe_to_hdf5, data_extract
 from pyxe.plotting import DataViz
 from pyxe.merge import basic_merge
-
-
-def plane_strain(e_xx, e_yy, E, v):
-    return (E / (1 - v ** 2)) * (e_xx + v * e_yy)
-
-
-def plane_stress(e_xx, e_yy, E, v):
-    return E * ((1 - v) * e_xx + v * e_yy) / ((1 + v) * (1 - 2 * v))
-
+from pyxe.fitting_functions import plane_strain, plane_stress
 
 class PeakAnalysis(DataViz):
     """
@@ -33,20 +25,20 @@ class PeakAnalysis(DataViz):
         """
         self.fpath = fpath
 
-        data_ids = ['ndim', 'd1', 'd2', 'd3', 'q', 'I', 'phi',
-                    'peaks', 'peaks_err', 'fwhm', 'fwhm_err',
-                    'strain', 'strain_err', 'strain_tensor',
-                    'E', 'v', 'G', 'stress_state', 'analysis_state']
-
         with h5py.File(fpath, 'r') as f:
-            data = f['pyxe_analysis']
-            for name in data_ids:
-                try:
-                    d = data[name][()]
-                    d = d.decode() if isinstance(d, binary_type) else d
-                    setattr(self, name, d)
-                except KeyError:
-                    setattr(self, name, None)
+            self.ndim, self.d1, self.d2, self.d3 = data_extract(f, 'dims')
+            self.q, self.I, self.phi = data_extract(f, 'raw')
+            self.peaks, self.peaks_err = data_extract(f, 'peaks')
+            self.fwhm, self.fwhm_err = data_extract(f, 'fwhm')
+            self.strain, self.strain_err = data_extract(f, 'strain')
+            self.strain_tensor = data_extract(f, 'tensor')[0]
+            self.E, self.v, self.G = data_extract(f, 'material')
+            self.stress_state, self.analysis_state = data_extract(f, 'state')
+            if self.stress_state is None:
+                self.stress_eqn = None
+            else:
+                p_strain = self.stress_state == 'plane strain'
+                self.stress_eqn = plane_strain if p_strain else plane_stress
 
     def peak_fit(self, q0_approx, window_width, func='gaussian',
                  err_lim=10**-4, progress=True):

@@ -10,7 +10,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from six import string_types
+from six import string_types, binary_type
 import h5py
 import numpy as np
 from scipy.optimize import curve_fit
@@ -66,7 +66,6 @@ def pyxe_to_hdf5(fname, pyxe_object, overwrite=False):
     with h5py.File(fname, write) as f:
 
         for name in data_ids:
-            #print('Saving: ', name)
             d_path = 'pyxe_analysis/%s' % name
             data = getattr(pyxe_object, name)
             data = data.encode() if isinstance(data, string_types) else data
@@ -75,6 +74,29 @@ def pyxe_to_hdf5(fname, pyxe_object, overwrite=False):
                     f.create_dataset(d_path, data=data, compression='gzip')
                 else:
                     f.create_dataset(d_path, data=data)
+
+
+def data_extract(pyxe_h5, data_id):
+
+    data_ids = {'dims': ['ndim', 'd1', 'd2', 'd3'],
+                'raw': ['q', 'I', 'phi'],
+                'peaks': ['peaks', 'peaks_err'],
+                'fwhm': ['fwhm', 'fwhm_err'],
+                'strain': ['strain', 'strain_err'],
+                'tensor': ['strain_tensor'],
+                'material': ['E', 'v', 'G'],
+                'state': ['stress_state', 'analysis_state']}
+
+    extract = data_ids[data_id]
+    data = []
+    for ext in extract:
+        try:
+            d = pyxe_h5['pyxe_analysis/{}'.format(ext)]
+            d = d[()].decode() if isinstance(d[()], binary_type) else d[()]
+            data.append(d)
+        except KeyError:
+            data.append(None)
+    return data
 
 
 def dim_fill(data):
@@ -105,7 +127,7 @@ def mirror_data(phi, data):
     return angles, d2
 
 
-def dimension_fill(data, dim_ID):
+def dimension_fill(data, dim_id):
     """
     Extracts correct spatial array from hdf5 file. Returns None is the
     dimension doesn't exist.
@@ -114,7 +136,7 @@ def dimension_fill(data, dim_ID):
     # dim_ID:     Dimension ID (ss_x, ss2_y or ss2_z)
     """
     try:
-        dimension_data = data['entry1/EDXD_elements/' + dim_ID][()]
+        dimension_data = data['entry1/EDXD_elements/' + dim_id][()]
     except KeyError:
         dimension_data = None
     return dimension_data
