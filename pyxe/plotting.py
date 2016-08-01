@@ -12,8 +12,11 @@ from __future__ import unicode_literals
 
 import h5py
 import numpy as np
+from numpy.polynomial.chebyshev import chebfit, chebval
 import matplotlib.pyplot as plt 
 from scipy.interpolate import griddata
+from scipy.optimize import curve_fit
+from matplotlib.pyplot import cm
 
 from pyxe.command_parsing import analysis_check
 from pyxe.fitting_functions import strain_transformation, shear_transformation
@@ -84,21 +87,74 @@ class DataViz(object):
             ax = fig.add_subplot(1, 1, 1)
 
         pnt = (0,) * len(self.I[..., 0, 0].shape) if pnt is None else pnt
+        q, I = self.q[az_idx], self.I[pnt][az_idx]
 
-        ax.plot(self.q[az_idx], self.I[pnt][az_idx], 'k-')
+
+        if pawley:
+            detector = self.detector
+            background = chebval(q, detector.background[az_idx])
+            q_lim = [np.min(q), np.max(q)]
+            p0 = extract_parameters(detector, q_lim, np.nanmax(I))
+            pawley = pawley_hkl(detector, background)
+            coeff, var_mat = curve_fit(pawley, q, I, p0=p0)
+            I_pawley = pawley(q, *coeff)
+
+            ax.plot(q, I, 'o', markeredgecolor='0.3', markersize=4, markerfacecolor='none', label=r'$\mathregular{Y_{obs}}$')
+            ax.plot(q, I_pawley, '-', color='r', linewidth=0.75, label=r'$\mathregular{Y_{calc}}$')
+
+            I_diff = I - I_pawley
+            max_diff = np.max(I_diff)
+
+
+            ylim = ax.get_ylim()
+            ymin = -ylim[1]/10
+
+            materials = self.detector.materials
+
+            for idx, mat in enumerate(materials):
+                offset = (1 + idx) * ymin / 2
+                for q0 in self.detector.q0[mat]:
+                    ax.plot([q0, q0], [offset + ymin/8, offset - ymin/8], '-', color='g', linewidth=2)
+
+                ax.errorbar(0, 0, yerr=1, fmt='none', capsize=0,
+                            ecolor='g', elinewidth=1.5, label=r'Bragg ({})'.format(mat))
+
+            ax.plot(q, I - I_pawley + (idx + 2) * ymin/2 - max_diff, '-', color='b', linewidth=0.75,
+                    label=r'$\mathregular{Y_{diff}}$')
+
+            ylocs = ax.yaxis.get_majorticklocs()
+            yticks = ax.yaxis.get_major_ticks()
+            for idx, yloc in enumerate(ylocs):
+                if yloc < 0:
+                    yticks[idx].set_visible(False)
+
+
+
+            ax.legend(numpoints=1)
+
+
+
+
+
+        else:
+            ax.plot(q, I, 'k-', linewidth=0.5)
         ax.set_xlabel('q (A$^{-1}$)')
         ax.set_ylabel('Intensity')
+
+
+
+
         return ax
 
     @analysis_check('strain fit')
     def plot_strain_fit(self, pnt=None, figsize=(10,5)):
         """
-            Plots fitted in-plane strain field for given data point.
+        Plots fitted in-plane strain field for given data point.
 
-            # pnt:      Define point (index) from which to plot fitted in-plane
-                          strain field.
-            # figsize:    Figure dimensions
-            """
+        # pnt:      Define point (index) from which to plot fitted in-plane
+                      strain field.
+        # figsize:    Figure dimensions
+        """
         pnt = (0,) * (self.strain.ndim - 1) if pnt is None else pnt
 
         fig, (ax_1, ax_2) = plt.subplots(1, 2, figsize=figsize)
