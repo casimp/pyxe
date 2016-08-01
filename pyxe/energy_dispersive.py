@@ -15,6 +15,7 @@ import os
 
 from pyxe.analysis_tools import dimension_fill
 from pyxe.peak_analysis import PeakAnalysis
+from pyxpb.detectors import i12_energy
 
 
 class EDI12(PeakAnalysis):
@@ -55,3 +56,5 @@ class EDI12(PeakAnalysis):
         self.phi = np.linspace(-np.pi, 0, 23) if phi is None else phi
         self.E, self.v, self.G, self.stress_state = None, None, None, None
         self.analysis_state = 'integrated'
+        self.detector = i12_energy
+

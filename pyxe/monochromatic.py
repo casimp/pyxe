@@ -18,6 +18,7 @@ import sys
 
 from pyxe.analysis_tools import dim_fill
 from pyxe.peak_analysis import PeakAnalysis
+from pyxpb.detectors import MonoDetector
 
 
 def extract_fnames(folder, f_ext):
@@ -43,7 +44,7 @@ class Mono(PeakAnalysis):
                       calibration details as take from Fit2D in form:
                       (sample_to_detector (mm), centre_x (pix), centre_y (pix), 
                       tilt (deg), tilt_plane (deg), pixel_size_x (micron), 
-                      pixel_size_y (micron), wavelength (m))
+                      pixel_size_y (micron))
         # npt_rad:    Number of radial bins, should equal half detector pix
         # npt_az:     Number of azimuthal wedges           
         # az_range:   Range of azimuthal values to investigate - note that 0
@@ -91,3 +92,5 @@ class Mono(PeakAnalysis):
         self.phi = phi * np.pi / 180
         self.E, self.v, self.G, self.stress_state = None, None, None, None
         self.analysis_state = 'integrated'
+        # Temporary - extract from ai!
+        self.detector = MonoDetector((2000,2000), 0.1, 1000, 100, 1)
