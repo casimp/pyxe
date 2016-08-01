@@ -57,9 +57,90 @@ class PeakAnalysis(DataViz):
                 p_strain = self.stress_state == 'plane strain'
                 self.stress_eqn = plane_strain if p_strain else plane_stress
 
-    def peak_fit(self, q0_approx, window_width, func='gaussian',
-                 err_lim=10**-4, progress=True):
+    def add_material(self, material, weight=1, background=True):
+        """ Add material or phase to setup (needed for Pawley fit).
 
+        Finds Bragg peaks and estimates relative intensities based on material
+        and scanning setup.
+
+        Args:
+            material (str): Element symbol (compound formula)
+            weight (float): Relative peak weight (useful for mixtures/phases)
+            background (bool): Fit background profile based on material/peaks
+        """
+        self.detector.add_material(material, weight=weight)
+        if background:
+            self.define_background()
+
+    def define_background(self, seg=50, k=12, pnt=None, fwhm=None, plot=True,
+                          az_idx=0, auto=True, x=None, y=None):
+        """ Background profile fitting - segment data and auto find points.
+
+        Fits a Chebyshev polynomial (of order k) to automatically acquired
+        q, I points. These points are selected wrt. the materials present
+        (defined via add_materials), with the Bragg peaks being avoided.
+
+        If auto is False, q v I points can be manually specified.
+
+        Args:
+            seg (int): Number of points to split data into/extract
+            k (int): Order for Cheyshev polynomial
+            pnt (tuple): Point co_ords or None for averaged data
+            fwhm (float): Peak fwhm (to exclude more data around peaks)
+            plot (bool): True/False
+            az_idx (int): Azimuthal slice to plot
+            auto (bool): Automatically extract q v I data
+            x (ndarray): If not auto maunally defined q values
+            y (ndarray): If not auto maunally defined I values
+        """
+        # Automatically averages over all points unless point is specified
+        if pnt is None:
+            I = np.mean(self.I, tuple(range(self.I.ndim - 2)))
+        else:
+            I = self.I[pnt]
+
+        if auto:
+            az = self.q.shape[0]
+            x, y = np.zeros((az, seg)), np.zeros((az, seg))
+
+            for a in range(az):
+                split_q = np.array_split(self.q[a], seg)
+                split_I = np.array_split(I[a], seg)
+
+                for idx, q in enumerate(split_q):
+                    q_min, q_max = np.min(q), np.max(q)
+                    for mat in self.detector.materials:
+                        q0 = self.detector.q0[mat]
+                        sig = self.detector.sigma[mat]
+                        sig = sig if fwhm is None else fwhm
+                        clash = np.any(np.logical_and(q0 > q_min - 2 * sig,
+                                                      q0 < q_max + 2 * sig))
+                        x[a, idx] = np.nan if clash else np.mean(split_q[idx])
+                        y[a, idx] = np.nan if clash else np.mean(split_I[idx])
+
+        self.detector.define_background(x, y, k)
+        f = self.detector.background
+
+        if plot:
+            plt.plot(self.q[az_idx], I[az_idx], 'k')
+            plt.plot(self.q[az_idx], chebval(self.q[az_idx], f[az_idx]), 'r-')
+            plt.plot(x[az_idx], y[az_idx], 'r+')
+
+    def peak_fit(self, q0_approx, window_width, func='gaussian',
+                 err_lim=1e-4, progress=True):
+        """ Single peak fitting to all points/azimuthal slices.
+
+        Fits a Gaussian/Lorentzian/Psuedo-Voigt curve to a peak in a
+        defined window. An error limit (wrt strain) can be defined - any
+        points that fail to meet this criterion will be replaced with nan.
+
+        Args:
+            q0_approx (float): Approximate q0 value
+            window_width (float): Curve fitting window
+            func (str): Curve fitting func (gaussian/lorentzian/psuedo-voigt)
+            err_lim (float): Error limit (default 1e-4)
+            progress (bool): Output progress bar
+        """
         peak_window = [q0_approx - window_width/2, q0_approx + window_width/2]
         self.q0_approx = q0_approx
 
@@ -71,6 +152,39 @@ class PeakAnalysis(DataViz):
         print('\n%s acquisition points\n' % self.I[..., 0, 0].size)
 
         fit = array_fit(self.q, self.I, peak_window, func, err_lim, progress)
+        self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = fit
+        # Reset strain to None after peak fitting...
+        self.strain, self.strain_err, self.strain_tensor = None, None, None
+        self.analysis_state = 'peaks'
+
+    def pawley_fit(self, err_lim=1e-4, q_lim=[2, None], progress=True):
+        """ Basic Pawley refinement of full diffraction profile.
+
+        Fits the full diffraction profile according to a Pawley type
+        methodology. The detector-sample setup must be properly defined
+        (inc. materials/phases via add_materials). This is computational
+        expensive - it is recommended that you first call
+        plot_intensity(pawley=True) to test goodness of fit.
+
+        The detector/sample setup is used to provide an initial estimate
+        of lattice parameter (a), fwhm wrt q and peak intensity. Peak intensity
+        is allowed to vary freely. An error limit (wrt strain) can be defined -
+        any points that fail to meet this criterion will be replaced with nan.
+
+        Args:
+            err_lim (float): Error limit (default 1e-4)
+            q_lim (list): [min, max] q to interrogate
+            progress (bool): Output progress bar
+        """
+        # Iterate across q0 values and fit peaks for all detectors
+        array_shape = self.I.shape[:-1]
+        data = [np.nan * np.ones(array_shape) for _ in range(4)]
+        self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = data
+
+        print('\n%s acquisition points\n' % self.I[..., 0, 0].size)
+
+        fit = array_fit_pawley(self.q, self.I, self.detector, err_lim,
+                               q_lim, progress)
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = fit
         # Reset strain to None after peak fitting...
         self.strain, self.strain_err, self.strain_tensor = None, None, None
