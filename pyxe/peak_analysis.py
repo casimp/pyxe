@@ -3,25 +3,42 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from six import binary_type
 import h5py
 import numpy as np
 import os
+import matplotlib.pyplot as plt
+from numpy.polynomial.chebyshev import chebval
 
 from pyxe.command_parsing import analysis_check
-from pyxe.fitting_tools import array_fit
+from pyxe.fitting_tools import array_fit, array_fit_pawley
 from pyxe.analysis_tools import full_ring_fit, pyxe_to_hdf5, data_extract
 from pyxe.plotting import DataViz
 from pyxe.merge import basic_merge
 from pyxe.fitting_functions import plane_strain, plane_stress
 
+
 class PeakAnalysis(DataViz):
-    """
-    """
     def __init__(self, fpath):
-        """
-        # fpath:      Data is either the filepath to an analyzed pyxe NeXus
-                      file or a pyxe data object (inc. merged object)
+        """ Analysis class for the calculation of strain from q/a values.
+
+        The analysis is based around two peak fitting methods - single peak
+        and Pawley refinement. The Pawley refinement requires a more complete
+        description of the constituent material/phases and returns a lattice
+        parameter, whereas the single peak analysis returns a particular
+        lattice spacing, d0, or rather the reciprocal equivalent, q0.
+
+        The strain analysis follows naturally from this via a simple strain
+        calculation (e = delta_a / a0), with the variation in strain wrt.
+        azimuthal position allowing for the computation of the full strain
+        tensor (e_xx, e_yy, e_xy).
+
+        It is then possible to finalise the analytical procedure and calculate
+        stress, which relies on the material system being in a plane strain
+        or plane stress state. The in-plane stress state can then be
+        determined.
+
+        Args:
+            fpath (str): Path to an analyzed (integrated) pyxe hdf5 file
         """
         self.fpath = fpath
 
@@ -61,8 +78,21 @@ class PeakAnalysis(DataViz):
 
     @analysis_check('peaks')
     def calculate_strain(self, q0, tensor_fit=True):
-        """
-        Ideally pass in a pyxe data object containing
+        """ Calculate strain based on q0/a0 value(s).
+
+        Strain can be calculated with respect to a single value of
+        q0 or a0 but it is recommended to pass in a analyzed pyxe
+        data object containing q0/a0 measurements. Strain can then be
+        assessed wrt. azimuthal position, which reduces error in the case
+        of an area detector (see Kolunsky et al. ??)
+
+        There is an option to then compute the full strain tensor. This fits
+        the stress/strain transformation equations to the data and stores
+        e_xx, e_yy, e_xy.
+
+        Args:
+            q0 (float, object): q0/a0 float or pyxe data object
+            tensor_fit (bool): Calculate the full strain tensor
         """
         if isinstance(q0, PeakAnalysis):
             assert np.array_equal(q0.phi, self.phi)
@@ -77,7 +107,7 @@ class PeakAnalysis(DataViz):
             self.analysis_state = 'strain'
 
     @analysis_check('strain')
-    def define_material(self, E, v, G=None, stress_state='plane strain'):
+    def material_parameters(self, E, v, G=None, stress_state='plane strain'):
         G = E / (2 * (1-v)) if G is None else G
         self.E, self.v, self.G, self.stress_state = E, v, G, stress_state
         eqn = plane_strain if stress_state == 'plane strain' else plane_stress
@@ -85,13 +115,15 @@ class PeakAnalysis(DataViz):
         self.analysis_state = self.analysis_state.replace('strain', 'stress')
 
     def save_to_hdf5(self, fpath=None, overwrite=False):
-        """
-        Saves all data back into an expanded .nxs file. Contains all original
-        data plus q0, peak locations and strain.
+        """ Save data back to hdf5 file format.
 
-        # fpath:      Abs. path for new file - default is to save to parent
-                      directory (*/folder/folder_pyxe.nxs)
-        # overwrite:  Overwrite file if it already exists (True/[False])
+        Saves analyzed information and the detector setup. Data is discarded
+        relative to the NeXus data format (where applicable).
+
+        Args:
+            fpath (str): Abs. path for new file - default is to save to
+                         parent directory (*/folder/folder_pyxe.h5)
+            overwrite (bool): Overwrite file if it already exists
         """
         if fpath is None:
             if self.fpath[-8:] == '_pyxe.h5':
