@@ -209,6 +209,23 @@ class DataViz(object):
             return x, y, d, line
 
     def extract_slice(self, data='strain', phi=None, az_idx=None, z_idx=None):
+        """ Extract 2D data slice wrt. azimuthal slice index or angle (phi).
+
+        The extracted data is defined using the data variable (str), which
+        must be one of the following: peaks, peaks error, fwhm, fwhm error,
+        strain, strain error, shear strain, stress, shear stress.
+
+        Certain combinations of data type and azimuthal index/phi will not
+        work (e.g. can't extract peaks wrt. phi only wrt. az. index).
+
+        Note: must define EITHER phi or az_idx
+
+        Args:
+            data (str): Data type to extract (see above)
+            phi (float): Azimuthal angle in rad
+            az_idx (int): Azimuthal slice index
+            z_idx (int): Index of slice height in 3D array
+        """
         complex_check(data, self.analysis_state, phi, az_idx)
         command = text_cleaning(data)
         az_command = 'phi' if phi is not None else 'az_idx'
@@ -230,7 +247,6 @@ class DataViz(object):
                 data = self.stress_eqn(e_xx, e_yy, self.E, self.v)
 
         else:
-            print(self.strain_tensor.shape)
             tensor = self.strain_tensor
             tensor = tensor[..., 0], tensor[..., 1], tensor[..., 2]
             shear = True if 'shear' in command else False
@@ -248,7 +264,6 @@ class DataViz(object):
             else:
                 data = strain_transformation(phi, *tensor)
         data = data[z_idx] if z_idx is not None else data
-        print('data', data.shape)
         return data
 
     def plot_line(self, data='strain', phi=None, az_idx=None, z_idx=None,
@@ -267,17 +282,34 @@ class DataViz(object):
         return ax
 
     def plot_slice(self, data='strain', phi=None, az_idx=None, z_idx=None,
-                   plot_func=None, **kwargs):
-        data = self.extract_slice(data, phi, az_idx, z_idx)
-        plot_func = plot_complex if plot_func is None else plot_func
-        if data.ndim == 1:
-            d1_, d2_ = meshgrid_res(self.d1, self.d2, spatial_resolution=0.1)
-            z = griddata((self.d1.flatten(), self.d2.flatten()),
-                         data.flatten(), (d1_, d2_))
-        else:
-            d1_, d2_, z = self.d1, self.d2, data
+                   res=0.051, plot_func=None, **kwargs):
+        """ Plot 2D data slice wrt. azimuthal slice index or angle (phi).
 
-        ax_ = plot_func(self.d1, self.d2, d1_, d2_, z, **kwargs)
+        The extracted data is defined using the data variable (str), which
+        must be one of the following: peaks, peaks error, fwhm, fwhm error,
+        strain, strain error, shear strain, stress, shear stress.
+
+        Certain combinations of data type and azimuthal index/phi will not
+        work (e.g. can't plot peaks wrt. phi only wrt. az. index):
+
+        Note: must define EITHER phi or az_idx
+
+        Args:
+            data (str): Data type to extract (see above)
+            phi (float): Azimuthal angle in rad
+            az_idx (int): Azimuthal slice index
+            z_idx (int): Index of slice height in 3D array
+            res (float): Resolution of re-gridded/plotted data points in mm
+            plot_func (func): User defined plotting function
+            kwargs (list): Passed to plot_func.
+        """
+        data = self.extract_slice(data, phi, az_idx, z_idx)
+        finite = np.isfinite(data)
+        d1, d2 = meshgrid_res(self.d1[finite], self.d2[finite],
+                              spatial_resolution=res)
+        z = griddata((self.d1[finite], self.d2[finite]), data[finite], (d1, d2))
+        plot_func = plot_complex if plot_func is None else plot_func
+        ax_ = plot_func(self.d1[finite], self.d2[finite], d1, d2, z, **kwargs)
 
         return ax_
 
@@ -292,7 +324,6 @@ class DataViz(object):
             n_lst.append(name)
 
             if perp:
-
                 a90 = az90(self.phi, az_idx) if az_idx is not None else az_idx
                 p90 = phi + np.pi/2 if phi is not None else phi
                 name = name_convert(d, p90, a90, perp)
