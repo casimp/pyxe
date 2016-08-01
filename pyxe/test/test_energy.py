@@ -34,14 +34,15 @@ def i12_dict(X, Y, q, I):
     return d
 
 # Lets create a detector and add peaks...
-i12_energy.add_peaks('Fe')
+i12 = i12_energy()
+i12.add_material('Fe')
 
 # Create the test data from that setup
-data_ = intensity_array(i12_energy, pnts=(6, 6), max_strain=1e-3)
+data_ = intensity_array(i12, pnts=(6, 6), max_strain=1e-3)
 x, y, q, I,(e_xx, e_yy, e_xy) = data_
 data_dict=i12_dict(x, y, q, I)
 
-q0_ = intensity_array(i12_energy, pnts=(1, 1), max_strain=0)
+q0_ = intensity_array(i12, pnts=(1, 1), max_strain=0)
 x, y, q, I, _ = q0_
 q0_data_dict=i12_dict(x, y, q, I)
 
@@ -81,11 +82,11 @@ class TestEnergy(object):
 
     def test_stress_calc(self):
         self.data.calculate_strain(self.q0)
-        self.data.define_material(E=200*10**9, v=0.3)
+        self.data.material_parameters(E=200*10**9, v=0.3)
 
     def test_extract_slice(self):
         self.data.calculate_strain(self.q0)
-        self.data.define_material(E=200 * 10 ** 9, v=0.3)
+        self.data.material_parameters(E=200 * 10 ** 9, v=0.3)
         # Try a few slice extract options
         self.data.extract_slice('strain', phi=np.pi/3)
         assert_raises(AssertionError, self.data.extract_slice, 'strain err', 0)
@@ -130,7 +131,7 @@ class TestEnergy(object):
 
     def test_plot_line(self):
         self.data.calculate_strain(self.q0)
-        self.data.define_material(E=200 * 10 ** 9, v=0.3)
+        self.data.material_parameters(E=200 * 10 ** 9, v=0.3)
         data2 = copy.deepcopy(self.data)
         data2.d1 += 1.0001
         merged = ordered_merge([self.data, data2], [0, 1])
@@ -155,7 +156,7 @@ class TestEnergy(object):
 
     def test_plot_slice(self):
         self.data.calculate_strain(self.q0)
-        self.data.define_material(E=200 * 10 ** 9, v=0.3)
+        self.data.material_parameters(E=200 * 10 ** 9, v=0.3)
         data2 = copy.deepcopy(self.data)
         data2.d1 += 1.0001
         merged = ordered_merge([self.data, data2], [0, 1])
@@ -197,7 +198,7 @@ class TestEnergy(object):
 
     def test_save_to_text(self):
         self.data.calculate_strain(self.q0)
-        self.data.define_material(200*10**9, 0.3)
+        self.data.material_parameters(200*10**9, 0.3)
         data2 = copy.deepcopy(self.data)
         data2.d1 += 1.00001
         merged = ordered_merge([self.data, data2], [0, 1], 0.1)
@@ -214,7 +215,7 @@ if __name__ == '__main__':
     data.peak_fit(3.1, 1.)
     q0.peak_fit(3.1, 1.)
     data.calculate_strain(q0)
-    data.define_material(200*10**9, 0.3, G=None)
+    data.material_parameters(200*10**9, 0.3, G=None)
     data.plot_intensity()
     data.plot_strain_fit()
     shift = 1.00001

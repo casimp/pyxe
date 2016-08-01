@@ -22,7 +22,7 @@ def test_real():
     for data in [fine, coarse]:
         data.peak_fit(3.1, 0.25)
         data.calculate_strain(3.1)
-        data.define_material(E=200*10**9, v=0.3)
+        data.material_parameters(E=200*10**9, v=0.3)
     merged = ordered_merge([fine, coarse], [0, 1], pad=0.2)
     merged.plot_slice('stress', phi=np.pi/3)
 

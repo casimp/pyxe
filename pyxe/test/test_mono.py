@@ -58,7 +58,7 @@ fit2Dparams = (sample_detector, crop_shape[0] / 2, crop_shape[1] / 2,
 
 # Lets create a detector and add peaks...
 mono = MonoDetector(shape, pixel_size, sample_detector, energy, energy_sigma)
-mono.add_peaks('Fe')
+mono.add_material('Fe')
 
 # Create the test data from that setup
 fnames, co_ords, images, tensor = faked_data(mono, (6, 6), crop=crop,
@@ -112,11 +112,11 @@ class TestMono(object):
 
     def test_stress_calc(self):
         self.data.calculate_strain(self.q0)
-        self.data.define_material(E=200*10**9, v=0.3)
+        self.data.material_parameters(E=200*10**9, v=0.3)
 
     def test_extract_slice(self):
         self.data.calculate_strain(self.q0)
-        self.data.define_material(E=200 * 10 ** 9, v=0.3)
+        self.data.material_parameters(E=200 * 10 ** 9, v=0.3)
         # Try a few slice extract options
         self.data.extract_slice('strain', phi=np.pi/3)
         assert_raises(AssertionError, self.data.extract_slice, 'strain err', 0)
@@ -161,7 +161,7 @@ class TestMono(object):
 
     def test_plot_line(self):
         self.data.calculate_strain(self.q0)
-        self.data.define_material(E=200 * 10 ** 9, v=0.3)
+        self.data.material_parameters(E=200 * 10 ** 9, v=0.3)
         data2 = copy.deepcopy(self.data)
         data2.d1 += 1.0001
         merged = ordered_merge([self.data, data2], [0, 1])
@@ -186,7 +186,7 @@ class TestMono(object):
 
     def test_plot_slice(self):
         self.data.calculate_strain(self.q0)
-        self.data.define_material(E=200 * 10 ** 9, v=0.3)
+        self.data.material_parameters(E=200 * 10 ** 9, v=0.3)
         data2 = copy.deepcopy(self.data)
         data2.d1 += 1.0001
         merged = ordered_merge([self.data, data2], [0, 1])
@@ -229,7 +229,7 @@ class TestMono(object):
 
     def test_save_to_text(self):
         self.data.calculate_strain(self.q0)
-        self.data.define_material(200*10**9, 0.3)
+        self.data.material_parameters(200*10**9, 0.3)
         data2 = copy.deepcopy(self.data)
         data2.d1 += 1.00001
         merged = ordered_merge([self.data, data2], [0, 1], 0.1)

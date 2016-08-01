@@ -74,7 +74,7 @@ class DataViz(object):
             axes[idx] -= i
 
     def plot_intensity(self, pnt=None, az_idx=0, figsize=(9, 6), ax=False,
-                       pawley=True):
+                       pawley=False):
         """
         Plots q v intensity.
 
