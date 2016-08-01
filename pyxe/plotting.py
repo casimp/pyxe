@@ -21,12 +21,10 @@ from pyxe.plotting_tools import plot_complex, meshgrid_res, line_extract, az90
 from pyxe.command_parsing import complex_check, text_cleaning, name_convert
 from pyxe.analysis_tools import data_extract
 from pyxe.fitting_functions import plane_stress, plane_strain
+from pyxe.fitting_tools import pawley_hkl, extract_parameters
 
 
 class DataViz(object):
-    """
-
-    """
 
     def __init__(self, fpath):
         """
@@ -50,7 +48,30 @@ class DataViz(object):
                 p_strain = self.stress_state == 'plane strain'
                 self.stress_eqn = plane_strain if p_strain else plane_stress
 
-    def plot_intensity(self, pnt=None, az_idx=0, figsize=(7, 5), ax=False):
+    def flipaxis(self, axis):
+        """
+        Flip axis (positive to negative).
+        """
+        axes = {0: self.d1, 1: self.d2, 2: self.d3}
+        axes[axis] *= -1
+
+    def swapaxes(self, axis1, axis2):
+        """
+        Interchange two axes of an array. This effectively rotates the data.
+        """
+        axes = {0: self.d1, 1: self.d2, 2: self.d3}
+        axes[axis1], axes[axis2] = axes[axis2], axes[axis1]
+
+    def centre(self, coordinate):
+        """
+        Centre array on point (tuple).
+        """
+        axes = {0: self.d1, 1: self.d2, 2: self.d3}
+        for idx, i in enumerate(coordinate):
+            axes[idx] -= i
+
+    def plot_intensity(self, pnt=None, az_idx=0, figsize=(9, 6), ax=False,
+                       pawley=True):
         """
         Plots q v intensity.
 
