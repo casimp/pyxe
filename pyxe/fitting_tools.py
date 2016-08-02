@@ -285,10 +285,9 @@ def array_fit(q_array, I_array, peak_window, func='gaussian',
 if __name__ == '__main__':
     import os
     from pyxe.energy_dispersive import EDI12
-    base = r'C:\Users\casim\Dropbox\Python\pyxe\pyxe\data'
-    fpath_1 = os.path.join(base, '50418.nxs')
-    fpath_2 = os.path.join(base, '50414.nxs')
+    base = os.path.split(os.path.dirname(__file__))[0]
+    fpath_1 = os.path.join(base, r'pyxe/data/50418.nxs')
+    fpath_2 = os.path.join(base, r'pyxe/data/50414.nxs')
     fine = EDI12(fpath_1)
     fine.add_material('Fe')
     fine.plot_intensity()
-    # cProfile.run('fine.pawley_fit()')
