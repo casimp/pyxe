@@ -21,7 +21,7 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pip mock h5py lxml nose numpy scipy scikit-image matplotlib pandas
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pip mock h5py lxml nose numpy numba scipy scikit-image matplotlib pandas
   - source activate test-environment
   - pip install python-coveralls
   - pip install git+git://github.com/casimp/pyxpb

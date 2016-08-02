@@ -19,17 +19,12 @@ from pyxpb.detectors import i12_energy
 
 
 class EDI12(PeakAnalysis):
-    """
-    Takes an un-processed .nxs file from the I12 EDXD detector and fits curves
-    to all specified peaks for each detector. Calculates strain and details
-    associated error. 
-    """
-   
+
     def __init__(self, fpath, unused_detector=23, phi=None, progress=True):
         """
         Extract useful data from raw .nxs file. Removes data from unused 
         detector. Allows definition of az_angle (phi) if the unused detector is
-        not 23.
+        not 23.  Prepares the file for peak/profile analysis.
         """
         self.fpath = fpath
         f = h5py.File(fpath, 'r')
