@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+""" Text parsing and validation tools for use with pyxe data/analysis commands.
+
+Includes basic text cleaning operations, which provide some limited spell
+check and word order conversions. The
+"""
+
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -6,16 +14,19 @@ from __future__ import unicode_literals
 
 # step 1: clean entry
 def text_cleaning(text):
-    """
-    Basic text pre-processing - searches for likely errors in data request
-    command and replaces text entry with valid alternative.
+    """ Basic text pre-processing for data commands.
 
-    :param text:
-    :return:
+    Searches for likely errors in data request command and replaces text entry
+    with valid alternative.
+
+    Args:
+        text (str): Data command
+
+    Returns:
+        str: Cleaned text command
     """
     text = text.lower()
     text = text.replace('_', ' ').replace('-', ' ')
-    split_text = text.split(' ')
 
     remap = {'err': 'error',
              'peak': 'peaks',
@@ -24,8 +35,6 @@ def text_cleaning(text):
              'strians': 'strain',
              'shears': 'shear',
              'stresses': 'stress'}
-
-    primary = ['peaks', 'strain', 'stress']
 
     split_text = text.split(' ')
     for idx, word in enumerate(split_text):
@@ -36,17 +45,18 @@ def text_cleaning(text):
 
 # step 2: check whether command is valid
 def validate_entry(request_command):
-
-    valid_requests = ['peaks', 'peaks error', 'fwhm', 'fwhm error',
-                      'strain', 'shear strain', 'strain error',
-                      'stress', 'shear stress', 'stress error']
+    """ Validate command relative to list of all allowed commands. """
+    valid = ['peaks', 'peaks error', 'fwhm', 'fwhm error',
+             'strain', 'shear strain', 'strain error',
+             'stress', 'shear stress', 'stress error']
 
     error = 'Unknown data request command! Valid requests:\n\n{}'
-    assert request_command in valid_requests, error.format('\n'.join(valid_requests))
+    assert request_command in valid, error.format('\n'.join(valid))
 
 
 # step 3: check that either phi/az_idx has been entered
 def check_none(phi, az_idx):
+    """ Check that EITHER phi or az_idx are specified."""
     error = 'Must define either an azimuthal angle or azimuthal segment index.'
     assert not (phi is None and az_idx is None), error
     assert not (phi is not None and az_idx is not None), error
@@ -54,7 +64,7 @@ def check_none(phi, az_idx):
 
 # step 4: check whether valid combo of command and phi/az_idx request
 def validate_azimuthal_selection(request_command, phi, az_idx):
-
+    """ Validate combo of data request/az_idx or phi command."""
     requests = {'peaks': 'az_idx',
                 'peaks error': 'az_idx',
                 'fwhm': 'az_idx',
@@ -82,16 +92,15 @@ def validate_azimuthal_selection(request_command, phi, az_idx):
 
 # step 5: bring together to check command validity
 def validate_command(request_command, phi, az_idx):
+    """ Clean command and then validate command/(phi, az_idx) combination."""
     request_command = text_cleaning(request_command)
     validate_entry(request_command)
-
     return validate_azimuthal_selection(request_command, phi, az_idx)
-
 
 
 # step 6: convert request command to analysis level
 def convert_request_to_level(request_command, az_command):
-
+    """ Convert data requesed to associated required analysis level (str)."""
     command_end = ' fit' if az_command == 'phi' else ''
 
     if any(x in request_command for x in ['peaks', 'fwhm']):
@@ -108,8 +117,7 @@ def convert_request_to_level(request_command, az_command):
 
 # step 7: check analysis level is valid
 def analysis_state_comparison(current, required):
-    """
-    Compares the current and required analysis state. Returns True if the
+    """ Compares the current and required analysis state. Returns True if the
     requirement is met. If requirements are not met False is returned and a
     list of required method calls is printed.
     """
@@ -131,55 +139,52 @@ def analysis_state_comparison(current, required):
     assert c >= r, base_error.format(commands)
     return True
 
+
 def complex_check(request_command, analysis_state, phi, az_idx):
+    """ Complete command parsing and validation - returns True if valid."""
     az_command = 'phi' if phi is not None else 'az_idx'
     validate_command(request_command, phi, az_idx)
     required = convert_request_to_level(request_command, az_command)
     analysis_state_comparison(analysis_state, required)
 
-# def complex_check(func):
-#     def wrapper(*args, **kwargs):
-#         current_level = args[0].analysis_state
-#         request_command, phi, az_idx = args[1:4]
-#         print(request_command, phi, az_idx)
-#         valid = validate_command(request_command, phi, az_idx)
-#
-#         if valid:
-#             # check analysis level
-#             cleaned_command = text_cleaning(request_command)
-#             required_level = convert_request_to_level(cleaned_command)
-#             if analysis_state_comparison(current_level, required_level):
-#                 return func(*args, **kwargs)
-#     return wrapper
-
 
 def analysis_check(required_state):
+    """ Analysis state comparison decorator. """
     def dec_check(func):
         def wrapper(*args, **kwargs):
             current_state = args[0].analysis_state
             if analysis_state_comparison(current_state, required_state):
                 return func(*args, **kwargs)
-
         return wrapper
-
     return dec_check
 
-# Name conversion for column headers (save_to_csv)
-def name_convert(name, phi, az_idx, perp=False):
-    name = text_cleaning(name)
-    validate_command(name, phi, az_idx)
+
+def name_convert(request, phi, az_idx, perp=False):
+    """ Name conversion for column headers (save_to_csv).
+
+    Args:
+        request (str): Data request command
+        phi (ndarray): Azimuthal angle of each azimuthal slice (rad)
+        az_idx (int): Azimuthal slice index
+        perp (bool): If perp is True then convert xx to yy.
+
+    Returns:
+        str: Column header title
+    """
+    request = text_cleaning(request)
+    validate_command(request, phi, az_idx)
 
     data = ['fwhm', 'peaks', 'strain', 'stress']
-    n_0 = [n for n in name.split(' ') if n in data]
+    n_0 = [n for n in request.split(' ') if n in data]
     convert = {'peaks': 'peaks_', 'fwhm': 'fwhm_',
                'strain': 'e_', 'stress': 'sigma_'}
     n_start = convert[n_0[0]]
-    if 'shear' in name:
+    if 'shear' in request:
         n_shear = 'xy' if not perp else 'yx'
     else:
         n_shear = 'xx' if not perp else 'yy'
 
-    n_err = '_err' if 'error' in name else ''
+    n_err = '_err' if 'error' in request else ''
 
     if phi is not None:
         n_end = 'phi={:.4}'.format(float(phi))

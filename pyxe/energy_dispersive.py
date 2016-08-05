@@ -11,7 +11,6 @@ import re
 
 import h5py
 import numpy as np
-import os
 
 from pyxe.data_io import dimension_fill
 from pyxe.peak_analysis import PeakAnalysis
@@ -20,11 +19,17 @@ from pyxpb.detectors import i12_energy
 
 class EDI12(PeakAnalysis):
 
-    def __init__(self, fpath, unused_detector=23, phi=None, progress=True):
-        """
-        Extract useful data from raw .nxs file. Removes data from unused 
-        detector. Allows definition of az_angle (phi) if the unused detector is
-        not 23.  Prepares the file for peak/profile analysis.
+    def __init__(self, fpath, unused_detector=23, phi=None):
+        """ Extract useful data from raw .nxs file.
+
+        Deletes data from unused  detector. Allows definition of az_angle (phi)
+        if the unused detector is not 23.  Prepares the file for peak/profile
+        analysis.
+
+        Args:
+            fpath (str): Path to NeXus file
+            unused_detector (int): Unused detector (normally 23)
+            phi (ndarray, list): Re-define phi if detector order is mixed
         """
         self.fpath = fpath
         f = h5py.File(fpath, 'r')
@@ -52,4 +57,3 @@ class EDI12(PeakAnalysis):
         self.E, self.v, self.G, self.stress_state = None, None, None, None
         self.analysis_state = 'integrated'
         self.detector = i12_energy()
-

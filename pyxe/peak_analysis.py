@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Analysis module for the interrogation of integrated diffraction profiles.
+""" Analysis module for the interrogation of integrated diffraction profiles.
 
 The foundation of the pyXe package, allowing for single peak fitting and, more
 recently, a Pawley type refinement of the complete diffracted profile. The
@@ -15,7 +15,7 @@ wrt. azimuthal position, which helps account for errors in beam centering.
 The variation in strain wrt. azimuthal position can be used to calculate the
 full strain tensor. This is done according to the traditional stress/strain
 transformation equations. The strain tensor should improve the accuracy of
-calcaulted strain and allow for the computattion of strain at any arbitrary
+calculated strain and allow for the computation of strain at any arbitrary
 azmimuthal angle (not just at slice positions). In addition to this, the
 strain tensor provides information about the shear strain.
 
@@ -47,7 +47,7 @@ from pyxe.fitting_functions import plane_strain, plane_stress
 
 class PeakAnalysis(DataViz):
     def __init__(self, fpath):
-        """ Analysis class for the calculation of strain from q/a values.
+        """ Analysis class for the calculation of peaks and strain.
 
         The analysis is based around two peak fitting methods - single peak
         and Pawley refinement. The Pawley refinement requires a more complete
@@ -113,7 +113,7 @@ class PeakAnalysis(DataViz):
 
         Args:
             seg (int): Number of points to split data into/extract
-            k (int): Order for Cheyshev polynomial
+            k (int): Order for Chebyshev polynomial
             pnt (tuple): Point co_ords or None for averaged data
             fwhm (float): Peak fwhm (to exclude more data around peaks)
             plot (bool): True/False

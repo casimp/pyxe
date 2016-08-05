@@ -9,140 +9,112 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import unittest
 import numpy as np
-from scipy.optimize import curve_fit
+
 
 def plane_strain(e_xx, e_yy, E, v):
+    """ Stress calculation (from strain) in a plane strain system.
+
+    Args:
+        e_xx (float, ndarray): Strain/stress in x orientation
+        e_yy (float, ndarray): Strain/stress in x orientation
+        E (float): Young's modulus (MPa)
+        v (float): Poisson's ratio
+    Returns:
+        float, ndarray: Stress for each e_xx, e_yy combination
+    """
     return (E / (1 - v ** 2)) * (e_xx + v * e_yy)
 
 
 def plane_stress(e_xx, e_yy, E, v):
+    """ Stress calculation (from strain) in a plane stress system.
+
+    Args:
+        e_xx (float, ndarray): Strain/stress in x orientation
+        e_yy (float, ndarray): Strain/stress in x orientation
+        E (float): Young's modulus (MPa)
+        v (float): Poisson's ratio
+    Returns:
+        float, ndarray: Stress for each e_xx, e_yy combination
+    """
     return E * ((1 - v) * e_xx + v * e_yy) / ((1 + v) * (1 - 2 * v))
 
 
-
 def strain_transformation(phi, *p):
+    """ Stress/strain (normal) transformation
+
+    Args:
+        phi (float, ndarray): Azimuthal angle (rad)
+        p[0] (float, ndarray): e_xx
+        p[1] (float, ndarray): e_yy
+        p[2] (float, ndarray): e_xy
+
+    Returns:
+        float, ndarray: Stress/strain wrt. azimuthal angle(s)
     """
-    # x phi
-    #   e_xx                  : p[0]
-    #   e_yy                  : p[1]
-    #   e_xy                  : p[2]
+    average = (p[0] + p[1]) / 2
+    radius = (p[0] - p[1]) / 2
+    return average + np.cos(2 * phi) * radius + p[2] * np.sin(2 * phi)
+
+
+def shear_transformation(phi, *p):
+    """ Shear transformation (analogous to stress/normal transformation)
+
+    Args:
+        phi (float, ndarray): Azimuthal angle (rad)
+        p[0] (float, ndarray): e_xx
+        p[1] (float, ndarray): e_yy
+        p[2] (float, ndarray): e_xy
+
+    Returns:
+        float, ndarray: Shear stress/strain at wrt. azimuthal angle(s)
     """
 
-    return (p[0] + p[1]) / 2 + np.cos(2 * phi) * (p[0] - p[1]) / 2 + p[2] * np.sin(2 * phi)
-
-
-def shear_transformation(x, *p):
-    """
-    #   e_xx                  : p[0]
-    #   e_yy                  : p[1]
-    #   e_xy                  : p[2]
-    """
-
-    return - np.sin(2 * x) * (p[0] - p[1]) / 2 + p[2] * np.cos(2 * x)
+    return - np.sin(2 * phi) * (p[0] - p[1]) / 2 + p[2] * np.cos(2 * phi)
 
 
 def gaussian(x, *p):
-    """
-    Guassian curve fit for diffraction data.
-    #   Constant Background          : p[0]
-    #   Peak height above background : p[1]
-    #   Central value                : p[2]
-    #   Standard deviation           : p[3]
+    """ Guassian peak fitting.
+
+    Args:
+        p[0] (float, ndarray): Constant background
+        p[1] (float, ndarray): Peak height above background
+        p[2] (float, ndarray): Central value
+        p[3] (float, ndarray): standard deviation
+
+    Returns:
+        ndarray: Gaussian peak intensity wrt. x
     """
     return p[0] + p[1] * np.exp(- (x - p[2])**2 / (2. * p[3]**2))
     
     
 def lorentzian(x, *p):
-    """
-    Loretnzian curve fit for diffraction data.    
-    # A lorentzian peak with:
-    #   Constant Background          : p[0]
-    #   Peak height above background : p[1]
-    #   Central value                : p[2]
-    #   HWHM / Standard deviation    : p[3]
+    """ Lorentzian peak fitting.
+    Args:
+        p[0] (float, ndarray): Constant background
+        p[1] (float, ndarray): Peak height above background
+        p[2] (float, ndarray): Central value
+        p[3] (float, ndarray): standard deviation / hwhm
+
+    Returns:
+        ndarray: Lorentzian peak intensity wrt. x
     """
     return p[0] + p[1] / (1.0 + ((x - p[2]) / p[3])**2)
 
 
 def psuedo_voigt(x, *p):
-    """
-    Psuedo-voigt curve fit for diffraction data.
-    Linear combinationg of gaussian and lorentzian fit.     
-    # A psuedo-voigt peak with:
-    #   Constant Background          : p[0]
-    #   Peak height above background : p[1]
-    #   Central value                : p[2]
-    #   Standard deviation           : p[3]
-    #   Linear combination fraction  : p[4]
+    """ Psuedo-voigt peak fitting.
+
+    Linear combination of gaussian and lorentzian fit.
+
+    Args:
+        p[0] (float, ndarray): Constant background
+        p[1] (float, ndarray): Peak height above background
+        p[2] (float, ndarray): Central value
+        p[3] (float, ndarray): standard deviation
+        p[4] (float, ndarray): Linear combination fraction
+
+    Returns:
+        ndarray: Psuedo-voigt peak intensity wrt. x
     """
     return (1 - p[4]) * gaussian(x, *p) + p[4] * lorentzian(x, *p)
-
-
-# class FittingTests(unittest.TestCase):
-#     """
-#     Our basic test class
-#     """
-#
-#     def test_gaussian(self):
-#         """
-#         The actual test.
-#         Any method which starts with ``test_`` will considered as a test case.
-#         """
-#         p0 = np.array([100, 1, 1, 1])
-#         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
-#         I = gaussian(x, *p0)
-#         coeff, var_matrix = curve_fit(gaussian, x, I, p0)
-#
-#         self.assertEqual(sum(p0), sum(coeff))
-#
-#     def test_lorentzian(self):
-#         """
-#         The actual test.
-#         Any method which starts with ``test_`` will considered as a test case.
-#         """
-#         p0 = np.array([100, 1, 1, 1])
-#         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
-#         I = lorentzian(x, *p0)
-#         coeff, var_matrix = curve_fit(lorentzian, x, I, p0)
-#
-#         self.assertEqual(sum(p0), sum(coeff))
-#
-#     def test_psuedo_voigt1(self):
-#         """
-#         The actual test.
-#         Any method which starts with ``test_`` will considered as a test case.
-#         """
-#         p0 = np.array([100, 1, 1, 1, 0.5])
-#         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
-#         I = psuedo_voigt(x, *p0)
-#         coeff, var_matrix = curve_fit(psuedo_voigt, x, I, p0)
-#
-#         self.assertEqual(sum(p0), sum(coeff))
-#
-#     def test_psuedo_voigt_gaussian(self):
-#         """
-#         The actual test.
-#         Any method which starts with ``test_`` will considered as a test case.
-#         """
-#         p0 = np.array([100, 1, 1, 1])
-#         pg = np.array([100, 1, 1, 1, 0])
-#         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
-#
-#         self.assertEqual(sum(gaussian(x, *p0)), sum(psuedo_voigt(x, *pg)))
-#
-#     def test_psuedo_voigt_lorentzian(self):
-#         """
-#         The actual test.
-#         Any method which starts with ``test_`` will considered as a test case.
-#         """
-#         p0 = np.array([100, 1, 1, 1])
-#         pl = np.array([100, 1, 1, 1, 1])
-#         x = np.linspace(p0[2] - 10 * p0[3], p0[2] + 10 * p0[3], 1000)
-#
-#         self.assertEqual(sum(lorentzian(x, *p0)), sum(psuedo_voigt(x, *pl)))
-#
-#
-# if __name__ == '__main__':
-#     unittest.main()

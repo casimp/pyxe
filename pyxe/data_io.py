@@ -24,8 +24,8 @@ def pyxe_to_hdf5(fname, pyxe, overwrite=False):
 
     Args:
         fname (str): File path.
-        data (object): pyXe data object
-        overwite (bool): Option to overwrite if same filename is specified.
+        pyxe: pyXe data object
+        overwrite (bool): Option to overwrite if same filename is specified.
     """
     data_ids = ['ndim', 'd1', 'd2', 'd3', 'q', 'I', 'phi',
                 'peaks', 'peaks_err', 'fwhm', 'fwhm_err',
@@ -33,8 +33,6 @@ def pyxe_to_hdf5(fname, pyxe, overwrite=False):
                 'E', 'v', 'G', 'stress_state', 'analysis_state']
 
     detector_ids = ['method', '_det_param', '_back', 'materials']
-
-    # sigma_q and flux_q are the issues
 
     write = 'w' if overwrite else 'w-'
     with h5py.File(fname, write) as f:
@@ -69,7 +67,7 @@ def pyxe_to_hdf5(fname, pyxe, overwrite=False):
 
 
 def data_extract(pyxe_h5, variable_id):
-    """ Takes pyxe hdf5 file and variable type and returns data."""
+    """ Takes pyxe hdf5 file and variable type and extract/returns data."""
     data_ids = {'dims': ['ndim', 'd1', 'd2', 'd3'],
                 'raw': ['q', 'I', 'phi'],
                 'peaks': ['peaks', 'peaks_err'],
@@ -92,7 +90,7 @@ def data_extract(pyxe_h5, variable_id):
 
 
 def detector_extract(pyxe_h5):
-    """ Takes pyxe hdf5 file and extracts detector object."""
+    """ Takes pyxe hdf5 file and extracts/returns detector object."""
     materials = {}
     try:
         mat = pyxe_h5['setup/materials']
@@ -117,7 +115,17 @@ def detector_extract(pyxe_h5):
 
 
 def detector_recreate(method, det_params, materials, back):
-    """ Recreates detector instance from data extracted from pyxe hdf5 file."""
+    """ Recreates detector instance from data extracted from pyxe hdf5 file.
+
+    Args:
+        method (str): mono or edxd
+        det_params (dict): Dictionary correct parameters for method
+        materials (dict): Dictionary containing materials and their params
+        back (ndarray): Chebyshev polynomial terms (wrt. az_idx)
+
+    Returns:
+        pyxpb.peaks.Peak: pyxpb detector instance
+    """
     Detector = MonoDetector if method == 'mono' else EnergyDetector
     detector = Detector(**det_params)
     detector._back = back
@@ -127,15 +135,22 @@ def detector_recreate(method, det_params, materials, back):
     return detector
 
 
-def dim_fill(data):
-    co_ords = []
-    dims = []
+def dim_fill(co_array):
+    """ Splits ndarray of co-ords into d1, d2 (or None), d3 (or None).
 
-    if data.ndim == 1:
-        return [data, None, None], [b'ss2_x']
+    Args:
+        co_array (ndarray): Data co-ordinates
+
+    Returns:
+        tuple: co_ords (d1, d2, d3), dims (list of valid dimensions)
+    """
+    co_ords, dims = [], []
+
+    if co_array.ndim == 1:
+        return [co_array, None, None], [b'ss2_x']
     for axis, dim in zip(range(3), [b'ss2_x', b'ss2_y', b'ss2_z']):
         try:
-            co_ords.append(data[:, axis])
+            co_ords.append(co_array[:, axis])
             dims.append(dim)
         except IndexError:
             co_ords.append(None)
@@ -147,8 +162,8 @@ def dimension_fill(i12_nxs, dim_id):
     dimension doesn't exist.
 
     Args:
-        data:       Raw data (hdf5 format)
-        dim_ID (str):     Dimension ID (ss_x, ss2_y or ss2_z)
+        i12_nxs: Raw data (hdf5 format)
+        dim_id (str): Dimension ID (ss_x, ss2_y or ss2_z)
     """
     try:
         dimension_data = i12_nxs['entry1/EDXD_elements/' + dim_id][()]
@@ -161,4 +176,3 @@ def extract_fnames(folder, f_ext):
     """ Extracts file names (with specified file extension) from folder"""
     fnames = sorted([x for x in os.listdir(folder) if x.endswith(f_ext)])
     return fnames
-

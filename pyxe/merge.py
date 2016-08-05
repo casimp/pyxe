@@ -16,11 +16,12 @@ import copy
 from pyxe.command_parsing import analysis_state_comparison
 
 
-def state_compare(analysis_states):
-    """
-    Will return at earliest opportunity
-    :param analysis_states:
-    :return:
+def lowest_state(analysis_states):
+    """ Returns lowest analysis state from list of states
+    Args:
+        analysis_states (tuple, list): List of analysis states
+    Returns:
+        str: Minimum analysis state
     """
     states = ['integrated', 'peaks', 'strain', 'strain fit',
               'stress', 'stress fit']
@@ -30,7 +31,12 @@ def state_compare(analysis_states):
 
 
 def extract_limits(data):
-
+    """ Finds limits for data cube.
+    Args:
+        data: pyxe data object
+    Returns:
+        tuple: d1_lim (min, max), d2_lim (min, max), d3_lim (min, max)
+    """
     d1_lim = [np.min(data.d1), np.max(data.d1)]
     d2_lim = [np.min(data.d2), np.max(data.d2)]
     d3_lim = [np.min(data.d3), np.max(data.d3)]
@@ -39,8 +45,15 @@ def extract_limits(data):
 
 
 def remove_data(data, limit):
+    """ Crop pyxe data object according to positional limits.
 
-    # print(data.d1)
+    Args:
+        data: pyxe data object
+        limit (tuple): d1_lim, d2_lim, d3_lim - cube limits for data removal
+
+    Returns:
+        pyxe data object: Cropped pyxe object
+    """
     mask = np.ones_like(data.d1, dtype='bool')
     for lim, d in zip(limit, [data.d1, data.d2, data.d3]):
         try:
@@ -62,10 +75,21 @@ def remove_data(data, limit):
         masked = d[mask] if d is not None else d
         setattr(data, name, masked)
 
-    return data # potentially not needed (change in place)
+    return data  # potentially not needed (change in place)
 
 
 def none_merge(data, current_state, required_state, axis=-1):
+    """ Merge data if present/exists else return None
+
+    Args:
+        data (list): List of ndarrays
+        current_state (str): Current state for comparison
+        required_state (str): Required state for comparison
+        axis (int): Axis for data concatenation
+
+    Returns:
+        ndarray: Merged data (or None)
+    """
     if analysis_state_comparison(current_state, required_state):
         assert not any([d is None for d in data]), 'Invalid data (None types)'
         if axis is None:
@@ -79,11 +103,13 @@ def none_merge(data, current_state, required_state, axis=-1):
 
 
 def basic_merge(data):
-    """
-    Flat merge two pyxe data object together
+    """ Simple merge of multiple pyxe data objects (keep all data).
 
-    :param pyxe_objects:
-    :return:
+    Args:
+        data (list): List of pyxe data objects
+
+    Returns:
+        pyxe data object: Merged pyxe object
     """
     new = copy.deepcopy(data[0])
     if len(data) == 1:
@@ -99,7 +125,7 @@ def basic_merge(data):
     new.d2 = np.append(*[d.d2 for d in data]) if new.ndim > 1 else None
     new.d3 = np.append(*[d.d3 for d in data]) if new.ndim > 2 else None
 
-    state = state_compare([d.analysis_state for d in data])
+    state = lowest_state([d.analysis_state for d in data])
 
     for i in data:
         valid = all([new.E == i.E, new.v == i.v, new.G == i.G,
@@ -125,7 +151,16 @@ def basic_merge(data):
 
 
 def ordered_merge(data, order=None, pad=0.01):
+    """ Ordered merge - keep/reject overlapping data based on order.
 
+    Args:
+        data (list): List of pyxe data objects
+        order (list, tuple): Priority list to keep/reject the overlapping data
+        pad (float): For overlapping data apply a pad to separate
+
+    Returns:
+        pyxe data object: Merged pyxe object
+    """
     if order is None:
         return basic_merge(data)
 
