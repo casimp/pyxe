@@ -16,39 +16,35 @@ import numpy as np
 import pyFAI
 import sys
 
-from pyxe.analysis_tools import dim_fill
+from pyxe.data_io import dim_fill, extract_fnames
 from pyxe.peak_analysis import PeakAnalysis
 from pyxpb.detectors import MonoDetector
 
 
-def extract_fnames(folder, f_ext):
-    fnames = sorted([x for x in os.listdir(folder) if x.endswith(f_ext)])
-    return fnames
-
-
 class Mono(PeakAnalysis):
-    """
-    Takes a folder containing image files from area detectors and cakes the 
-    data while associating it with spatial information. The caked data can then
-    be analysed (peak_fit/strain calculations).
-    """
 
     def __init__(self, folder, co_ords, detector, wavelength=None,
                  f_ext='.edf', progress=True, npt_rad=1024, npt_az=36,
                  az_range=(-180, 180)):
         """
-        # folder:     Folder containing the image files for analysis
-        # co_ords:   1D/2D/3D numpy array containing data point co_ords
-        # params:     Accepts a file location for a .poni parameter file 
-                      produced by pyFAI-calib. Alternative directly enter 
-                      calibration details as take from Fit2D in form:
-                      (sample_to_detector (mm), centre_x (pix), centre_y (pix), 
-                      tilt (deg), tilt_plane (deg), pixel_size_x (micron), 
-                      pixel_size_y (micron))
-        # npt_rad:    Number of radial bins, should equal half detector pix
-        # npt_az:     Number of azimuthal wedges           
-        # az_range:   Range of azimuthal values to investigate - note that 0
-                      degrees is defined at the eastern edge of the circle.
+        Takes a folder containing image files from area detectors and cakes
+        the data while associating it with spatial information. The caked data
+        can then be analysed (peak_fit/strain calculations).
+
+        Args:
+            folder (str): Folder containing the image files for analysis
+            co_ords (ndarray): 1D/2D/3D numpy array containing data co-ords
+            params (tuple, object): pyFAI detector object or Fit2D params:
+                (sample_to_detector (mm), centre_x (pix), centre_y (pix),
+                tilt (deg), tilt_plane (deg), pixel_size_x (micron),
+                pixel_size_y (micron)).
+            wavelength (float): Wavelength (nm) (if not defined in pyFAI file)
+            f_ext (str): File extension of image files
+            progress (bool): Live progress bar
+            npt_rad (int): Number of radial bins (approx. half detect width)
+            npt_az (int): Number of azimuthal wedges
+            az_range (tuple): Azimtuhal range (deg) - default (-180, 180).
+                Note that the 0deg is at eastern edge of circle.
         """
         fname = '{}.h5'.format(os.path.split(folder)[1])
         self.fpath = os.path.join(folder, fname)
@@ -58,9 +54,13 @@ class Mono(PeakAnalysis):
 
         # Allow for use of pyFAI or Fit2D detector params
         # Currently checking if folder string - perhaps not the best method!
-        if isinstance(detector, ("".__class__, u"".__class__)):
-            ai = pyFAI.load(detector)  # CORRECT??
-            # check if wavelength exists?
+
+        if isinstance(detector, pyFAI.azimuthalIntegrator.AzimuthalIntegrator):
+            ai = detector
+            if wavelength is None:
+                ai.get_wavelength()
+            else:
+                ai.set_wavelength(wavelength)
         else:
             ai = pyFAI.AzimuthalIntegrator()
             ai.setFit2D(*detector)
