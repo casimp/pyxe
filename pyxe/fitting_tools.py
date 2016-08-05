@@ -9,18 +9,16 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import cProfile
 import sys
 import matplotlib.pyplot as plt
-import h5py
 import numpy as np
 from scipy.optimize import curve_fit
-from numpy.polynomial.chebyshev import chebfit, chebval
+from numpy.polynomial.chebyshev import chebval
 import numba
 
-from pyxe.fitting_functions import gaussian, lorentzian, psuedo_voigt
+from pyxe.fitting_functions import gaussian, lorentzian, psuedo_voigt, strain_transformation
 
-import numba
+
 @numba.jit(nopython=True)
 def sum_numba(a):
     return np.sum(a, axis=0)
@@ -280,6 +278,51 @@ def array_fit(q_array, I_array, peak_window, func='gaussian',
            run_error, err_exceed))                  
     
     return peaks, peaks_err, fwhm, fwhm_err
+
+
+def full_ring_fit(strain, phi):
+    """
+    Fits the strain transformation equation to the strain information from each
+    azimuthal slice.
+    """
+    strain_tensor = np.nan * np.ones(strain.shape[:-1] + (3,))
+
+    error_count = 0
+    for idx in np.ndindex(strain.shape[:-1]):
+        data = strain[idx]
+        not_nan = ~np.isnan(data)
+
+        phi_range = np.max(phi) - np.min(phi)
+        # nyquist - twice the frequency response (strain freq = 2 * ang freq)
+        nyquist_sampling = 1 + 2 * np.ceil(2 * phi_range / np.pi)
+        if phi[not_nan].size >= nyquist_sampling:
+            # Estimate curve parameters
+            p0 = [np.nanmean(data), 3 * np.nanstd(data) / (2 ** 0.5), 0]
+            try:
+                a, b = curve_fit(strain_transformation,
+                                 phi[not_nan], data[not_nan], p0)
+                strain_tensor[idx] = a
+            except (TypeError, RuntimeError):
+                error_count += 1
+        else:
+            error_count += 1
+    print('\nUnable to fit full ring at %i out of %i points'
+          % (error_count, np.size(strain[..., 0])))
+
+    return strain_tensor
+
+
+def mirror_data(phi, data):
+    # has to be even number of slices but uneven number of boundaries.
+    angles = phi[:int(phi[:].shape[0]/2)]
+    peak_shape = data.shape
+    phi_len = int(peak_shape[-2]/2)
+    new_shape = (peak_shape[:-2] + (phi_len, ) + peak_shape[-1:])
+    d2 = np.nan * np.zeros(new_shape)
+    for i in range(phi_len):
+        d2[:, i] = (data[:, i] + data[:, i + new_shape[-2]]) / 2
+    return angles, d2
+
 
 
 if __name__ == '__main__':
