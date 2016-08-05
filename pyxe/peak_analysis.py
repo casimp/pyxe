@@ -1,3 +1,31 @@
+# -*- coding: utf-8 -*-
+"""Analysis module for the interrogation of integrated diffraction profiles.
+
+The foundation of the pyXe package, allowing for single peak fitting and, more
+recently, a Pawley type refinement of the complete diffracted profile. The
+peak fitting is completed at each acquisiion point for every azimuthal slice.
+Inherits from the DataViz class for plotting functionality.
+
+The fitted peaks (or calculated lattice parameter) can be compared against
+a stress free equivalent to allow for the calculation of strain. It is
+recommended that rather than pass in a single value of q0/a0, an analyzed,
+stress free, pyxe object is supplied. This essentially allows q0/a0 to vary
+wrt. azimuthal position, which helps account for errors in beam centering.
+
+The variation in strain wrt. azimuthal position can be used to calculate the
+full strain tensor. This is done according to the traditional stress/strain
+transformation equations. The strain tensor should improve the accuracy of
+calcaulted strain and allow for the computattion of strain at any arbitrary
+azmimuthal angle (not just at slice positions). In addition to this, the
+strain tensor provides information about the shear strain.
+
+It is also possible to supply material parameters (and stress state), which
+will allow for the calculation of stress/shear stress.
+
+The pyxe data objects can be saved an reloaded at any point through the
+analysis process.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -222,6 +250,19 @@ class PeakAnalysis(DataViz):
 
     @analysis_check('strain')
     def material_parameters(self, E, v, G=None, stress_state='plane strain'):
+        """ Apply material parameters and stress state to system.
+
+        The parameters are used for the calcaultion of stress - currently
+        no option to apply different parameters for different materials in
+        multi-material systems.
+
+        Args:
+            E (float): Young's modulus (MPa)
+            v (float): Poisson's ratio
+            G (float): Shear modulus else estimated from E/v if None
+            stress_state (str): plane stress or plane strain stress state
+        """
+
         G = E / (2 * (1-v)) if G is None else G
         self.E, self.v, self.G, self.stress_state = E, v, G, stress_state
         eqn = plane_strain if stress_state == 'plane strain' else plane_stress
