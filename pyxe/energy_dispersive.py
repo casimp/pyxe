@@ -13,7 +13,7 @@ import h5py
 import numpy as np
 import os
 
-from pyxe.analysis_tools import dimension_fill
+from pyxe.data_io import dimension_fill
 from pyxe.peak_analysis import PeakAnalysis
 from pyxpb.detectors import i12_energy
 

@@ -12,17 +12,16 @@ from __future__ import unicode_literals
 
 import h5py
 import numpy as np
-from numpy.polynomial.chebyshev import chebfit, chebval
+from numpy.polynomial.chebyshev import chebval
 import matplotlib.pyplot as plt 
 from scipy.interpolate import griddata
 from scipy.optimize import curve_fit
-from matplotlib.pyplot import cm
 
 from pyxe.command_parsing import analysis_check
 from pyxe.fitting_functions import strain_transformation, shear_transformation
 from pyxe.plotting_tools import plot_complex, meshgrid_res, line_extract, az90
 from pyxe.command_parsing import complex_check, text_cleaning, name_convert
-from pyxe.analysis_tools import data_extract
+from pyxe.data_io import data_extract
 from pyxe.fitting_functions import plane_stress, plane_strain
 from pyxe.fitting_tools import pawley_hkl, extract_parameters
 
@@ -92,7 +91,7 @@ class DataViz(object):
 
         if pawley:
             detector = self.detector
-            background = chebval(q, detector.background[az_idx])
+            background = chebval(q, detector._back[az_idx])
             q_lim = [np.min(q), np.max(q)]
             p0 = extract_parameters(detector, q_lim, np.nanmax(I))
             pawley = pawley_hkl(detector, background)

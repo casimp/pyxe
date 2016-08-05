@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 from numpy.polynomial.chebyshev import chebval
 
 from pyxe.command_parsing import analysis_check
-from pyxe.fitting_tools import array_fit, array_fit_pawley
-from pyxe.analysis_tools import full_ring_fit, pyxe_to_hdf5, data_extract
+from pyxe.fitting_tools import array_fit, array_fit_pawley, full_ring_fit
+from pyxe.data_io import pyxe_to_hdf5, data_extract, detector_extract
 from pyxe.plotting import DataViz
 from pyxe.merge import basic_merge
 from pyxe.fitting_functions import plane_strain, plane_stress
@@ -51,6 +51,7 @@ class PeakAnalysis(DataViz):
             self.strain_tensor = data_extract(f, 'tensor')[0]
             self.E, self.v, self.G = data_extract(f, 'material')
             self.stress_state, self.analysis_state = data_extract(f, 'state')
+            self.detector = detector_extract(f)
             if self.stress_state is None:
                 self.stress_eqn = None
             else:
@@ -111,15 +112,14 @@ class PeakAnalysis(DataViz):
                     q_min, q_max = np.min(q), np.max(q)
                     for mat in self.detector.materials:
                         q0 = self.detector.q0[mat]
-                        sig = self.detector.sigma[mat]
-                        sig = sig if fwhm is None else fwhm
-                        clash = np.any(np.logical_and(q0 > q_min - 2 * sig,
-                                                      q0 < q_max + 2 * sig))
+                        fw = self.detector.fwhm[mat] if fwhm is None else fwhm
+                        clash = np.any(np.logical_and(q0 > q_min - 2 * fw,
+                                                      q0 < q_max + 2 * fw))
                         x[a, idx] = np.nan if clash else np.mean(split_q[idx])
                         y[a, idx] = np.nan if clash else np.mean(split_I[idx])
 
         self.detector.define_background(x, y, k)
-        f = self.detector.background
+        f = self.detector._back
 
         if plot:
             plt.plot(self.q[az_idx], I[az_idx], 'k')
@@ -157,7 +157,7 @@ class PeakAnalysis(DataViz):
         self.strain, self.strain_err, self.strain_tensor = None, None, None
         self.analysis_state = 'peaks'
 
-    def pawley_fit(self, err_lim=1e-4, q_lim=[2, None], progress=True):
+    def pawley_fit(self, err_lim=1e-4, q_lim=[None, None], progress=True):
         """ Basic Pawley refinement of full diffraction profile.
 
         Fits the full diffraction profile according to a Pawley type
