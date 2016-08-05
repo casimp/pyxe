@@ -35,9 +35,14 @@ def pawley_hkl(detector, back):
     """Pawley wrapper allows you to pass in a detector. """
     def pawley(q, *p):
 
-        p0 = len(detector.hkl) + 2
+        p0 = len(detector.hkl) + 3
         I = np.zeros_like(q)
-        p_fw = p[p0 - 2: p0]
+        p_fw = p[p0 - 3: p0]
+
+        # if detector.method == 'energy':
+        #     fwhm_q = lambda q: np.polyval(p_fw, q) ** 0.5
+        # else:
+        #     fwhm_q = lambda q: np.tan
 
         for idx, material in enumerate(detector.materials):
             # Extract number of peaks and associated hkl values
@@ -51,7 +56,7 @@ def pawley_hkl(detector, back):
             q0 = q0[np.logical_and(q0>np.min(q), q0<np.max(q))]
 
             # Calculate FWHM and (associated) sigma/c value
-            fwhm = p_fw[1] + p_fw[0] * np.expand_dims(detector.sigma_q(q0), 1)
+            fwhm = np.expand_dims(detector.fwhm_q(q0, p_fw), 1)
 
             # Extract intensity values
             h = np.array(p[p0: p0 + npeaks])
@@ -85,7 +90,8 @@ def pawley_hkl_old(detector, back):
             q0 = q0[np.logical_and(q0>np.min(q), q0<np.max(q))]
 
             # Calculate FWHM and (associated) sigma/c value
-            fwhm = p_fw[1] + p_fw[0] * np.expand_dims(detector.sigma_q(q0), 1)
+            fwhm = detector.fwhm_q(np.expand_dims(detector.sigma_q(q0), 1), p_fw)
+            # fwhm = p_fw[1] + p_fw[0] * np.expand_dims(detector.sigma_q(q0), 1)
             sig = fwhm / (2 * np.sqrt(2 * np.log(2)))
 
             # Extract intensity values
@@ -104,7 +110,7 @@ def pawley_hkl_old(detector, back):
 
 def extract_parameters(detector, q_lim, I_max=1):
     p = [detector.materials[mat]['a'] for mat in detector.materials]
-    p += [1, 0]
+    p += detector._fwhm
     for idx, material in enumerate(detector.materials):
         for idx, i in enumerate(detector.relative_heights()[material]):
             q0 = detector.q0[material][idx]
@@ -134,11 +140,11 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
         crop = np.logical_and(q > q_lim[0], q < q_lim[1])
         q = q[crop]
 
-        if detector.background.ndim == 2:
-            background = chebval(q, detector.background[az_idx])
+        if detector._back.ndim == 2:
+            background = chebval(q, detector._back[az_idx])
 
         else:
-            background = chebval(q, detector.background)
+            background = chebval(q, detector._back)
 
 
         for position in np.ndindex(I_array.shape[:-2]):
@@ -333,4 +339,6 @@ if __name__ == '__main__':
     fpath_2 = os.path.join(base, r'pyxe/data/50414.nxs')
     fine = EDI12(fpath_1)
     fine.add_material('Fe')
-    fine.plot_intensity()
+    fine.plot_intensity(pawley=True)
+    plt.show()
+    print(fine.detector.fwhm_param)

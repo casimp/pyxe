@@ -9,9 +9,6 @@ import os
 
 from pyxe.merge import ordered_merge
 from pyxe.energy_dispersive import EDI12
-# base = r'C:\Users\casim\Dropbox\Python\pyxe\pyxe\test'
-# fpath_1 = os.path.join(base, '50418.nxs')
-# fpath_2 = os.path.join(base, '50414.nxs')
 folder = os.path.join(os.path.split(os.path.dirname(__file__))[0], r'data')
 fpath_1 = os.path.join(folder, r'50418.nxs')
 fpath_2 = os.path.join(folder, r'50414.nxs')
