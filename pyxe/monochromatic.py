@@ -90,7 +90,6 @@ class Mono(PeakAnalysis):
         # Create az_slice 'specific' q values - to work with edxd data
         self.q = np.repeat(q_[None, :], npt_az, axis=0)
         self.phi = phi * np.pi / 180
-        self.E, self.v, self.G, self.stress_state = None, None, None, None
         self.analysis_state = 'integrated'
         # Temporary - extract from ai!
         self.detector = MonoDetector((2000,2000), 0.1, 1000, 100, 1)

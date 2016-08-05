@@ -54,6 +54,5 @@ class EDI12(PeakAnalysis):
         self.I = f['entry1/EDXD_elements/data'][()]
         self.I = np.delete(self.I, unused_detector, -2)
         self.phi = np.linspace(-np.pi, 0, 23) if phi is None else phi
-        self.E, self.v, self.G, self.stress_state = None, None, None, None
         self.analysis_state = 'integrated'
         self.detector = i12_energy()

@@ -61,6 +61,13 @@ def peak_fit():
     q0.peak_fit(3.1, 1.)
     return data, q0
 
+
+def test_no_analysis_save_load():
+    data, q0 = integration()
+    data.save_to_hdf5(fpath='pyxe/data/energy_test_pyxe.h5', overwrite=True)
+    PeakAnalysis(fpath='pyxe/data/energy_test_pyxe.h5')
+
+
 class TestEnergy(object):
 
     data, q0 = peak_fit()

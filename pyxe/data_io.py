@@ -38,14 +38,17 @@ def pyxe_to_hdf5(fname, pyxe, overwrite=False):
     with h5py.File(fname, write) as f:
 
         for name in data_ids:
-            d_path = 'pyxe_analysis/%s' % name
-            data = getattr(pyxe, name)
-            data = data.encode() if isinstance(data, string_types) else data
-            if data is not None:
-                if name == 'I':
-                    f.create_dataset(d_path, data=data, compression='gzip')
-                else:
-                    f.create_dataset(d_path, data=data)
+            try:
+                d_path = 'pyxe_analysis/%s' % name
+                d = getattr(pyxe, name)
+                d = d.encode() if isinstance(d, string_types) else d
+                if d is not None:
+                    if name == 'I':
+                        f.create_dataset(d_path, data=d, compression='gzip')
+                    else:
+                        f.create_dataset(d_path, data=d)
+            except AttributeError:
+                pass
 
         for name in detector_ids:
             d_path = 'setup/%s' % name

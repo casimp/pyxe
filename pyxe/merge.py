@@ -128,12 +128,15 @@ def basic_merge(data):
     state = lowest_state([d.analysis_state for d in data])
 
     for i in data:
-        valid = all([new.E == i.E, new.v == i.v, new.G == i.G,
-                    new.stress_state == i.stress_state])
-        if not valid:
-            print('Material properties inconsistent - resetting all.')
-            new.E, new.v, new.G, new.stress_state = None, None, None, None
-            state = state.replace('stress', 'strain')
+        try:
+            valid = all([new.E == i.E, new.v == i.v, new.G == i.G,
+                        new.stress_state == i.stress_state])
+            if not valid:
+                print('Material properties inconsistent - resetting all.')
+                new.E, new.v, new.G, new.stress_state = None, None, None, None
+                state = state.replace('stress', 'strain')
+        except AttributeError:
+            pass
 
     new.analysis_state = state
 
