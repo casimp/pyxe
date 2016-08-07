@@ -40,21 +40,21 @@ def pawley_sum(I, h, q, q0, fwhm):
     return I
 
 
-def pawley_hkl(detector, back):
+def pawley_hkl(detector, back, fw_order=None):
     """ Wrapper for Pawley fitting, allowing spec. of detector and background.
 
     Args:
         detector (pyxpb.peaks.Peak): pyxpb detector instance
         back (ndarray): Background intensity profile
-
+        fw_order (int): Order of polynomial
     Returns:
         function: Pawley fitting function
         """
     def pawley(q, *p):
-
-        p0 = len(detector.hkl) + 3
+        np_fw = fw_order + 1 if fw_order is not None else len(detector._fwhm)
+        p0 = len(detector.hkl) + np_fw
         I = np.zeros_like(q)
-        p_fw = p[p0 - 3: p0]
+        p_fw = p[p0 - np_fw: p0]
 
         for idx, material in enumerate(detector.materials):
             # Extract number of peaks and associated hkl values
@@ -120,6 +120,8 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
     Return:
         tuple: peaks, peaks_err, fwhm, fwhm_err (fwhm, fwhm_err = None, None)
     """
+    nmat = len(detector.materials)
+    assert nmat > 0, "No materials have yet been specified."
     data = [np.nan * np.ones(I_array.shape[:-1]) for _ in range(4)]
     peaks, peaks_err, fwhm, fwhm_err = data
     slices = [i for i in range(q_array.shape[0])]
@@ -147,16 +149,21 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
 
             # Fit peak across window
             try:
-                # background = chebval(q, detector.background[az_idx])
                 pawley = pawley_hkl(detector, background)
                 coeff, var_mat = curve_fit(pawley, q, I, p0=p0)
                 perr = np.sqrt(np.diag(var_mat))
                 peak, peak_err = coeff[0], perr[0]
+                p_fw, p_fw_err = coeff[nmat:nmat+3], perr[nmat:nmat+3]
+
+                # REALLY DUBIOUS - PLACEHOLDER
+                fw = np.polyval(p_fw, 5)
+                fw_err = np.polyval(p_fw_err, 5)
                 # Check error and store
                 if peak_err / peak > err_lim:
                     err_exceed += 1
                 else:
                     peaks[index], peaks_err[index] = peak, peak_err
+                    fwhm[index], fwhm_err[index] = fw, fw_err
             except RuntimeError:
                 run_error += 1
 
@@ -199,7 +206,6 @@ def p0_approx(data, window, func='gaussian'):
     hm = min(I) + (max(I) - min(I)) / 2
     
     stdev = q[max_index + np.argmin(I[max_index:] > hm)] - q[max_index]
-    print(stdev)
     if stdev <= 0:
         stdev = 0.1
     p0 = [min(I), max(I) - min(I), q[max_index], stdev]
@@ -370,6 +376,71 @@ def mirror_data(phi, data):
     for i in range(phi_len):
         mdata[:, i] = (data[:, i] + data[:, i + new_shape[-2]]) / 2
     return mphi, mdata
+
+
+def single_pawley(detector, q, I, back, p_fw=None):
+    """ Full pawley fitting for a specific q, I combination.
+
+    Option to use different initial parameters for FWHM fit. This allows a
+    lower order polynomial to be specified.
+
+    Args:
+        detector: pyxpb detector object
+        q (ndarray): Reciprocal lattice
+        I (ndarray): Intensity values
+        az_idx (int): Azimuthal slice index
+        p_fw (list, tuple): New initial estimate
+    """
+    nmat, nf = len(detector.materials), len(detector._fwhm)
+    background = chebval(q, back)
+    q_lim = [np.min(q), np.max(q)]
+    p0 = extract_parameters(detector, q_lim, np.nanmax(I))
+
+    if p_fw is not None:
+        p_fw0_idx = range(nmat, nmat + nf)
+        p0_new = [i for idx, i in enumerate(p0) if idx not in p_fw0_idx]
+
+        for idx, i in enumerate(p_fw):
+            p0_new.insert(nmat + idx, i)
+
+        nf = len(p_fw)
+    else:
+        p0_new = p0
+    pawley = pawley_hkl(detector, background, nf - 1)
+    return curve_fit(pawley, q, I, p0=p0_new)
+
+
+def fwhm_single(detector, q, I , window):
+    """ FWHM estimation for each individual peak in profile.
+
+    Args:
+        detector: pyxpb detector object
+        q (ndarray): Reciprocal lattice
+        I (ndarray): Intensity values
+        window (tuple, list): min, max q value for peak fitting
+
+    Returns:
+        tuple: q0_v, fw_v - lists of q0 and fwhm values
+    """
+    q0_v, fw_v = [], []
+    q0 = np.concatenate([detector.q0[i] for i in detector.materials])
+    fw0 = np.polyval(detector._fwhm, q0)
+    w0 = (q0 - 20 * fw0, q0 + 20 * fw0)
+    for idx, _ in enumerate(q0):
+        win = (w0[0][idx], w0[1][idx]) if window is None else window
+        p0 = p0_approx((q, I), win)
+        try:
+            est = peak_fit((q, I), win, p0)
+            peak, sig = est[0][2:4]
+            peak_err, sig_err = np.sqrt(np.diag(est[1]))[2:4]
+            fw, fw_err = sig * 2.35482, sig_err * 2.35482
+            if peak_err / peak < 1e-4:
+
+                q0_v.append(q0[idx])
+                fw_v.append(fw)
+        except RuntimeError:
+            pass
+    return q0_v, fw_v
 
 
 if __name__ == '__main__':

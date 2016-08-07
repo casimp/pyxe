@@ -38,7 +38,8 @@ import matplotlib.pyplot as plt
 from numpy.polynomial.chebyshev import chebval
 
 from pyxe.command_parsing import analysis_check
-from pyxe.fitting_tools import array_fit, array_fit_pawley, full_ring_fit
+from pyxe.fitting_tools import (array_fit, array_fit_pawley, full_ring_fit,
+    single_pawley, fwhm_single)
 from pyxe.data_io import pyxe_to_hdf5, data_extract, detector_extract
 from pyxe.plotting import DataViz
 from pyxe.merge import basic_merge
@@ -153,6 +154,71 @@ class PeakAnalysis(DataViz):
             plt.plot(self.q[az_idx], I[az_idx], 'k')
             plt.plot(self.q[az_idx], chebval(self.q[az_idx], f[az_idx]), 'r-')
             plt.plot(x[az_idx], y[az_idx], 'r+')
+            plt.ylim([0, np.nanmax(y) * 1.5])
+            plt.xlabel(r'$\mathregular{q (A^{-1})}$')
+            plt.ylabel(r'Intensity')
+
+    def estimate_fwhm(self, az_idx=0, pnt=None, k=None, single=False,
+                      window=None, store=True):
+        """ FWHM estimation and fitting.
+
+        Re-estimation of the polynomial parameters used for the FWHM fit.
+        These values are used in the complete Pawley fit and improving the
+        initial estimate may aid convergence. The order of the polynomial may
+        be reduced from 2 to 1. This has been observed to help in situations
+        in which the FWHM distribution is linear and not quadratic.
+
+        Args:
+            az_idx (int): Azimuthal slice to plot
+            pnt (tuple): Point co_ords or None for averaged data
+            k (int): Order for FWHM polynomial
+            single(bool): Show the FWHM values calc. from single peak fit
+            window (tuple): Window used for single peak fit
+            store (bool): Store new estimation of parameters
+        """
+        # Automatically average over all points unless point is specified
+        ndim = self.I.ndim - 2
+        I = np.sum(self.I, tuple(range(ndim))) if pnt is None else self.I[pnt]
+        q, I = self.q[az_idx], I[az_idx]
+        detector, back = self.detector, self.detector._back[az_idx]
+        nmat, nf = len(detector.materials), len(detector._fwhm)
+
+        # Initial fitting using detector based estimated (k=2)
+        k = nf if k is None else k
+        error = "k must be less or equal to than current polynomial order."
+        assert nf - 1 >= k, error
+
+        # Calculate the polynomials from Pawley fit
+        q0_all = np.concatenate([detector.q0[i] for i in detector.materials])
+        estp0 = single_pawley(detector, q, I, back)
+        estp1 = None
+        if k < nf - 1:
+            f0 = estp0[0][nmat:nmat+nf]
+            f = np.polyfit(q0_all, np.polyval(f0, q0_all), k)
+            estp1 = single_pawley(detector, q, I, back, f)
+
+        # Evaluate and plot fwhm from polynomials
+        fwhm0 = np.polyval(detector._fwhm, q0_all) ** 0.5
+        plt.plot(q0_all, fwhm0, 'r--', label='Est0 (k={})'.format(nf - 1))
+        for idx, (est, c) in enumerate(zip([estp0, estp1], ['r', 'k'])):
+            if est is not None:
+                i = range(nmat, nmat + nf - idx)
+                coeff, var_mat = est
+                fwhm = np.polyval(coeff[i], q0_all) ** 0.5
+                err = np.polyval(np.sqrt(np.diag(var_mat))[i], 5) ** .5
+                label = 'Est{} (k={}, e={:.0e})'.format(idx, nf - 1 - idx, err)
+                plt.plot(q0_all, fwhm, '.-', color=c, label=label)
+
+        # Store new default parameters
+        detector._fwhm = list(coeff[i]) if store else detector._fwhm
+
+        # Attempt to find FWHM for each peak individually (for comparison)
+        if single:
+            q0_v, fw_v = fwhm_single(detector, q, I, window)
+            plt.plot(q0_v, fw_v, 'o', color='0.75', label='Single')
+        plt.legend(numpoints=1, loc=2)
+        plt.xlabel(r'$\mathregular{q (A^{-1})}$')
+        plt.ylabel(r'$\mathregular{FWHM (A^{-1})}$')
 
     def peak_fit(self, q0_approx, window_width, func='gaussian',
                  err_lim=1e-4, progress=True):
@@ -185,7 +251,7 @@ class PeakAnalysis(DataViz):
         self.strain, self.strain_err, self.strain_tensor = None, None, None
         self.analysis_state = 'peaks'
 
-    def pawley_fit(self, err_lim=1e-4, q_lim=[None, None], progress=True):
+    def pawley_fit(self, err_lim=1e-4, q_lim=[2, None], progress=True):
         """ Basic Pawley refinement of full diffraction profile.
 
         Fits the full diffraction profile according to a Pawley type
