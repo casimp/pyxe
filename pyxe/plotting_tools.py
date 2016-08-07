@@ -97,13 +97,15 @@ def meshgrid_res(d1, d2, spatial_resolution):
     return np.meshgrid(d1_, d2_)
 
 
-def plot_complex(x, y, z, lvls=11, figsize=(10, 10),
+def plot_complex(x_raw, y_raw, x, y, z, lvls=11, figsize=(10, 10),
                  ax=False, cbar=True, **kwargs):
     """ Plots 2D heat map of stress/strain fields.
 
     Args:
-        x (ndarray): 2D x-position array
-        y (ndarray): 2D y-position array
+        x_raw (ndarray): Data acquisision points
+        y_raw (ndarray): Data acquisision points
+        x (ndarray): 2D x-position array (interpolated)
+        y (ndarray): 2D y-position array (interpolated)
         z (ndarray): 2D stress/strain array
         lvls (int, ndarray): Number of contours to display (or defined levels)
         figsize (tuple): Figure size
@@ -123,7 +125,7 @@ def plot_complex(x, y, z, lvls=11, figsize=(10, 10),
     else:
         ax.contourf(x, y, z, 192, **kwargs)
     c = ax.contour(x, y, z, lvls, colors='0', alpha=0.625)
-    ax.plot(x, y, '+', color='0.1', alpha=0.75,
+    ax.plot(x_raw, y_raw, '+', color='0.1', alpha=0.75,
             markersize=5, linestyle='None')
     ax.set_aspect('equal')
     ax.autoscale(tight=True)
@@ -159,9 +161,9 @@ def pawley_plot(q, I, detector, az_idx, ax):
 
     # Plot raw data and Pawley fit to data
     ax.plot(q, I, 'o', markeredgecolor='0.3', markersize=4,
-            markerfacecolor='none', label=r'$\mathregular{Y_{obs}}$')
+            markerfacecolor='none', label=r'$\mathregular{I_{obs}}$')
     ax.plot(q, I_pawley, 'r-', linewidth=0.75,
-            label=r'$\mathregular{Y_{calc}}$')
+            label=r'$\mathregular{I_{calc}}$')
 
     # Plot Bragg positions - locate relative to max intensity
     ymin = -ax.get_ylim()[1] / 10
@@ -180,7 +182,7 @@ def pawley_plot(q, I, detector, az_idx, ax):
     max_diff = np.max(I_diff)
     shifted_error = I - I_pawley + (idx + 2) * ymin / 2 - max_diff
     ax.plot(q, shifted_error, 'b-', linewidth=0.75,
-            label=r'$\mathregular{Y_{diff}}$')
+            label=r'$\mathregular{I_{diff}}$')
 
     # Remove ticks below 0 intensity
     ylocs = ax.yaxis.get_majorticklocs()
@@ -189,4 +191,6 @@ def pawley_plot(q, I, detector, az_idx, ax):
         if yloc < 0:
             yticks[idx].set_visible(False)
 
-    ax.legend(numpoints=1)
+    legend = ax.legend(numpoints=1)
+    frame = legend.get_frame()
+    frame.set_facecolor('w')

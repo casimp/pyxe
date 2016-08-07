@@ -39,7 +39,7 @@ from numpy.polynomial.chebyshev import chebval
 
 from pyxe.command_parsing import analysis_check
 from pyxe.fitting_tools import (array_fit, array_fit_pawley, full_ring_fit,
-    single_pawley, fwhm_single)
+    single_pawley, fwhm_single, q0_valid_range)
 from pyxe.data_io import pyxe_to_hdf5, data_extract, detector_extract
 from pyxe.plotting import DataViz
 from pyxe.merge import basic_merge
@@ -205,7 +205,10 @@ class PeakAnalysis(DataViz):
                 i = range(nmat, nmat + nf - idx)
                 coeff, var_mat = est
                 fwhm = np.polyval(coeff[i], q0_all) ** 0.5
-                err = np.polyval(np.sqrt(np.diag(var_mat))[i], 5) ** .5
+                q0_min, q0_max = q0_valid_range(detector, [q.min(), q.max()])
+                q0_range = np.linspace(q0_min, q0_max, 100)
+                perr = np.sqrt(np.diag(var_mat))
+                err = np.sum(np.polyval(perr[i], q0_range) ** 0.5) / 100
                 label = 'Est{} (k={}, e={:.0e})'.format(idx, nf - 1 - idx, err)
                 plt.plot(q0_all, fwhm, '.-', color=c, label=label)
 

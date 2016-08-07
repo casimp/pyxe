@@ -305,7 +305,7 @@ class DataViz(object):
         co_ords = (self.d1[finite], self.d2[finite])
         z = griddata(co_ords, data[finite], (d1, d2))
         plot_func = plot_complex if plot_func is None else plot_func
-        ax = plot_func(d1, d2, z, **kwargs)
+        ax = plot_func(self.d1, self.d2, d1, d2, z, **kwargs)
 
         return ax
 

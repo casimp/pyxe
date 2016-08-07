@@ -80,13 +80,14 @@ def pawley_hkl(detector, back, fw_order=None):
     return pawley
 
 
-def extract_parameters(detector, q_lim, I_max=1):
+def extract_parameters(detector, q_lim, I_max=1, I_lim=None):
     """ Extract initial Pawley parameters from detector/setup.
 
     Args:
         detector (pyxpb.peaks.Peak): pyXpb detector instance
         q_lim (list, tuple): Limit q0 range for pawley fitting
-        I_max (float): relative maximum intensity limit
+        I_max (float): Multiplication factor for intensity
+        I_lim (float): Relative minimum intensity limit
 
     Returns:
         list: Pawley parameter estimates
@@ -97,8 +98,31 @@ def extract_parameters(detector, q_lim, I_max=1):
         for idx, i in enumerate(detector.relative_heights()[material]):
             q0 = detector.q0[material][idx]
             if np.logical_and(q0 > q_lim[0], q0 < q_lim[1]):
-                p.append(i * I_max)
+                if I_lim is None or i > I_lim:
+                    p.append(i * I_max)
     return p
+
+
+def q0_valid_range(detector, q_lim, I_lim=None):
+    """ Finds valid q0 range (min, max) from detector/material/argument comb.
+
+    Args:
+        detector (pyxpb.peaks.Peak): pyXpb detector instance
+        q_lim (list, tuple): Limit q0 range for pawley fitting
+        I_max (float): Multiplication factor for intensity
+        I_lim (float): Relative minimum intensity limit
+
+    Returns:
+        tuple: q_min, q_max
+    """
+    q0_valid = []
+    for material in detector.materials:
+        for idx, i in enumerate(detector.relative_heights()[material]):
+            q0 = detector.q0[material][idx]
+            if np.logical_and(q0 > q_lim[0], q0 < q_lim[1]):
+                if I_lim is None or i > I_lim:
+                    q0_valid.append(q0)
+    return np.min(q0_valid), np.max(q0_valid)
 
 
 def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
@@ -120,7 +144,7 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
     Return:
         tuple: peaks, peaks_err, fwhm, fwhm_err (fwhm, fwhm_err = None, None)
     """
-    nmat = len(detector.materials)
+    nmat, nf = len(detector.materials), len(detector._fwhm)
     assert nmat > 0, "No materials have yet been specified."
     data = [np.nan * np.ones(I_array.shape[:-1]) for _ in range(4)]
     peaks, peaks_err, fwhm, fwhm_err = data
@@ -136,6 +160,8 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
         q_lim[1] = q_lim[1] if q_lim[1] is not None else np.max(q)
         crop = np.logical_and(q > q_lim[0], q < q_lim[1])
         q = q[crop]
+        q0_min, q0_max = q0_valid_range(detector, q_lim)
+        q0_range = np.linspace(q0_min, q0_max, 100)
 
         if detector._back.ndim == 2:
             background = chebval(q, detector._back[az_idx])
@@ -152,12 +178,12 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
                 pawley = pawley_hkl(detector, background)
                 coeff, var_mat = curve_fit(pawley, q, I, p0=p0)
                 perr = np.sqrt(np.diag(var_mat))
-                peak, peak_err = coeff[0], perr[0]
-                p_fw, p_fw_err = coeff[nmat:nmat+3], perr[nmat:nmat+3]
+                peak, peak_err = coeff[0], perr[0]  # Single material
 
-                # REALLY DUBIOUS - PLACEHOLDER
-                fw = np.polyval(p_fw, 5)
-                fw_err = np.polyval(p_fw_err, 5)
+                pfw, pfw_err = coeff[nmat: nmat + nf], perr[nmat: nmat + nf]
+
+                fw = np.sum(np.polyval(pfw, q0_range)**0.5) / 100
+                fw_err = np.sum(np.polyval(pfw_err, q0_range)**0.5) / 100
                 # Check error and store
                 if peak_err / peak > err_lim:
                     err_exceed += 1
@@ -179,7 +205,7 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
           (peaks.size, peaks.shape[-1], peaks[..., 0].size,
            run_error, err_exceed))
 
-    return peaks, peaks_err, None, None
+    return peaks, peaks_err, fwhm, fwhm_err
 
 
 def p0_approx(data, window, func='gaussian'):
