@@ -88,7 +88,7 @@ The new area detector analysis module relies on pyFAI, which is a software packa
 Installation
 ------------
 
-Although pyXe is pip installable, this is not the recommended at this time. The version available on PyPI is not up to date and significantly inferior to/behind the current version. The current version will be made available on PyPI once more testing has been completed.
+Although pyXe is pip installable, this is not recommended at this time. The version available on PyPI is not up to date and significantly inferior to/behind the current version. The current version will be made available on PyPI once more testing has been completed.
 
 In the meantime, you can install from the distribution using the setup.py script. The source is stored in the GitHub repo, which can be browsed at:
 
@@ -99,10 +99,3 @@ Simply download and unpack, then navigate to the download directory and run the 
 ```
 python setup.py install
 ```
-
-Documentation
--------------
-
-Documentation is hosted by readthedocs. Although still incomplete they do, however, provide some background information and installation details:
-
-http://pyxe.readthedocs.org/en/latest/
