@@ -88,15 +88,9 @@ The new area detector analysis module relies on pyFAI, which is a software packa
 Installation
 ------------
 
-Installing pyXe is easily done using pip. Assuming it is installed, just run the following from the command-line:
+Although pyXe is pip installable, this is not the recommended at this time. The version available on PyPI is not up to date and significantly inferior to/behind the current version. The current version will be made available on PyPI once more testing has been completed.
 
-```
-pip install pyxe
-```
-
-This command will download the latest version of pyXe from the Python Package Index and install it to your system.
-
-Alternatively, you can install from the distribution using the setup.py script. The source is stored in the GitHub repo, which can be browsed at:
+In the meantime, you can install from the distribution using the setup.py script. The source is stored in the GitHub repo, which can be browsed at:
 
 https://github.com/casimp/pyxe
 
