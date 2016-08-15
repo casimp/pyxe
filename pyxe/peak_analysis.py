@@ -307,7 +307,7 @@ class PeakAnalysis(DataViz):
         """
         if isinstance(q0, PeakAnalysis):
             assert np.array_equal(q0.phi, self.phi)
-            q0 = q0.peaks.mean(axis=tuple(range(0, q0.ndim)))
+            q0 = np.nanmean(q0.peaks, axis=tuple(range(0, q0.peaks.ndim - 1)))
         self.q0 = q0
         self.strain = (self.q0 / self.peaks) - 1
         self.strain_err = (self.q0 / self.peaks_err) - 1
