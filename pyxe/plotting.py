@@ -63,8 +63,12 @@ class DataViz(object):
 
     def swapaxes(self, axis1, axis2):
         """ Swap two axes of an array. Effectively rotates the data."""
-        axes = {0: self.d1, 1: self.d2, 2: self.d3}
-        axes[axis1], axes[axis2] = axes[axis2], axes[axis1]
+        if axis1 in [0, 1] and axis2 in [0, 1]:
+            self.d1, self.d2 = self.d2, self.d1
+        elif axis1 in [0, 2] and axis2 in [0, 2]:
+            self.d1, self.d3 = self.d3, self.d1
+        elif axis1 in [1, 2] and axis2 in [1, 2]:
+            self.d2, self.d3 = self.d3, self.d2
 
     def centre(self, co_ord):
         """ Centre array on point (tuple)."""
