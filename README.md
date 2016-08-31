@@ -1,7 +1,10 @@
 pyXe: X-ray Diffraction Strain Analysis Package
 ===============================================
 
-[![DOI](https://zenodo.org/badge/20396/casimp/pyxe.svg)](https://zenodo.org/badge/latestdoi/20396/casimp/pyxe) [![Build Status](https://travis-ci.org/casimp/pyxe.svg?branch=master)](https://travis-ci.org/casimp/pyxe) [![Coverage Status](https://coveralls.io/repos/github/casimp/pyxe/badge.svg?branch=master)](https://coveralls.io/github/casimp/pyxe?branch=master)
+[![DOI](https://zenodo.org/badge/20396/casimp/pyxe.svg)](https://zenodo.org/badge/latestdoi/20396/casimp/pyxe) 
+[![Build Status](https://travis-ci.org/casimp/pyxe.svg?branch=master)](https://travis-ci.org/casimp/pyxe) 
+[![Build status](https://ci.appveyor.com/api/projects/status/wpo0h77r509d00ma?svg=true)](https://ci.appveyor.com/project/casimp/pyxe)
+[![Coverage Status](https://coveralls.io/repos/github/casimp/pyxe/badge.svg?branch=master)](https://coveralls.io/github/casimp/pyxe?branch=master)
 
 What is pyXe?
 -------------
