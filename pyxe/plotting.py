@@ -179,10 +179,8 @@ class DataViz(object):
             return self.d1, data
         else:
             x, y, d = line_extract(self.d1, self.d2, pnt, theta, res)
-            print(x.shape, y.shape, d.shape)
             co_ords = (self.d1.flatten(), self.d2.flatten())
             line = griddata(co_ords, data.flatten(), (x, y))
-            print(line.shape)
             return x, y, d, line
 
     def extract_slice(self, data='strain', phi=None, az_idx=None, z_idx=None):
@@ -244,7 +242,7 @@ class DataViz(object):
         return data
 
     def plot_line(self, data='strain', phi=None, az_idx=None, z_idx=None,
-                  pnt=(0, 0), theta=0, res=0.1, pos_value='d', ax=False):
+                  pnt=(0, 0), theta=0, res=0.1, x='d', ax=False):
         """ Plots line through data slice wrt. az slice index or angle (phi).
 
         The line is defined by a point and an angle. The extracted data is
@@ -265,7 +263,7 @@ class DataViz(object):
             theta (float): Angle (rad) though 2D array
             z_idx (int): Index of slice height in 3D array
             res (float): Point spacing or interpolated data
-            pos_value (str): Plot wrt. x, y or absolute line length (d)
+            x (str): Plot data against 'x', 'y' or line length 'd'
             ax: Supply axis to plot on or (False) create new plot
         """
         x, y, d, line = self.extract_line(data, phi, az_idx, pnt,
@@ -275,7 +273,7 @@ class DataViz(object):
         if not ax:
             fig = plt.figure(figsize=(7, 5))
             ax = fig.add_subplot(1, 1, 1)
-        ax.plot(position[pos_value], line, 'k-')
+        ax.plot(position[x], line, 'k-')
         ax.set_xlabel('Position ({})'.format('mm'))
         ax.set_ylabel(data)
         return ax
