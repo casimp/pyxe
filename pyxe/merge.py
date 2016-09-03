@@ -90,7 +90,8 @@ def none_merge(data, current_state, required_state, axis=-1):
     Returns:
         ndarray: Merged data (or None)
     """
-    if analysis_state_comparison(current_state, required_state):
+    try:
+        analysis_state_comparison(current_state, required_state)
         assert not any([d is None for d in data]), 'Invalid data (None types)'
         if axis is None:
             merged_data = np.append(*data)
@@ -98,7 +99,7 @@ def none_merge(data, current_state, required_state, axis=-1):
             reshaped_data = [d.reshape(axis, *d.shape[axis:]) for d in data]
             merged_data = np.concatenate(reshaped_data)
         return merged_data
-    else:
+    except AssertionError:
         return None
 
 
@@ -121,9 +122,9 @@ def basic_merge(data):
         assert np.array_equal(new.phi, d.phi), error % 'number of az bins'
         assert np.array_equal(new.q, d.q), error % 'number of q bins'
 
-    new.d1 = np.append(*[d.d1 for d in data]) if new.ndim > 0 else None
-    new.d2 = np.append(*[d.d2 for d in data]) if new.ndim > 1 else None
-    new.d3 = np.append(*[d.d3 for d in data]) if new.ndim > 2 else None
+    new.d1 = np.concatenate([d.d1 for d in data]) if new.ndim > 0 else None
+    new.d2 = np.concatenate([d.d2 for d in data]) if new.ndim > 1 else None
+    new.d3 = np.concatenate([d.d3 for d in data]) if new.ndim > 2 else None
 
     state = lowest_state([d.analysis_state for d in data])
 
