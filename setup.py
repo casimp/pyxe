@@ -2,13 +2,13 @@ from setuptools import setup
 
 setup(
     name='pyxe',
-    version='0.8.1',
+    version='0.9.0',
     author='C. Simpson',
     author_email='c.a.simpson01@gmail.com',
     packages=['pyxe'],
     include_package_data=True,
     url='https://github.com/casimp/pyxe',
-    download_url = 'https://github.com/casimp/pyxe/tarball/v0.8.0',
+    download_url = 'https://github.com/casimp/pyxe/tarball/v0.9.0',
     license='LICENSE.txt',
     description='XRD strain analysis package. Efficient analysis and visulisation of diffraction data.',
     keywords = ['XRD', 'EDXD', 'x-ray', 'diffraction', 'strain', 'synchrotron'],
