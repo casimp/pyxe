@@ -112,46 +112,46 @@ def basic_merge(data):
     Returns:
         pyxe data object: Merged pyxe object
     """
-    new = copy.deepcopy(data[0])
+    m = copy.deepcopy(data[0])
     if len(data) == 1:
-        return new
+        return m
 
     for d in data:
         error = 'Trying to merge incompatible data - %s'
-        assert new.ndim == d.ndim, error % 'e.g. 2D with 3D'
-        assert np.array_equal(new.phi, d.phi), error % 'number of az bins'
-        assert np.array_equal(new.q, d.q), error % 'number of q bins'
+        assert m.ndim == d.ndim, error % 'e.g. 2D with 3D'
+        assert np.array_equal(m.phi, d.phi), error % 'number of az bins'
+        assert np.array_equal(m.q, d.q), error % 'number of q bins'
 
-    new.d1 = np.concatenate([d.d1 for d in data]) if new.ndim > 0 else None
-    new.d2 = np.concatenate([d.d2 for d in data]) if new.ndim > 1 else None
-    new.d3 = np.concatenate([d.d3 for d in data]) if new.ndim > 2 else None
+    m.d1 = np.concatenate([d.d1 for d in data], None) if m.ndim > 0 else None
+    m.d2 = np.concatenate([d.d2 for d in data], None) if m.ndim > 1 else None
+    m.d3 = np.concatenate([d.d3 for d in data], None) if m.ndim > 2 else None
 
     state = lowest_state([d.analysis_state for d in data])
 
     for i in data:
         try:
-            valid = all([new.E == i.E, new.v == i.v, new.G == i.G,
-                        new.stress_state == i.stress_state])
+            valid = all([m.E == i.E, m.v == i.v, m.G == i.G,
+                        m.stress_state == i.stress_state])
             if not valid:
                 print('Material properties inconsistent - resetting all.')
-                new.E, new.v, new.G, new.stress_state = None, None, None, None
+                m.E, m.v, m.G, m.stress_state = None, None, None, None
                 state = state.replace('stress', 'strain')
         except AttributeError:
             pass
 
-    new.analysis_state = state
+    m.analysis_state = state
 
-    new.I = none_merge([d.I for d in data], state, 'integrated', axis=-2)
-    new.peaks = none_merge([d.peaks for d in data], state, 'peaks')
-    new.peaks_err = none_merge([d.peaks_err for d in data], state, 'peaks')
-    new.fwhm = none_merge([d.fwhm for d in data], state, 'peaks')
-    new.fwhm_err = none_merge([d.fwhm_err for d in data], state, 'peaks')
-    new.strain = none_merge([d.strain for d in data], state, 'strain')
-    new.strain_err = none_merge([d.strain_err for d in data], state, 'strain')
+    m.I = none_merge([d.I for d in data], state, 'integrated', axis=-2)
+    m.peaks = none_merge([d.peaks for d in data], state, 'peaks')
+    m.peaks_err = none_merge([d.peaks_err for d in data], state, 'peaks')
+    m.fwhm = none_merge([d.fwhm for d in data], state, 'peaks')
+    m.fwhm_err = none_merge([d.fwhm_err for d in data], state, 'peaks')
+    m.strain = none_merge([d.strain for d in data], state, 'strain')
+    m.strain_err = none_merge([d.strain_err for d in data], state, 'strain')
     strain_tensor = [d.strain_tensor for d in data]
-    new.strain_tensor = none_merge(strain_tensor, state, 'strain fit')
+    m.strain_tensor = none_merge(strain_tensor, state, 'strain fit')
 
-    return new
+    return m
 
 
 def ordered_merge(data, order=None, pad=0.01):
