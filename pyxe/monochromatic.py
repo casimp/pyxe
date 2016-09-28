@@ -10,13 +10,15 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import re
 import os
 import fabio
+import h5py
 import numpy as np
 import pyFAI
 import sys
 
-from pyxe.data_io import dim_fill, extract_fnames
+from pyxe.data_io import dim_fill, extract_fnames, dimension_fill
 from pyxe.peak_analysis import PeakAnalysis
 from pyxpb.detectors import MonoDetector
 
@@ -34,7 +36,7 @@ class Mono(PeakAnalysis):
         Args:
             folder (str): Folder containing the image files for analysis
             co_ords (ndarray): 1D/2D/3D numpy array containing data co-ords
-            params (tuple, object): pyFAI detector object or Fit2D params:
+            detector (tuple, object): pyFAI detector object or Fit2D params:
                 (sample_to_detector (mm), centre_x (pix), centre_y (pix),
                 tilt (deg), tilt_plane (deg), pixel_size_x (micron),
                 pixel_size_y (micron)).
@@ -93,3 +95,49 @@ class Mono(PeakAnalysis):
         self.analysis_state = 'integrated'
         # Temporary - extract from ai!
         self.detector = MonoDetector((2000,2000), 0.1, 1000, 100, 1)
+
+
+class MonoI12(PeakAnalysis):
+
+    def __init__(self, fpath, detector=None):
+        """ Extract useful data from pre-processed .nxs file.
+
+        *** Un-tested ***
+
+        Analysis of pre-processed (azimuthally integrated) data from the I12
+        beamline. Data file should approximate to the .nxs from the EDXD
+        detector but still untested. Should re-arrange and scrape pre-processed
+        data to correct form.
+
+        Args:
+            fpath (str): Path to NeXus file
+            detector (tuple, object): pyFAI detector object or Fit2D params:
+                (sample_to_detector (mm), centre_x (pix), centre_y (pix),
+                tilt (deg), tilt_plane (deg), pixel_size_x (micron),
+                pixel_size_y (micron)).
+        """
+        self.fpath = fpath
+        f = h5py.File(fpath, 'r')
+
+        # Use scan command to find number of dimensions and the order in which
+        # they were acquired. Important/useful for plotting!
+        scan_command = f['entry1/scan_command'][()][0]
+        dims = re.findall(b'ss2_\w+', scan_command) # valid?
+        self.ndim = len(dims)
+        all_dims = [b'ss2_x', b'ss2_y', b'ss2_z']
+        dims = dims + [dim for dim in all_dims if dim not in dims]
+        co_ords = []
+        for dim in dims:
+            co_ords.append(dimension_fill(f, dim.decode("utf-8")))
+        self.d1, self.d2, self.d3 = co_ords
+
+        self.q = f['entry1/EDXD_elements/edxd_q'][()] # will be incorrect
+        self.I = f['entry1/EDXD_elements/data'][()] # will be incorrect
+        self.phi = f['entry1/EDXD_elements/phi'][()] # will be incorrect
+        self.analysis_state = 'integrated'
+        ##### FIX THIS!
+        if detector is None:
+            # scrape from file..?
+            self.detector = MonoDetector((2000, 2000), 0.1, 1000, 100, 1)
+        else:
+            self.detector = MonoDetector((2000, 2000), 0.1, 1000, 100, 1)
