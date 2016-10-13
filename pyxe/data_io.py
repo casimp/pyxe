@@ -173,6 +173,20 @@ def dimension_fill(i12_nxs, dim_id):
     except KeyError:
         dimension_data = None
     return dimension_data
+    
+def dimension_fill_pixium10(i12_nxs, dim_id):
+    """ Extracts correct spatial array from NeXus file. Returns None if the
+    dimension doesn't exist.
+
+    Args:
+        i12_nxs: Raw data (hdf5 format)
+        dim_id (str): Dimension ID (ss_x, ss2_y or ss2_z)
+    """
+    try:
+        dimension_data = i12_nxs['entry1/pixium10_tif/' + dim_id][()]
+    except KeyError:
+        dimension_data = None
+    return dimension_data
 
 
 def extract_fnames(folder, f_ext):

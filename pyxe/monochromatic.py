@@ -18,7 +18,7 @@ import numpy as np
 import pyFAI
 import sys
 
-from pyxe.data_io import dim_fill, extract_fnames, dimension_fill
+from pyxe.data_io import dim_fill, extract_fnames, dimension_fill_pixium10
 from pyxe.peak_analysis import PeakAnalysis
 from pyxpb.detectors import MonoDetector
 
@@ -99,7 +99,7 @@ class Mono(PeakAnalysis):
 
 class MonoI12(PeakAnalysis):
 
-    def __init__(self, fpath, detector=None):
+    def __init__(self, fpath, rpath, detector=None):
         """ Extract useful data from pre-processed .nxs file.
 
         *** Un-tested ***
@@ -110,7 +110,8 @@ class MonoI12(PeakAnalysis):
         data to correct form.
 
         Args:
-            fpath (str): Path to NeXus file
+            fpath (str): Path to processed datafile (.nxs)
+            rpath (str): Path to raw datafile (.nxs)
             detector (tuple, object): pyFAI detector object or Fit2D params:
                 (sample_to_detector (mm), centre_x (pix), centre_y (pix),
                 tilt (deg), tilt_plane (deg), pixel_size_x (micron),
@@ -118,22 +119,24 @@ class MonoI12(PeakAnalysis):
         """
         self.fpath = fpath
         f = h5py.File(fpath, 'r')
-
+        raw = h5py.File(rpath, 'r')
         # Use scan command to find number of dimensions and the order in which
         # they were acquired. Important/useful for plotting!
-        scan_command = f['entry1/scan_command'][()][0]
+        scan_command = raw['entry1/scan_command'][()][0]
         dims = re.findall(b'ss2_\w+', scan_command) # valid?
         self.ndim = len(dims)
         all_dims = [b'ss2_x', b'ss2_y', b'ss2_z']
         dims = dims + [dim for dim in all_dims if dim not in dims]
         co_ords = []
         for dim in dims:
-            co_ords.append(dimension_fill(f, dim.decode("utf-8")))
+            co_ords.append(dimension_fill_pixium10(raw, dim.decode("utf-8")))
         self.d1, self.d2, self.d3 = co_ords
 
-        self.q = f['entry1/EDXD_elements/edxd_q'][()] # will be incorrect
-        self.I = f['entry1/EDXD_elements/data'][()] # will be incorrect
-        self.phi = f['entry1/EDXD_elements/phi'][()] # will be incorrect
+        q = f['entry/result/q'][()] # will be incorrect
+        
+        self.I = f['entry/result/data'][()] # will be incorrect
+        self.phi = np.pi * f['entry/result/azimuthal angle (degrees)'][()] / 180 # will be incorrect
+        self.q = np.repeat(q[None, :], self.phi.size, axis=0)        
         self.analysis_state = 'integrated'
         ##### FIX THIS!
         if detector is None:
