@@ -8,7 +8,7 @@ import numpy as np
 from numpy.polynomial.chebyshev import chebval
 import matplotlib.pyplot as plt 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from pyxe.fitting_tools import pawley_hkl, extract_parameters
+from pyxe.fitting_tools import pawley_hkl, extract_parameters, array_fit_pawley
 from scipy.optimize import curve_fit
 
 
@@ -97,10 +97,10 @@ def meshgrid_res(d1, d2, spatial_resolution):
     return np.meshgrid(d1_, d2_)
 
 
-def plot_complex(x_raw, y_raw, x, y, z, lvls=11, figsize=(10, 10),
+def plot_complex(x_raw, y_raw, x, y, z, levels=11, limits=[None, None],
+                 continuous=True, figsize=(10, 10),
                  ax=False, cbar=True, **kwargs):
     """ Plots 2D heat map of stress/strain fields.
-
     Args:
         x_raw (ndarray): Data acquisision points
         y_raw (ndarray): Data acquisision points
@@ -116,30 +116,44 @@ def plot_complex(x_raw, y_raw, x, y, z, lvls=11, figsize=(10, 10),
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
 
-    cf_back = ax.contourf(x, y, z, lvls, **kwargs)
+    if limits != [None, None]:
+        z[z < limits[0]] = limits[0]
+        z[z > limits[1]] = limits[1]
+
+    cf_back = ax.contourf(x, y, z, levels, **kwargs)
+
+    # Zero markings
     ax.contour(x, y, z, levels=[0], colors=('k',),
                linestyles=('--',), linewidths=(3,))
-    if type(lvls) != int:
-        lvls_ = np.linspace(np.min(lvls), np.max(lvls), 192)
-        ax.contourf(x, y, z, lvls_, **kwargs)
-    else:
-        ax.contourf(x, y, z, 192, **kwargs)
-    c = ax.contour(x, y, z, lvls, colors='0', alpha=0.625)
+
+    # Continuous background of discrete colours
+    if continuous:
+        if not isinstance(levels, int):
+            lvls_ = np.linspace(np.min(levels), np.max(levels), 192)
+            ax.contourf(x, y, z, lvls_, **kwargs)
+        else:
+            ax.contourf(x, y, z, 192, **kwargs)
+
+    # Contours
+    c = ax.contour(x, y, z, levels, colors='0', alpha=0.625)
+
+    # Acquisition points
     ax.plot(x_raw, y_raw, '+', color='0.1', alpha=0.75,
             markersize=5, linestyle='None')
+
+    # Formatting
     ax.set_aspect('equal')
     ax.autoscale(tight=True)
 
     divider = make_axes_locatable(ax)
-    
-    if cbar:  
+
+    if cbar:
         cax = divider.append_axes("right", "3%", pad="3%")
         cbar = plt.colorbar(cf_back, cax=cax)
         cbar.add_lines(c)
     return ax
 
-
-def pawley_plot(q, I, detector, az_idx, ax):
+def pawley_plot(q, I, detector, az_idx, ax, q_lim=None, func='gaussian'):
     """ Plots q against measured intensity overlaid with Pawley fit.
 
     Includes highlighting of anticipated Bragg peak locations and
@@ -152,10 +166,12 @@ def pawley_plot(q, I, detector, az_idx, ax):
         az_idx (int): Azimuthal slice index
         ax: Axis to apply plot to
     """
+
     background = chebval(q, detector._back[az_idx])
-    q_lim = [np.min(q), np.max(q)]
+    if q_lim is None:
+        q_lim = [np.min(q), np.max(q)]
     p0 = extract_parameters(detector, q_lim, np.nanmax(I))
-    pawley = pawley_hkl(detector, background)
+    pawley = pawley_hkl(detector, background, func=func)
     coeff, var_mat = curve_fit(pawley, q, I, p0=p0)
     I_pawley = pawley(q, *coeff)
 

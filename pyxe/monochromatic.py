@@ -97,7 +97,7 @@ class Mono(PeakAnalysis):
         self.detector = MonoDetector((2000,2000), 0.1, 1000, 100, 1)
 
 
-class MonoI12(PeakAnalysis):
+class MonoI12_old(PeakAnalysis):
 
     def __init__(self, fpath, rpath, detector=None):
         """ Extract useful data from pre-processed .nxs file.
@@ -144,3 +144,55 @@ class MonoI12(PeakAnalysis):
             self.detector = MonoDetector((2000, 2000), 0.1, 1000, 100, 1)
         else:
             self.detector = MonoDetector((2000, 2000), 0.1, 1000, 100, 1)
+            
+class MonoI12(PeakAnalysis):
+
+    def __init__(self, fpath, detector=None):
+        """ Extract useful data from pre-processed .nxs file.
+
+        *** Un-tested ***
+
+        Analysis of pre-processed (azimuthally integrated) data from the I12
+        beamline. Data file should approximate to the .nxs from the EDXD
+        detector but still untested. Should re-arrange and scrape pre-processed
+        data to correct form.
+
+        Args:
+            fpath (str): Path to processed datafile (.nxs)
+            detector (tuple, object): pyFAI detector object or Fit2D params:
+                (sample_to_detector (mm), centre_x (pix), centre_y (pix),
+                tilt (deg), tilt_plane (deg), pixel_size_x (micron),
+                pixel_size_y (micron)).
+        """
+        self.fpath = fpath
+        f = h5py.File(fpath, 'r')
+        self.I = f['entry/result/data'][()]
+        self.phi = np.pi * f['entry/result/azimuthal angle (degrees)'][()] / 180
+        q = f['entry/result/q'][()]
+        self.q = np.repeat(q[None, :], self.phi.size, axis=0)   
+        
+
+        self.ndim = len(self.I.shape[:-2])
+        dims = [i for i in list(f['entry/result/'].keys()) if i[:2] == 'ss']
+        self.d1, self.d2, self.d3 = None, None, None
+        try:
+            self.d1 = f['entry/result/{}'.format(dims[0])][()]
+            self.d2 = f['entry/result/{}'.format(dims[1])][()]
+            self.d3 = f['entry/result/{}'.format(dims[2])][()]
+        except IndexError:
+            pass
+        
+        # This will not work with 3D data (which I'm yet to come across!)
+        if len(self.d1.shape) != self.ndim:
+            self.d1, self.d2 = np.meshgrid(self.d1, self.d2)
+
+            
+        self.analysis_state = 'integrated'
+        ##### FIX THIS!
+        if detector is None:
+            # scrape from file..?
+        
+            self.detector = MonoDetector((2043, 2043), 0.1, 1000, 100, 1)
+        else:
+            self.detector = MonoDetector((2043, 2043), 0.1, 1000, 100, 1)
+

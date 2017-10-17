@@ -76,7 +76,8 @@ class DataViz(object):
         for idx, i in enumerate(co_ord):
             axes[idx] -= i
 
-    def plot_intensity(self, pnt=None, az_idx=0, figsize=(9, 6), pawley=False):
+    def plot_intensity(self, pnt=None, az_idx=0, figsize=(9, 6), pawley=False,
+                       q_lim=None, func='gaussian'):
         """ Plots q against intensity (optionally including Pawley fit).
 
         Args:
@@ -91,7 +92,7 @@ class DataViz(object):
         q, I = self.q[az_idx], self.I[pnt][az_idx]
 
         if pawley:
-            pawley_plot(q, I, self.detector, az_idx, ax)
+            pawley_plot(q, I, self.detector, az_idx, ax, q_lim, func)
         else:
             ax.plot(q, I, 'k-', linewidth=0.5)
         ax.set_xlabel('q (A$^{-1}$)')
@@ -302,8 +303,13 @@ class DataViz(object):
         """
         data = self.extract_slice(data, phi, az_idx, z_idx)
         finite = np.isfinite(data)
-        d1, d2 = meshgrid_res(self.d1[finite], self.d2[finite],
-                              spatial_resolution=res)
+        # If x and y are vectos not 2d
+        if self.d1.shape != self.peaks.shape[:-1]:
+            d1, d2 = np.meshgrid(self.d1, self.d2)
+        else:
+            d1, d2 = self.d1, self.d2
+            
+        d1, d2 = meshgrid_res(d1, d2, spatial_resolution=res)
         co_ords = (self.d1[finite], self.d2[finite])
         z = griddata(co_ords, data[finite], (d1, d2))
         plot_func = plot_complex if plot_func is None else plot_func

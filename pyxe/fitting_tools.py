@@ -21,7 +21,7 @@ from pyxe.fitting_functions import strain_transformation
 
 
 @numba.jit(nopython=True)
-def pawley_sum(I, h, q, q0, fwhm):
+def pawley_sum(I, h, q, q0, fwhm, func_num):
     """ Computes diffraction profile for given set of Pawley parameters.
 
     Args:
@@ -34,13 +34,24 @@ def pawley_sum(I, h, q, q0, fwhm):
     Returns:
         ndarray: Computed intensity profile
     """
-    sig = fwhm / (2 * np.sqrt(2 * np.log(2)))
-    for i in range(len(q0)):
-        I = I + h[i] * np.exp(-(q - q0[i]) ** 2 / (2 * sig[i] ** 2))
-    return I
+    
+    # print(sig)
+    if func_num == 0:
+        sig = fwhm / (2 * np.sqrt(2 * np.log(2)))
+        for i in range(len(q0)):
+            I = I + h[i] * np.exp(-(q - q0[i]) ** 2 / (2 * sig[i] ** 2))
+        return I
+    
+    if func_num == 1:   
+        sig = fwhm / 2
+        for i in range(len(q0)):
+            I = I + h[i] / (1.0 + ((q - q0[i]) / sig[i])**2)
+            #I = I + h[i] * np.exp(-(q - q0[i]) ** 2 / (2 * sig[i] ** 2))
+            #   p[0] + p[1] * np.exp(- (x - p[2])**2 / (2. * p[3]**2))
+        return I
 
 
-def pawley_hkl(detector, back, fw_order=None):
+def pawley_hkl(detector, back, fw_order=None, func='gaussian'):
     """ Wrapper for Pawley fitting, allowing spec. of detector and background.
 
     Args:
@@ -50,11 +61,24 @@ def pawley_hkl(detector, back, fw_order=None):
     Returns:
         function: Pawley fitting function
         """
+        
+        
+
+
+            
     def pawley(q, *p):
+        
+        if func == 'gaussian':
+            func_num = 0
+        else:
+            func_num = 1 if func == 'lorentzian' else 2
+            
+
         np_fw = fw_order + 1 if fw_order is not None else len(detector._fwhm)
         p0 = len(detector.hkl) + np_fw
         I = np.zeros_like(q)
         p_fw = p[p0 - np_fw: p0]
+        # print(p_fw)
 
         for idx, material in enumerate(detector.materials):
             # Extract number of peaks and associated hkl values
@@ -73,7 +97,8 @@ def pawley_hkl(detector, back, fw_order=None):
             # Extract intensity values
             h = np.array(p[p0: p0 + npeaks])
 
-            I = pawley_sum(I, h, q, q0, fwhm)
+            # print(fwhm)
+            I = pawley_sum(I, h, q, q0, fwhm, func_num)
             p0 += npeaks
 
         return I + back
@@ -93,14 +118,17 @@ def extract_parameters(detector, q_lim, I_max=1, I_lim=None):
         list: Pawley parameter estimates
     """
     p = [detector.materials[mat]['a'] for mat in detector.materials]
+    # print(p, type(p))
     p += detector._fwhm
+    # print(p, type(p))
     for material in detector.materials:
         for idx, i in enumerate(detector.relative_heights()[material]):
             q0 = detector.q0[material][idx]
             if np.logical_and(q0 > q_lim[0], q0 < q_lim[1]):
                 if I_lim is None or i > I_lim:
-                    p.append(i * I_max)
-    return p
+                    # print(p, type(p), i, I_max)
+                    p = np.append(p, i * I_max)
+    return list(p)
 
 
 def q0_valid_range(detector, q_lim, I_lim=None):
@@ -126,7 +154,7 @@ def q0_valid_range(detector, q_lim, I_lim=None):
 
 
 def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
-                     q_lim=(2, None), progress=True):
+                     q_lim=(2, None), progress=True, func='gaussian'):
     """ Pawley peak fit wrapper for ndarray of diffraction profiles/az slices.
 
     The peak fit is completed using a Gaussian profile assumption (lorentzian
@@ -161,6 +189,8 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
         crop = np.logical_and(q > q_lim[0], q < q_lim[1])
         q = q[crop]
         q0_min, q0_max = q0_valid_range(detector, q_lim)
+
+        # Only used to calc FWHM at approx. locations
         q0_range = np.linspace(q0_min, q0_max, 100)
 
         if detector._back.ndim == 2:
@@ -175,7 +205,7 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
 
             # Fit peak across window
             try:
-                pawley = pawley_hkl(detector, background)
+                pawley = pawley_hkl(detector, background, func=func)
                 coeff, var_mat = curve_fit(pawley, q, I, p0=p0)
                 perr = np.sqrt(np.diag(var_mat))
                 peak, peak_err = coeff[0], perr[0]  # Single material
@@ -404,7 +434,7 @@ def mirror_data(phi, data):
     return mphi, mdata
 
 
-def single_pawley(detector, q, I, back, p_fw=None):
+def single_pawley(detector, q, I, back, p_fw=None, func='gaussian'):
     """ Full pawley fitting for a specific q, I combination.
 
     Option to use different initial parameters for FWHM fit. This allows a
@@ -432,11 +462,11 @@ def single_pawley(detector, q, I, back, p_fw=None):
         nf = len(p_fw)
     else:
         p0_new = p0
-    pawley = pawley_hkl(detector, background, nf - 1)
+    pawley = pawley_hkl(detector, background, nf - 1, func=func)
     return curve_fit(pawley, q, I, p0=p0_new)
 
 
-def fwhm_single(detector, q, I , window):
+def fwhm_single(detector, q, I , window, err_lim=3e-4):
     """ FWHM estimation for each individual peak in profile.
 
     Args:
@@ -458,9 +488,11 @@ def fwhm_single(detector, q, I , window):
         try:
             est = peak_fit((q, I), win, p0)
             peak, sig = est[0][2:4]
+            #print(np.diag(est[1])[2:4])
             peak_err, sig_err = np.sqrt(np.diag(est[1]))[2:4]
+            #print(peak_err)
             fw, fw_err = sig * 2.35482, sig_err * 2.35482
-            if peak_err / peak < 1e-4:
+            if peak_err / peak < err_lim:
 
                 q0_v.append(q0[idx])
                 fw_v.append(fw)

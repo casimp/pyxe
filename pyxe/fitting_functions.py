@@ -23,7 +23,11 @@ def plane_strain(e_xx, e_yy, E, v):
     Returns:
         float, ndarray: Stress for each e_xx, e_yy combination
     """
-    return (E / (1 - v ** 2)) * (e_xx + v * e_yy)
+    # return (E / (1 - v ** 2)) * (e_xx + v * e_yy)
+    E_ = E / (1 - v**2)
+    v_ = v / (1-v)
+    return (E_ / (1 - v_ **2)) * (e_xx + v_ * e_yy)
+    # return (E / (1 + v)) * (e_xx + (v / (1 - 2 * v)) * (e_xx + e_yy))
 
 
 def plane_stress(e_xx, e_yy, E, v):
@@ -37,7 +41,8 @@ def plane_stress(e_xx, e_yy, E, v):
     Returns:
         float, ndarray: Stress for each e_xx, e_yy combination
     """
-    return E * ((1 - v) * e_xx + v * e_yy) / ((1 + v) * (1 - 2 * v))
+    return (E / (1 - v **2)) * (e_xx + v * e_yy) # stress
+    # return E * ((1 - v) * e_xx + v * e_yy) / ((1 + v) * (1 - 2 * v))
 
 
 def strain_transformation(phi, *p):
