@@ -183,7 +183,7 @@ class MonoI12(PeakAnalysis):
             pass
         
         # This will not work with 3D data (which I'm yet to come across!)
-        if len(self.d1.shape) != self.ndim:
+        if self.d1 is not None and len(self.d1.shape) != self.ndim:
             self.d1, self.d2 = np.meshgrid(self.d1, self.d2)
 
             
