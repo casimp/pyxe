@@ -36,7 +36,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from numpy.polynomial.chebyshev import chebval
-from scipy.interpolate import interp1d, interp2d
+from scipy.interpolate import interp1d, griddata
 
 from pyxe.command_parsing import analysis_check
 from pyxe.fitting_tools import (array_fit, array_fit_pawley, full_ring_fit,
@@ -75,7 +75,7 @@ class PeakAnalysis(DataViz):
 
         with h5py.File(fpath, 'r') as f:
             self.ndim, self.d1, self.d2, self.d3 = data_extract(f, 'dims')
-            self.q, self.I, self.phi = data_extract(f, 'raw')
+            self.q, self.I, self.phi, self.T = data_extract(f, 'raw')
             self.peaks, self.peaks_err = data_extract(f, 'peaks')
             self.fwhm, self.fwhm_err = data_extract(f, 'fwhm')
             self.strain, self.strain_err = data_extract(f, 'strain')
@@ -108,7 +108,7 @@ class PeakAnalysis(DataViz):
                            bounds_error=True, fill_value=np.nan, plot=True):
         """ Fits a function to temperature data - calculates T across all pos.
         
-        See documentation fro interpd1d/interp2d
+        See documentation fro interpd1d/griddata
         
         Not yet able to take 3D data - is this needed? This is to be used in 
         conjunciton with other stuff.
@@ -128,21 +128,30 @@ class PeakAnalysis(DataViz):
                 self.plot_temperature(1)
             
         else:
-            f = interp2d(x, y, T, kind=kind, bounds_error=bounds_error, 
-                         fill_value=fill_value)
-            self.T = f(self.d1, self.d2)
+            
+            self.T = griddata((x, y), T, (self.d1, self.d2))
             if plot:
                 self.plot_temperature(2)
         
 
         
     
-    def plot_temperature(self, order=1):
+    def plot_temperature(self, order=None):
         
+        order = self.ndim if order is None else order
         if order == 1:
             plt.plot(self.d1, self.T) 
         else:
-            plt.contourf(self.T)
+            if self.ndim > len(self.d1.shape):
+                d1i = np.linspace(self.d1.min(), self.d1.max(), 100)
+                d2i = np.linspace(self.d2.min(), self.d2.max(), 100)
+                d1, d2 = np.meshgrid(d1i, d2i)
+                T = griddata((self.d1, self.d2), self.T, (d1, d2))
+                plt.contourf(d1, d2, T)
+                plt.colorbar()
+            else:
+                plt.contourf(self.d1, self.d2, self.T)
+                plt.colorbar()
 
     def define_background(self, seg=50, k=1, pnt=None, fwhm=None, plot=True,
                           az_idx=0, auto=True, x=None, y=None):
@@ -339,7 +348,8 @@ class PeakAnalysis(DataViz):
         self.analysis_state = 'peaks'
 
     @analysis_check('peaks')
-    def calculate_strain(self, q0=None, a0=None, tensor_fit=True, f=None, variables=None):
+    def calculate_strain(self, q0=None, a0=None, tensor_fit=True, f=None, 
+                         variables=None, plot=False):
         """ Calculate strain based on q0/a0 value(s).
 
         Strain can be calculated with respect to a single value of
@@ -360,7 +370,7 @@ class PeakAnalysis(DataViz):
             variables (list): list of variables ('d1', 'd2', 'T' etc) for func
         """
         assert (q0, a0) is not (None, None), 'Specify either q0 or a0'
-        q0 = a0 if a0 is not None else q0
+        # q0 = a0 if a0 is not None else q0
 
         if f is not None:
             vals = []
@@ -400,9 +410,21 @@ class PeakAnalysis(DataViz):
                 print('q0', np.shape(q0))
                 
             self.q0 = q0
+            
+            
             self.strain = (self.q0 / self.peaks) - 1
             self.strain_err = 1 - self.q0 / (self.q0 + self.peaks_err) ## ???
             #### self.strain_err = (self.q0 / self.peaks_err) - 1
+            if plot:
+                try:
+                    d1i = np.linspace(self.d1.min(), self.d1.max(), 100)
+                    d2i = np.linspace(self.d2.min(), self.d2.max(), 100)
+                    d1, d2 = np.meshgrid(d1i, d2i)
+                    q0_ = griddata((self.d1, self.d2), np.nanmean(self.q0, axis=-1), (d1, d2))
+                    plt.contourf(q0_)
+                except IndexError:
+                    print('Index Error - needs to be fixed or plotting removed')
+
 
         if tensor_fit:
             self.strain_tensor = full_ring_fit(self.strain, self.phi)
