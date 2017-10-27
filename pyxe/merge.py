@@ -68,7 +68,7 @@ def remove_data(data, limit):
     mask = np.logical_not(mask)
 
     all_data = ['d1', 'd2', 'd3', 'I', 'peaks', 'peaks_err', 'fwhm',
-                'fwhm_err', 'strain', 'strain_err', 'strain_tensor']
+                'fwhm_err', 'strain', 'strain_err', 'strain_tensor', 'T']
 
     for name in all_data:
         d = getattr(data, name)
@@ -125,6 +125,11 @@ def basic_merge(data):
     m.d1 = np.concatenate([d.d1 for d in data], None) if m.ndim > 0 else None
     m.d2 = np.concatenate([d.d2 for d in data], None) if m.ndim > 1 else None
     m.d3 = np.concatenate([d.d3 for d in data], None) if m.ndim > 2 else None
+    
+    try:
+        m.T = np.concatenate([d.T for d in data], None)
+    except:
+        m.T = None
 
     state = lowest_state([d.analysis_state for d in data])
 
@@ -150,6 +155,9 @@ def basic_merge(data):
     m.strain_err = none_merge([d.strain_err for d in data], state, 'strain')
     strain_tensor = [d.strain_tensor for d in data]
     m.strain_tensor = none_merge(strain_tensor, state, 'strain fit')
+    
+    
+        
 
     return m
 
