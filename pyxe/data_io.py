@@ -27,7 +27,7 @@ def pyxe_to_hdf5(fname, pyxe, overwrite=False):
         pyxe: pyXe data object
         overwrite (bool): Option to overwrite if same filename is specified.
     """
-    data_ids = ['ndim', 'd1', 'd2', 'd3', 'q', 'I', 'phi',
+    data_ids = ['ndim', 'd1', 'd2', 'd3', 'T', 'q', 'I', 'phi',
                 'peaks', 'peaks_err', 'fwhm', 'fwhm_err',
                 'strain', 'strain_err', 'strain_tensor',
                 'E', 'v', 'G', 'stress_state', 'analysis_state']
@@ -72,7 +72,7 @@ def pyxe_to_hdf5(fname, pyxe, overwrite=False):
 def data_extract(pyxe_h5, variable_id):
     """ Takes pyxe hdf5 file and variable type and extract/returns data."""
     data_ids = {'dims': ['ndim', 'd1', 'd2', 'd3'],
-                'raw': ['q', 'I', 'phi'],
+                'raw': ['q', 'I', 'phi', 'T'],
                 'peaks': ['peaks', 'peaks_err'],
                 'fwhm': ['fwhm', 'fwhm_err'],
                 'strain': ['strain', 'strain_err'],
