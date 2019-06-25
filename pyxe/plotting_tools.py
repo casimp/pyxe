@@ -123,8 +123,9 @@ def plot_complex(x_raw, y_raw, x, y, z, levels=11, limits=[None, None],
     cf_back = ax.contourf(x, y, z, levels, **kwargs)
 
     # Zero markings
-    ax.contour(x, y, z, levels=[0], colors=('k',),
-               linestyles=('--',), linewidths=(3,))
+    if z.min() < 0 and z.max() > 0:
+        ax.contour(x, y, z, levels=[0], colors=('k',),
+                   linestyles=('--',), linewidths=(3,))
 
     # Continuous background of discrete colours
     if continuous:
