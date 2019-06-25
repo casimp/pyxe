@@ -44,7 +44,8 @@ from pyxe.fitting_tools import (array_fit, array_fit_pawley, full_ring_fit,
 from pyxe.data_io import pyxe_to_hdf5, data_extract, detector_extract
 from pyxe.plotting import DataViz
 from pyxe.merge import basic_merge
-from pyxe.fitting_functions import plane_strain, plane_stress
+from pyxe.fitting_functions import (plane_strain, plane_stress, 
+                                    axisymmetric_xx, axisymmetric_yy)
 
 
 
@@ -86,8 +87,14 @@ class PeakAnalysis(DataViz):
             if self.stress_state is None:
                 self.stress_eqn = None
             else:
-                p_strain = self.stress_state == 'plane strain'
-                self.stress_eqn = plane_strain if p_strain else plane_stress
+#                ps = self.stress_state == 'plane strain'
+#                axi = self.stress_state == 'axi'
+                stress_states = {'plane strain':plane_strain,
+                                 'plane stress':plane_stress,
+                                 'axisymmetric_yy':axisymmetric_yy,
+                                 'axisymmetric_xx':axisymmetric_xx}
+                
+                self.stress_eqn = stress_states[self.stress_state] #plane_strain if ps else plane_stress
 
     def add_material(self, material, weight=1, background=True):
         """ Add material or phase to setup (needed for Pawley fit).
@@ -379,13 +386,16 @@ class PeakAnalysis(DataViz):
             # This should just tell us the distribution of q0/a0 wrt. 
             # variables not wrt. phi
             q0_mean = f(*vals)
-            print('q0_mean', np.shape(q0_mean))
+            # print('q0_mean', np.shape(q0_mean))
             #q0_mean.respae()
 
         if isinstance(q0, PeakAnalysis):
             assert np.array_equal(q0.phi, self.phi)
             q0 = np.nanmean(q0.peaks, axis=tuple(range(0, q0.peaks.ndim - 1)))
-                
+        
+        if isinstance(a0, PeakAnalysis):
+            assert np.array_equal(a0.phi, self.phi)
+            a0 = np.nanmean(a0.peaks, axis=tuple(range(0, a0.peaks.ndim - 1)))        
 
         if q0 is None:
             
@@ -400,15 +410,17 @@ class PeakAnalysis(DataViz):
         else:
             
             if f is not None:
-                q0_mean = q0_mean.reshape(q0_mean.shape + (1,))
-                print('q0_mean', np.shape(q0_mean))
-                q0 = np.array(q0).reshape(1, -1)
-                print('q0', np.shape(q0))
-                q0 /= np.nanmean(q0) ## Consider it in relation to e eqn..?
-                print('q0', np.shape(q0))
-                q0 = q0_mean * q0 
-                print('q0', np.shape(q0))
                 
+                ##### IS THIS CORRECT????
+                q0_mean = q0_mean.reshape(q0_mean.shape + (1,))
+                #print('q0_mean', np.shape(q0_mean))
+                q0 = np.array(q0).reshape(1, -1)
+                #print('q0', np.shape(q0))
+                q0 -= np.nanmean(q0) ## Consider it in relation to e eqn..?
+                #print('q0', np.shape(q0))
+                q0 = q0_mean + q0 
+                #print('q0', np.shape(q0))
+                #
             self.q0 = q0
             
             
@@ -450,8 +462,13 @@ class PeakAnalysis(DataViz):
 
         G = E / (2 * (1-v)) if G is None else G
         self.E, self.v, self.G, self.stress_state = E, v, G, stress_state
-        eqn = plane_strain if stress_state == 'plane strain' else plane_stress
-        self.stress_eqn = eqn
+        stress_states = {'plane strain':plane_strain,
+                         'plane stress':plane_stress,
+                         'axisymmetric_yy':axisymmetric_yy,
+                         'axisymmetric_xx':axisymmetric_xx}
+        #eqn = 
+        #eqn = plane_strain if stress_state == 'plane strain' else plane_stress
+        self.stress_eqn = stress_states[self.stress_state]
         self.analysis_state = self.analysis_state.replace('strain', 'stress')
 
     def save_to_hdf5(self, fpath=None, overwrite=False):
