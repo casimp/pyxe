@@ -27,10 +27,10 @@ def pyxe_to_hdf5(fname, pyxe, overwrite=False):
         pyxe: pyXe data object
         overwrite (bool): Option to overwrite if same filename is specified.
     """
-    data_ids = ['ndim', 'd1', 'd2', 'd3', 'T', 'q', 'I', 'phi',
+    data_ids = ['ndim', 'd1', 'd2', 'd3', 'q', 'I', 'phi',
                 'peaks', 'peaks_err', 'fwhm', 'fwhm_err',
                 'strain', 'strain_err', 'strain_tensor',
-                'E', 'v', 'G', 'stress_state', 'analysis_state']
+                'E', 'v', 'G', 'T', 'stress_state', 'analysis_state']
 
     detector_ids = ['method', '_det_param', '_back', 'materials']
 
@@ -38,6 +38,7 @@ def pyxe_to_hdf5(fname, pyxe, overwrite=False):
     with h5py.File(fname, write) as f:
 
         for name in data_ids:
+            
             try:
                 d_path = 'pyxe_analysis/%s' % name
                 d = getattr(pyxe, name)
