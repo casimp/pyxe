@@ -425,7 +425,9 @@ class PeakAnalysis(DataViz):
             
             
             self.strain = (self.q0 / self.peaks) - 1
-            self.strain_err = 1 - self.q0 / (self.q0 + self.peaks_err) ## ???
+            
+            ### Double check this...
+            self.strain_err = self.peaks_err / self.q0 # / self.peaks_err) - 1 ## ???
             #### self.strain_err = (self.q0 / self.peaks_err) - 1
             if plot:
                 try:
