@@ -177,9 +177,9 @@ def pawley_plot(q, I, detector, az_idx, ax, q_lim=None, func='gaussian'):
 
     # Plot raw data and Pawley fit to data
     ax.plot(q, I, 'o', markeredgecolor='0.3', markersize=4,
-            markerfacecolor='none', label=r'$\mathregular{I_{obs}}$')
+            markerfacecolor='none', label=r'$\mathrm{I_{obs}}$')
     ax.plot(q, I_pawley, 'r-', linewidth=0.75,
-            label=r'$\mathregular{I_{calc}}$')
+            label=r'$\mathrm{I_{calc}}$')
 
     # Plot Bragg positions - locate relative to max intensity
     ymin = -ax.get_ylim()[1] / 10
@@ -198,7 +198,7 @@ def pawley_plot(q, I, detector, az_idx, ax, q_lim=None, func='gaussian'):
     max_diff = np.max(I_diff)
     shifted_error = I - I_pawley + (idx + 2) * ymin / 2 - max_diff
     ax.plot(q, shifted_error, 'b-', linewidth=0.75,
-            label=r'$\mathregular{I_{diff}}$')
+            label=r'$\mathrm{I_{diff}}$')
 
     # Remove ticks below 0 intensity
     ylocs = ax.yaxis.get_majorticklocs()
