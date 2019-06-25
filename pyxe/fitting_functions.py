@@ -45,6 +45,38 @@ def plane_stress(e_xx, e_yy, E, v):
     # return E * ((1 - v) * e_xx + v * e_yy) / ((1 + v) * (1 - 2 * v))
 
 
+def axisymmetric_xx(e_xx, e_yy, E, v):
+    """ Stress calculation (from strain) where e_zz == e_xx.
+
+    Args:
+        e_xx (float, ndarray): Strain/stress in x orientation
+        e_yy (float, ndarray): Strain/stress in x orientation
+        E (float): Young's modulus (MPa)
+        v (float): Poisson's ratio
+        sym (int): Axisymmetry over e_xx (0) or e_yy (1)
+    Returns:
+        float, ndarray: Stress for each e_xx, e_yy combination
+    """
+    e_zz = e_xx
+    return (E / (1 - v **2)) * (e_xx + v * e_yy + v * e_zz) # stress
+    # return E * ((1 - v) * e_xx + v * e_yy) / ((1 + v) * (1 - 2 * v))
+
+def axisymmetric_yy(e_xx, e_yy, E, v):
+    """ Stress calculation (from strain) where e_zz == e_yy.
+
+    Args:
+        e_xx (float, ndarray): Strain/stress in x orientation
+        e_yy (float, ndarray): Strain/stress in x orientation
+        E (float): Young's modulus (MPa)
+        v (float): Poisson's ratio
+        sym (int): Axisymmetry over e_xx (0) or e_yy (1)
+    Returns:
+        float, ndarray: Stress for each e_xx, e_yy combination
+    """
+    e_zz = e_yy
+    return (E / (1 - v **2)) * (e_xx + v * e_yy + v * e_zz) # stress
+
+
 def strain_transformation(phi, *p):
     """ Stress/strain (normal) transformation
 
