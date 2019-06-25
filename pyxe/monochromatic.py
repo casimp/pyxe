@@ -16,6 +16,9 @@ import fabio
 import h5py
 import numpy as np
 import pyFAI
+
+import pyFAI.azimuthalIntegrator
+import warnings
 import sys
 import scipy.io as io
 
@@ -49,6 +52,14 @@ class Mono(PeakAnalysis):
             az_range (tuple): Azimtuhal range (deg) - default (-180, 180).
                 Note that the 0deg is at eastern edge of circle.
         """
+        
+        warnings.warn(
+            "pyFAI has been upgrading, deprecating certain functions and "
+            "likely breaking this class. Testing has been removed.",
+            DeprecationWarning
+        )
+        
+        
         fname = '{}.h5'.format(os.path.split(folder)[1])
         self.fpath = os.path.join(folder, fname)
 
@@ -65,7 +76,7 @@ class Mono(PeakAnalysis):
             else:
                 ai.set_wavelength(wavelength)
         else:
-            ai = pyFAI.AzimuthalIntegrator()
+            ai = pyFAI.azimuthalIntegrator.AzimuthalIntegrator()
             ai.setFit2D(*detector)
             ai.set_wavelength(wavelength)
         fnames = extract_fnames(folder, f_ext)
