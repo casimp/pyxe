@@ -46,6 +46,8 @@ class EDI12(PeakAnalysis):
         for dim in dims:
             co_ords.append(dimension_fill(f, dim.decode("utf-8")))
         self.d1, self.d2, self.d3 = co_ords
+        self.T = None
+        
 
         # Remove unused detector - resulting detector array is almost certainly
         # arrayed in ascending order from from -np.pi to 0 (phi). Option exists
