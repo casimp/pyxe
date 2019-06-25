@@ -70,6 +70,8 @@ def remove_data(data, limit):
     all_data = ['d1', 'd2', 'd3', 'I', 'peaks', 'peaks_err', 'fwhm',
                 'fwhm_err', 'strain', 'strain_err', 'strain_tensor', 'T']
 
+    
+
     for name in all_data:
         d = getattr(data, name)
         masked = d[mask] if d is not None else d
@@ -128,7 +130,7 @@ def basic_merge(data):
     
     try:
         m.T = np.concatenate([d.T for d in data], None)
-    except:
+    except AttributeError:
         m.T = None
 
     state = lowest_state([d.analysis_state for d in data])
@@ -147,6 +149,7 @@ def basic_merge(data):
     m.analysis_state = state
 
     m.I = none_merge([d.I for d in data], state, 'integrated', axis=-2)
+    m.T = none_merge([d.peaks for d in data], state, 'peaks')
     m.peaks = none_merge([d.peaks for d in data], state, 'peaks')
     m.peaks_err = none_merge([d.peaks_err for d in data], state, 'peaks')
     m.fwhm = none_merge([d.fwhm for d in data], state, 'peaks')
@@ -155,6 +158,7 @@ def basic_merge(data):
     m.strain_err = none_merge([d.strain_err for d in data], state, 'strain')
     strain_tensor = [d.strain_tensor for d in data]
     m.strain_tensor = none_merge(strain_tensor, state, 'strain fit')
+    
     
     
         
