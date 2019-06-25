@@ -42,7 +42,7 @@ class DataViz(object):
 
         with h5py.File(fpath, 'r') as f:
             self.ndim, self.d1, self.d2, self.d3 = data_extract(f, 'dims')
-            self.q, self.I, self.phi = data_extract(f, 'raw')
+            self.q, self.I, self.phi, self.T = data_extract(f, 'raw')
             self.peaks, self.peaks_err = data_extract(f, 'peaks')
             self.fwhm, self.fwhm_err = data_extract(f, 'fwhm')
             self.strain, self.strain_err = data_extract(f, 'strain')
