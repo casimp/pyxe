@@ -411,24 +411,15 @@ class PeakAnalysis(DataViz):
             
             if f is not None:
                 
-                ##### IS THIS CORRECT????
                 q0_mean = q0_mean.reshape(q0_mean.shape + (1,))
-                #print('q0_mean', np.shape(q0_mean))
                 q0 = np.array(q0).reshape(1, -1)
-                #print('q0', np.shape(q0))
-                q0 -= np.nanmean(q0) ## Consider it in relation to e eqn..?
-                #print('q0', np.shape(q0))
+                q0 -= np.nanmean(q0) 
                 q0 = q0_mean + q0 
-                #print('q0', np.shape(q0))
-                #
+                
             self.q0 = q0
+            self.strain = (self.q0 / self.peaks) - 1            
+            self.strain_err = self.peaks_err/self.q0 #(self.q0 / (self.q0 - self.peaks_err)) - 1 
             
-            
-            self.strain = (self.q0 / self.peaks) - 1
-            
-            ### Double check this...
-            self.strain_err = self.peaks_err / self.q0 # / self.peaks_err) - 1 ## ???
-            #### self.strain_err = (self.q0 / self.peaks_err) - 1
             if plot:
                 try:
                     d1i = np.linspace(self.d1.min(), self.d1.max(), 100)
