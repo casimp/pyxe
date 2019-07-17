@@ -9,11 +9,11 @@ pyXe: X-ray Diffraction Strain Analysis Package
 What is pyXe?
 -------------
 
-PyXe is a package developed to address bottlenecks in the diffraction-strain analysis workflow. It is vital that X-ray diffraction data acquired during synchrotron beamtimes is analysed in as close to real time as is possible. This allows for a tight feedback loop and ensures that decisions regarding acquisition and experimental parameters are optimized.
+pyXe is a package developed to address bottlenecks in the diffraction-strain analysis workflow. It is vital that X-ray diffraction data acquired during synchrotron beamtimes is analysed in as close to real time as is possible. This allows for a tight feedback loop and ensures that decisions regarding acquisition and experimental parameters are optimized.
 
 The pyXe package therefore aims to allow for the efficient analysis and visualization of diffraction data acquired from these large scale facilities. It achieves this through the extraction of strain from individual peaks (i.e. not a Reitveld type refinement). Peak fitting routines can be run over 1D, 2D and 3D data sets. Peaks and strain are extracted as a function of azimuthal position (either detector position or caking angle). The resultant strain data is then further interrogated to facilitate the calculation of principal and shear strains. Analysed data is stored in the hdf5 file format and can be easily reloaded and visualised.
 
-This package was originally designed to work with energy dispersive X-ray diffraction data (EDXD) stored in the NeXus format acquired on the I12:JEEP beamline at the Diamond Light Source, UK. However, tt now supports calculation of strain from both energy dispersive and monochromatic (area detector) experiments. The analysis of data from area detectors is possible through the pyFAI library, which allows for fast, accurate azimuthal integration.
+This package was originally designed to work with energy dispersive X-ray diffraction data (EDXRD) stored in the NeXus format acquired on the I12:JEEP beamline at the Diamond Light Source, UK. However, it now supports calculation of strain from both energy dispersive and monochromatic (area detector) experiments. 
 
 Example Usage
 -------------
@@ -75,18 +75,15 @@ We can now plot a strain map. To do this we call the plot_slice method, stating 
 Requirements
 ------------
 
-PyXe is built on Python’s scientific stack (numpy, scipy, matplotlib). Additionally, the h5py package is required for the manipulation and management of the NeXus data files. Testing and development were carried out using the Anaconda (v 4.0) package manager, which built with the following versions:
+PyXe is built on Python’s scientific stack (numpy, scipy, matplotlib). Additionally, the h5py package is required for the manipulation and management of the NeXus data files. Testing and development were carried out using the Anaconda (v 2019.03) package manager, which built with the following versions:
 
--	Python: version 2.7.11 and 3.5.2
--	numpy: version 1.10.4
--	scipy: version 0.17
--	matplotlib: version 1.5
--	h5py: version 2.5.0
+-	Python: version 3.7.3
+-	numpy: version 1.16.2
+-	scipy: version 1.2.1
+-	matplotlib: version 3.0.3
+-	h5py: version 2.8.0
 
-The new area detector analysis module relies on pyFAI, which is a software package developed at the ESRF, designed to reduce SAXS, WAXS and XRPD images recorded by area detectors to 1D plots or 2D patterns (known as caking or azimuthal regrouping). Testing has so far been completed using:
-
--	pyFAI: version 0.12.0
--	fabIO: version 0.3.0
+Backward compatability to Python 3.5 is likely but not guaranteed. Monochromatic XRD caking/azimuthal integration within pyXe relies on pyFAI (and fabIO), which is a software package developed at the ESRF, designed to reduce SAXS, WAXS and XRPD images recorded by area detectors to 1D plots or 2D patterns. This caking functionality is not currently under development within pyXe and recent developments within pyFAI may have broken this functionality. While this may be fixed in the future we currently advise that azimuthal integration be carried out as a pre-processing step at the beamline (using pyFAI at ESRF or DAWN at DLS); the pyXe monochromatic post-processing analysis platform should be flexible enough to deal with most data inputs (although interface modules will likely be required outside of the Diamond Light Source).
 
 Installation
 ------------

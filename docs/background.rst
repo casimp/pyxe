@@ -3,63 +3,37 @@ Background
 
 The following section provides a broad and basic overview of the key information and concepts used in the construction of the pyXe package. These details are by no means comprehensive. A comprehensive introduction to the topic can be found in the Synchrotron X-ray Diffraction (P. J. Withers) chapter of Practical Residual Stress Measurements by G. S. Shajer [1].
 
-The package was originally developed for use with the I12:JEEP beamline and their EDXD detector. The following section details some information regarding their setup.
-
-I12 and EDXD
-------------
-
-*Beamline I12-JEEP (Joint Engineering, Environmental, and Processing) is a high energy X-ray beamline for imaging, diffraction and scattering, which operates at energies of 53-150 keV.*
-
-The I12-JEEP beamline is located at the Diamond Light Source (DLS) in Oxfordshire, UK. Specifications for the beamline have be detailed in the Journal of Synchrontron Radiation [2]. Much of this information is replicated on the DLS's website:
-
-http://www.diamond.ac.uk/Beamlines/Engineering-and-Environment/I12.html
-
-The I12-JEEP beamline can be accessed through two separate experimental hutches. Experimental Hutch 2 (EH2), which is the larger of the hutches, contains the energy dispersive X-ray detector (EDXD). The layout of the detector can be seen below:
-
-.. figure:: EDXD.png
-    :figwidth: 400px
-    :width: 500px
-    :alt: EDXD setup
-
-*The EDXD system. (a) Geometry of the detector, detector slits and sample slits showing the semi-annular arrangement of 23 independent Ge crystals [2].*
-
-..
-
-The detector is comprised of 23 elements spaced in steps of 8.2°, covering an azimuthal range from 0 to 180°. An additional, unused, detector is available in the case that one detector should fail. The data array that is output contains reference to this detector but it is ignored during the analysis. Detailed information about the EDXD setup can be found in the previously noted journal article and on the DLS website:
-
-http://www.diamond.ac.uk/Beamlines/Engineering-and-Environment/I12/detectors/EDXD.html
-
 
 Strain Calculation
 ------------------
 
-Strain is calculated from each specified peak individually (i.e. this is not a Reitveld type refinement) although the strain from many individual peaks may be calculated and stored. Strain is calculated against the unstrained inter-planar spacing, :math:`d_0`, such that:
+In pyXe, strain can now be calculated either from either a single user defined peak and associated lattice spacing, :math:`d`, or through a multi-peak Pawley type refinement and the associated lattice parameter, :math:`a`. Strain is calculated against an unstrained equivalent, :math:`d_0` or :math:`a_0`, respectively. For a single peak approach, strain is found according to the following relationship:
 
 .. math::
     \epsilon = \frac{d_n - d_0}{d_0}
 
-or, more specifically, in terms of the scattering vector, q:
+or, in terms of the scattering vector, q:
 
 .. math::
-    \epsilon = \frac{q_0}{q_n - q_0}.
+    \epsilon = \frac{q_0}{q_n} - 1.
 
-The unstrained lattice parameter (:math:`d_0`) much either be explicitly given or specified via a NeXus file containing EDXD measurements from an unstrained source.
-A consideration of the methods by which to extract unstrained lattice parameters can be found in work by Withers et al [3].
+The unstrained lattice spacing (:math:`d_0`) much either be explicitly given or specified via an analysed pyXe file (i.e. containing unstrained peaks that had been fit using pyXe) containing measurements from an unstrained source.
+A consideration of the methods by which to extract unstrained lattice parameters can be found in work by Withers et al [3]. Note that in almost all cases, it is preferable to pass in a list of unstrained lattice spacings/parameters with respect to detetor or angle. This typically removes much of the systematic error introduced via detector alignment and set-up.
 
 
-Principal and Shear Strains
+In-plane Strain Tensor
 ---------------------------
 
-The detector, and therefore angle, specific strain values can be further utilised to calculate the principal strains and the angle that the strain element is rotated relative to the principal axis. Knowing this it is then possible to calculate the shear strain. Further to this, these parameters allow for the extraction of strain at any defined angle. This can be more accurate than the equivalent detector specific strain due to the additional information that is effectively leveraged in the calculations.
+The detector, and therefore angle, specific strain values can be further utilised to calculate the in-plane strain tensor. This reduces uncertainty relative to single detector/angle analysis and allows for the extraction of strain at any defined angle. 
 
 .. figure:: example_fitmohrs.png
-    :figwidth: 900px
-    :width: 1000px
+    :figwidth: 700px
+    :width: 800px
     :alt: Strain fit
 
 *(a) An example of the fit made through the strain array corresponding to the 23-element detector array. (b) The corresponding Mohr's circle highlighting both the principal strain and the strain and shear strain at 0° and 90°.*
 
-Stress calculations
+Stress Calculations
 -------------------
 
 In a 3D strain state, the normal stresses can be calculated according to the following equation:
@@ -67,7 +41,7 @@ In a 3D strain state, the normal stresses can be calculated according to the fol
 .. math:: \sigma_{xx} = \frac{E}{(1 + \mu)(1 - 2\mu)} \left[(1 - \mu)\epsilon_{xx} + \mu(\epsilon_{yy} + \epsilon_{zz})\right].
 
 
-The EDXD system captures the peak shifts and therefore the strain in 2D (nominally in x and y). The peak shifts and strain information in the orientation along the beam are not computed. Stress cannot be calculated unless additional information is available. One situation in which it is possible to calculate stress is under a plane strain criterion. In this scenario material along one axis (in this case along the beam direction) is under constraint and the strain can be approximated to zero. Ignoring poisson ratio effects, the full strain tensor collapses down to the 2D in-plane state such that:
+In both monochromatic and energy dispersive diffraction we typically capture the peak shifts and therefore the strain in 2D (nominally in x and y). The peak shift and strain in the orientation along the beam are not measured. Stress cannot be calculated unless additional information is available. One situation in which it is possible to calculate stress is under a plane strain criterion. In this scenario material along one axis (in this case along the beam direction) is under constraint and the strain can be approximated to zero. Ignoring poisson ratio effects, the full strain tensor collapses down to the 2D in-plane state such that:
 
 .. math::  \epsilon_{ij} =
   \begin{pmatrix}  \epsilon_{xx} & \epsilon_{xy} & \epsilon_{xz} \\
@@ -82,6 +56,7 @@ This then allows for the convenient calculation of stress:
 
 .. math:: \sigma_{xx} = \frac{E}{(1 + \mu)(1 - 2\mu)} \left[(1 - \mu)\epsilon_{xx} + \mu(\epsilon_{yy})\right]
 
+A similar consideration and approach is available in pyXe for scenarios in which the stress state is more accurately characterised as plane stress. 
 
 References
 ----------

@@ -218,21 +218,25 @@ class TestEnergy(object):
 
 
 if __name__ == '__main__':
-    data, q0 = integration()
-    data.peak_fit(3.1, 1.)
-    q0.peak_fit(3.1, 1.)
-    data.calculate_strain(q0)
-    data.material_parameters(200*10**9, 0.3, G=None)
-    data.plot_intensity()
-    data.plot_strain_fit()
-    shift = 1.00001
-    data2 = copy.deepcopy(data)
-    data2.d1 += shift
-    merged = ordered_merge([data, data2], [0, 1], 0)
-    merged.plot_slice('shear strain', phi=0)
-    #plt.show()
-    merged.save_to_hdf5(overwrite=True)
-    merged_reload = PeakAnalysis('_pyxe.h5')
-    #print(merged_reload.analysis_state.decode())
-    merged_reload.plot_slice('shear strain', phi=0)
-    plt.show()
+    
+    h = TestEnergy()
+    h.data.calculate_strain(h.q0)
+    h.data.plot_slice('strain', phi=0)
+#    data, q0 = integration()
+#    data.peak_fit(3.1, 1.)
+#    q0.peak_fit(3.1, 1.)
+#    data.calculate_strain(q0)
+#    data.material_parameters(200*10**9, 0.3, G=None)
+#    data.plot_intensity()
+#    data.plot_strain_fit()
+#    shift = 1.00001
+#    data2 = copy.deepcopy(data)
+#    data2.d1 += shift
+#    merged = ordered_merge([data, data2], [0, 1], 0)
+#    merged.plot_slice('shear strain', phi=0)
+#    #plt.show()
+#    merged.save_to_hdf5(overwrite=True)
+#    merged_reload = PeakAnalysis('_pyxe.h5')
+#    #print(merged_reload.analysis_state.decode())
+#    merged_reload.plot_slice('shear strain', phi=0)
+#    plt.show()
