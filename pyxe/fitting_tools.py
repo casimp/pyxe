@@ -384,8 +384,12 @@ def full_ring_fit(strain, phi):
 
     Returns:
         tuple: Strain tensor (e_xx, e_yy, e_xy)
+               Strain tensor error (e_xx_err, e_yy_err, e_xy_err)
+               Strain tensor rmse (e_rmse)
     """
     strain_tensor = np.nan * np.ones(strain.shape[:-1] + (3,))
+    strain_tensor_error = np.nan * np.ones(strain.shape[:-1] + (3,))
+    strain_tensor_rmse = np.nan * np.ones(strain.shape[:-1] + (1,))
 
     error_count = 0
     for idx in np.ndindex(strain.shape[:-1]):
@@ -399,9 +403,14 @@ def full_ring_fit(strain, phi):
             # Estimate curve parameters
             p0 = [np.nanmean(data), 3 * np.nanstd(data) / (2 ** 0.5), 0]
             try:
-                a, b = curve_fit(strain_transformation,
+                popt, pcov = curve_fit(strain_transformation,
                                  phi[not_nan], data[not_nan], p0)
-                strain_tensor[idx] = a
+                strain_tensor[idx] = popt
+                strain_tensor_error[idx] = popt
+                e_t = strain_transformation(phi, *popt)
+                strain_tensor_rmse[idx] = np.nanmean((e_t - strain)**2)**0.5
+                
+                
             except (TypeError, RuntimeError):
                 error_count += 1
         else:
@@ -409,7 +418,7 @@ def full_ring_fit(strain, phi):
     print('\nUnable to fit full ring at %i out of %i points'
           % (error_count, np.size(strain[..., 0])))
 
-    return strain_tensor
+    return strain_tensor, strain_tensor_error, strain_tensor_rmse
 
 
 def mirror_data(phi, data):

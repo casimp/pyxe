@@ -80,7 +80,7 @@ class PeakAnalysis(DataViz):
             self.peaks, self.peaks_err = data_extract(f, 'peaks')
             self.fwhm, self.fwhm_err = data_extract(f, 'fwhm')
             self.strain, self.strain_err = data_extract(f, 'strain')
-            self.strain_tensor = data_extract(f, 'tensor')[0]
+            self.strain_tensor, self.strain_tensor_err, self.strain_tensor_rmse = data_extract(f, 'tensor') #[0]
             self.E, self.v, self.G = data_extract(f, 'material')
             self.stress_state, self.analysis_state = data_extract(f, 'state')
             self.detector = detector_extract(f)
@@ -418,7 +418,7 @@ class PeakAnalysis(DataViz):
                 
             self.q0 = q0
             self.strain = (self.q0 / self.peaks) - 1            
-            self.strain_err = self.peaks_err/self.q0 #(self.q0 / (self.q0 - self.peaks_err)) - 1 
+            self.strain_err =  (self.q0 / (self.q0 - self.peaks_err)) - 1
             
             if plot:
                 try:
@@ -432,7 +432,9 @@ class PeakAnalysis(DataViz):
 
 
         if tensor_fit:
-            self.strain_tensor = full_ring_fit(self.strain, self.phi)
+            tf = full_ring_fit(self.strain, self.phi)
+            self.strain_tensor, self.strain_tensor_err, self.strain_tensor_rmse = tf
+            self.strain_tensor_error = []
             self.analysis_state = 'strain fit'
         else:
             self.analysis_state = 'strain'

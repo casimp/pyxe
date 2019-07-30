@@ -29,7 +29,7 @@ def pyxe_to_hdf5(fname, pyxe, overwrite=False):
     """
     data_ids = ['ndim', 'd1', 'd2', 'd3', 'q', 'I', 'phi',
                 'peaks', 'peaks_err', 'fwhm', 'fwhm_err',
-                'strain', 'strain_err', 'strain_tensor',
+                'strain', 'strain_err', 'strain_tensor', 'strain_tensor_err','strain_tensor_rmse',
                 'E', 'v', 'G', 'T', 'stress_state', 'analysis_state']
 
     detector_ids = ['method', '_det_param', '_back', 'materials']
@@ -77,7 +77,7 @@ def data_extract(pyxe_h5, variable_id):
                 'peaks': ['peaks', 'peaks_err'],
                 'fwhm': ['fwhm', 'fwhm_err'],
                 'strain': ['strain', 'strain_err'],
-                'tensor': ['strain_tensor'],
+                'tensor': ['strain_tensor', 'strain_tensor_err', 'strain_tensor_rmse'],
                 'material': ['E', 'v', 'G'],
                 'state': ['stress_state', 'analysis_state']}
 
