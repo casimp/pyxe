@@ -154,7 +154,8 @@ def plot_complex(x_raw, y_raw, x, y, z, levels=11, limits=[None, None],
         cbar.add_lines(c)
     return ax
 
-def pawley_plot(q, I, detector, az_idx, ax, q_lim=None, func='gaussian'):
+def pawley_plot(q, I, detector, az_idx, ax, q_lim=None, func='gaussian',
+                poisson=True):
     """ Plots q against measured intensity overlaid with Pawley fit.
 
     Includes highlighting of anticipated Bragg peak locations and
@@ -166,6 +167,7 @@ def pawley_plot(q, I, detector, az_idx, ax, q_lim=None, func='gaussian'):
         detector: pyxpb detector instance
         az_idx (int): Azimuthal slice index
         ax: Axis to apply plot to
+        poisson (bool): Poisson weighting
     """
 
     background = chebval(q, detector._back[az_idx])
@@ -173,7 +175,8 @@ def pawley_plot(q, I, detector, az_idx, ax, q_lim=None, func='gaussian'):
         q_lim = [np.min(q), np.max(q)]
     p0 = extract_parameters(detector, q_lim, np.nanmax(I))
     pawley = pawley_hkl(detector, background, func=func)
-    coeff, var_mat = curve_fit(pawley, q, I, p0=p0)
+    sig = 1 + I**0.5 if poisson else None
+    coeff, var_mat = curve_fit(pawley, q, I, p0=p0, sigma=sig)
     I_pawley = pawley(q, *coeff)
 
     # Plot raw data and Pawley fit to data

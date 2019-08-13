@@ -154,7 +154,8 @@ def q0_valid_range(detector, q_lim, I_lim=None):
 
 
 def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
-                     q_lim=(2, None), progress=True, func='gaussian'):
+                     q_lim=(2, None), progress=True, func='gaussian',
+                     poisson=True):
     """ Pawley peak fit wrapper for ndarray of diffraction profiles/az slices.
 
     The peak fit is completed using a Gaussian profile assumption (lorentzian
@@ -168,6 +169,7 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
         err_limit (float): Maximum error (in strain) for peak fit
         q_lim (list, tuple): Limit q0 range for pawley fitting
         progress (bool): Live progress bar
+        poisson (bool): Poisson weighting
 
     Return:
         tuple: peaks, peaks_err, fwhm, fwhm_err (fwhm, fwhm_err = None, None)
@@ -206,7 +208,8 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
             # Fit peak across window
             try:
                 pawley = pawley_hkl(detector, background, func=func)
-                coeff, var_mat = curve_fit(pawley, q, I, p0=p0)
+                sig = 1 + I**0.5 if poisson else None
+                coeff, var_mat = curve_fit(pawley, q, I, p0=p0, sigma=sig)
                 perr = np.sqrt(np.diag(var_mat))
                 peak, peak_err = coeff[0], perr[0]  # Single material
 
@@ -224,11 +227,15 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
                 run_error += 1
 
             if progress:
-                frac = (az_idx + 1) / len(slices)
+                frac = (az_idx) / len(slices)
                 prog = '\rProgress: [{0:20s}] {1:.0f}%'
                 sys.stdout.write(prog.format('#' * int(20 * frac), 100 * frac))
                 sys.stdout.flush()
-
+    if progress:
+        prog = '\rProgress: [{0:20s}] {1:.0f}%'
+        sys.stdout.write(prog.format('#' * int(20 * 1), 100 * 1))
+        sys.stdout.flush()
+                
     print('\nTotal points: %i (%i az_angles x %i positions)'
           '\nPeak not found in %i position/detector combinations'
           '\nError limit exceeded (or pcov not estimated) %i times' %
@@ -271,7 +278,7 @@ def p0_approx(data, window, func='gaussian'):
     return p0
 
 
-def peak_fit(data, window, p0=None, func='gaussian'):
+def peak_fit(data, window, p0=None, func='gaussian', poisson=True):
     """ Peak fit for diffraction data across specified q window.
 
     The peak fitting is completed using either a Gaussian, Lorentzian or
@@ -303,11 +310,12 @@ def peak_fit(data, window, p0=None, func='gaussian'):
     x = data[0][peak_ind[0]:peak_ind[1]]
     I = data[1][peak_ind[0]:peak_ind[1]]
 
-    return curve_fit(func, x, I, p0, sigma=I**0.5)
+    sig = 1 + I**0.5 if poisson else None
+    return curve_fit(func, x, I, p0, sigma=sig)
 
 
 def array_fit(q_array, I_array, window, func='gaussian',
-              error_limit=1e-4, progress=True):
+              error_limit=1e-4, progress=True, poisson=True):
     """ Peak fit wrapper for ndarray of diffraction profiles/azimuhtal slices.
 
     The peak fitting is completed using either a Gaussian, Lorentzian or
@@ -340,7 +348,7 @@ def array_fit(q_array, I_array, window, func='gaussian',
             p0 = p0_approx((q, I), window, func)
             # Fit peak across window
             try:
-                coeff, var_matrix = peak_fit((q, I), window, p0, func)
+                coeff, var_matrix = peak_fit((q, I), window, p0, func, poisson)
                 perr = np.sqrt(np.diag(var_matrix))                
                 peak, peak_err = coeff[2], perr[2]
                 fw, fw_err = coeff[3], perr[3]
@@ -358,11 +366,15 @@ def array_fit(q_array, I_array, window, func='gaussian',
                 run_error += 1
                 
             if progress:
-                percent = 100 * ((idx + 1) / len(slices))
+                percent = 100 * ((idx) / len(slices))
                 sys.stdout.write('\rProgress: [{0:20s}] {1:.0f}%'.format('#' *
                                  int(percent / 5), percent))
                 sys.stdout.flush()
-                  
+    if progress:
+        percent = 100 
+        sys.stdout.write('\rProgress: [{0:20s}] {1:.0f}%'.format('#' *
+                         int(percent / 5), percent))
+        sys.stdout.flush()              
     print('\nTotal points: %i (%i az_angles x %i positions)'
           '\nPeak not found in %i position/detector combintions'
           '\nError limit exceeded (or pcov not estimated) %i times' % 
@@ -392,7 +404,8 @@ def full_ring_fit(strain, phi):
     strain_tensor_rmse = np.nan * np.ones(strain.shape[:-1] + (1,))
 
     error_count = 0
-    for idx in np.ndindex(strain.shape[:-1]):
+    for idx_ in np.ndindex(strain_tensor.shape):
+        idx = idx_[:-1]
         data = strain[idx]
         not_nan = ~np.isnan(data)
 
@@ -406,9 +419,11 @@ def full_ring_fit(strain, phi):
                 popt, pcov = curve_fit(strain_transformation,
                                  phi[not_nan], data[not_nan], p0)
                 strain_tensor[idx] = popt
-                strain_tensor_error[idx] = popt
+                strain_tensor_error[idx] = np.sqrt(np.diag(pcov))
                 e_t = strain_transformation(phi, *popt)
-                strain_tensor_rmse[idx] = np.nanmean((e_t - strain)**2)**0.5
+                e = strain[idx]
+                strain_tensor_rmse[idx] = np.nanmean((e_t - e)**2)**0.5
+                # np.nanmean((e_t - strain)**2)**0.5
                 
                 
             except (TypeError, RuntimeError):

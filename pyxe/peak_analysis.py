@@ -291,7 +291,7 @@ class PeakAnalysis(DataViz):
         plt.ylabel(r'$\mathregular{FWHM (A^{-1})}$')
 
     def peak_fit(self, q0_approx, window_width, func='gaussian',
-                 err_lim=1e-4, progress=True):
+                 err_lim=1e-4, progress=True, sigma='Poisson'):
         """ Single peak fitting to all points/azimuthal slices.
 
         Fits a Gaussian/Lorentzian/Psuedo-Voigt curve to a peak in a
@@ -315,10 +315,11 @@ class PeakAnalysis(DataViz):
 
         print('\n%s acquisition points\n' % self.I[..., 0, 0].size)
 
-        fit = array_fit(self.q, self.I, peak_window, func, err_lim, progress)
+        fit = array_fit(self.q, self.I, peak_window, func, err_lim, progress, sigma)
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = fit
         # Reset strain to None after peak fitting...
         self.strain, self.strain_err, self.strain_tensor = None, None, None
+        self.strain_tensor_err, self.strain_tensor_rmse = None, None
         self.analysis_state = 'peaks'
 
     def pawley_fit(self, err_lim=1e-4, q_lim=[2, None], progress=True, func='gaussian'):
@@ -434,7 +435,7 @@ class PeakAnalysis(DataViz):
         if tensor_fit:
             tf = full_ring_fit(self.strain, self.phi)
             self.strain_tensor, self.strain_tensor_err, self.strain_tensor_rmse = tf
-            self.strain_tensor_error = []
+            # self.strain_tensor_error = []
             self.analysis_state = 'strain fit'
         else:
             self.analysis_state = 'strain'
