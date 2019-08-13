@@ -9,3 +9,4 @@ v 0.8.0, 20160415 -- Extraction/plotting refactoring , interaction/plotting of 3
 v 0.8.1, 20160421 -- Small improvements and bug fixes
 v 0.9.0, 20160903 -- Large scale breaking changes to all aspects of projects - cleaner interface, significant testing and inclusion of full peak (Pawley) fitting.
 v 0.9.1, 20190717 -- Update of docs, temperature dependent strain calculation, updated monochromatic analysis to be more general
+v 0.9.2, 20190813 -- Peak fitting now uses Poisson statistics to weight the fit. Strain tensor error/RMSE is now recorded/stored.

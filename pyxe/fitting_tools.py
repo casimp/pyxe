@@ -303,7 +303,7 @@ def peak_fit(data, window, p0=None, func='gaussian'):
     x = data[0][peak_ind[0]:peak_ind[1]]
     I = data[1][peak_ind[0]:peak_ind[1]]
 
-    return curve_fit(func, x, I, p0)
+    return curve_fit(func, x, I, p0, sigma=I**0.5)
 
 
 def array_fit(q_array, I_array, window, func='gaussian',
