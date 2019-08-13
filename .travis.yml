@@ -24,7 +24,7 @@ install:
   - source activate test-environment
   - pip install python-coveralls
   - pip install git+git://github.com/casimp/pyxpb
-  - pip install pyFAI
+  - conda install pyfai -c conda-forge
 
   - python setup.py install
 services:
