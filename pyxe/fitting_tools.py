@@ -276,7 +276,6 @@ def p0_approx(data, window, func='gaussian'):
 
     if func == 'psuedo_voigt':
         p0.append(0.5)
-    print(p0)
     return p0
 
 
