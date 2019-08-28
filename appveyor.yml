@@ -23,7 +23,7 @@ install:
   - pip install coverage
   - pip install pyFAI
   - pip install git+git://github.com/casimp/pyxpb
-  - python setup.py install
+  - pip install .
 
 test_script:
   - nosetests
