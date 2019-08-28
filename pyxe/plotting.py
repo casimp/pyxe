@@ -84,21 +84,24 @@ class DataViz(object):
         self.d1 = self.d1 if self.d1 is None else self.d1[start:stop:step]
         self.d2 = self.d2 if self.d2 is None else self.d2[start:stop:step]
         self.d3 = self.d3 if self.d3 is None else self.d3[start:stop:step]
-        self.T = self.T if self.T is None else self.T[start:stop:step]
-        
-        self.peaks = self.peaks[start:stop:step]
-        self.peaks_err = self.peaks_err[start:stop:step]
-        self.fwhm = self.fwhm[start:stop:step]
-        self.fwhm_err = self.fwhm_err[start:stop:step]
-        
         try:
+            self.T = self.T if self.T is None else self.T[start:stop:step]
+        except AttributeError: #  T doesn't exist
+            pass
+        if self.analysis_state == 'peaks':
+            self.peaks = self.peaks[start:stop:step]
+            self.peaks_err = self.peaks_err[start:stop:step]
+            self.fwhm = self.fwhm[start:stop:step]
+            self.fwhm_err = self.fwhm_err[start:stop:step]
+        
+        if self.analysis_state[:6] == 'strain':
             self.strain = self.strain[start:stop:step]
             self.strain_err = self.strain_err[start:stop:step]
+        
+        if self.analysis_state == 'strain fit':    
             self.strain_tensor = self.strain_tensor[start:stop:step]
             self.strain_tensor_err = self.strain_tensor_err[start:stop:step]
             self.strain_tensor_rmse = self.strain_tensor_rmse[start:stop:step]
-        except TypeError:
-            pass
 
 
     def plot_intensity(self, pnt=None, az_idx=0, figsize=(9, 6), pawley=False,
