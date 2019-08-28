@@ -88,14 +88,12 @@ Backward compatability to Python 3.5 is likely but not guaranteed. Monochromatic
 Installation
 ------------
 
-Although pyXe is pip installable, this is not recommended at this time. The version available on PyPI is not up to date and significantly inferior to/behind the current version. The current version will be made available on PyPI once more testing has been completed.
-
-In the meantime, you can install from the distribution using the setup.py script. The source is stored in the GitHub repo, which can be browsed at:
+Install from the distribution using the setup.py script. The source is stored in the GitHub repo, which can be browsed at:
 
 https://github.com/casimp/pyxe
 
 Simply download and unpack, then navigate to the download directory and run the following from the command-line:
 
 ```
-python setup.py install
+pip install .
 ```
