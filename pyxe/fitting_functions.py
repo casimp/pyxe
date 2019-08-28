@@ -118,11 +118,13 @@ def gaussian(x, *p):
         p[1] (float, ndarray): Peak height above background
         p[2] (float, ndarray): Central value
         p[3] (float, ndarray): standard deviation
+        p[4] (float, ndarray): Gradient of background
 
     Returns:
         ndarray: Gaussian peak intensity wrt. x
     """
-    return p[0] + p[1] * np.exp(- (x - p[2])**2 / (2. * p[3]**2))
+
+    return (p[0] + x * p[4]) + p[1] * np.exp(- (x - p[2])**2 / (2. * p[3]**2))
     
     
 def lorentzian(x, *p):
@@ -132,11 +134,12 @@ def lorentzian(x, *p):
         p[1] (float, ndarray): Peak height above background
         p[2] (float, ndarray): Central value
         p[3] (float, ndarray): standard deviation / hwhm
+        p[4] (float, ndarray): Gradient of background
 
     Returns:
         ndarray: Lorentzian peak intensity wrt. x
     """
-    return p[0] + p[1] / (1.0 + ((x - p[2]) / p[3])**2)
+    return (p[0] + x * p[4]) + p[1] / (1.0 + ((x - p[2]) / p[3])**2)
 
 
 def psuedo_voigt(x, *p):
@@ -149,9 +152,10 @@ def psuedo_voigt(x, *p):
         p[1] (float, ndarray): Peak height above background
         p[2] (float, ndarray): Central value
         p[3] (float, ndarray): standard deviation
-        p[4] (float, ndarray): Linear combination fraction
+        p[4] (float, ndarray): Gradient of background
+        p[5] (float, ndarray): Linear combination fraction
 
     Returns:
         ndarray: Psuedo-voigt peak intensity wrt. x
     """
-    return (1 - p[4]) * gaussian(x, *p) + p[4] * lorentzian(x, *p)
+    return (1 - p[5]) * gaussian(x, *p) + p[5] * lorentzian(x, *p)

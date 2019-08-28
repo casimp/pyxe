@@ -76,8 +76,33 @@ class DataViz(object):
         for idx, i in enumerate(co_ord):
             axes[idx] -= i
 
+    def crop1d(self, start=None, stop=None, step=None):
+        """ Crop array by index [start:stop:step]."""
+        
+        
+        self.I = self.I[start:stop:step]
+        self.d1 = self.d1 if self.d1 is None else self.d1[start:stop:step]
+        self.d2 = self.d2 if self.d2 is None else self.d2[start:stop:step]
+        self.d3 = self.d3 if self.d3 is None else self.d3[start:stop:step]
+        self.T = self.T if self.T is None else self.T[start:stop:step]
+        
+        self.peaks = self.peaks[start:stop:step]
+        self.peaks_err = self.peaks_err[start:stop:step]
+        self.fwhm = self.fwhm[start:stop:step]
+        self.fwhm_err = self.fwhm_err[start:stop:step]
+        
+        try:
+            self.strain = self.strain[start:stop:step]
+            self.strain_err = self.strain_err[start:stop:step]
+            self.strain_tensor = self.strain_tensor[start:stop:step]
+            self.strain_tensor_err = self.strain_tensor_err[start:stop:step]
+            self.strain_tensor_rmse = self.strain_tensor_rmse[start:stop:step]
+        except TypeError:
+            pass
+
+
     def plot_intensity(self, pnt=None, az_idx=0, figsize=(9, 6), pawley=False,
-                       q_lim=None, func='gaussian'):
+                       q_lim=None, func='gaussian', poisson=True):
         """ Plots q against intensity (optionally including Pawley fit).
 
         Args:
@@ -85,6 +110,7 @@ class DataViz(object):
             az_idx (int): Azimuthal slice index
             figsize (tuple): Figure size
             pawley (bool): Compute and overlay Pawley type fit to data
+            poisson (bool): Poisson weighting for Pawley
         """
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(1, 1, 1)
@@ -92,7 +118,7 @@ class DataViz(object):
         q, I = self.q[az_idx], self.I[pnt][az_idx]
 
         if pawley:
-            pawley_plot(q, I, self.detector, az_idx, ax, q_lim, func)
+            pawley_plot(q, I, self.detector, az_idx, ax, q_lim, func, poisson=poisson)
         else:
             ax.plot(q, I, 'k-', linewidth=0.5)
         ax.set_xlabel('q (A$^{-1}$)')

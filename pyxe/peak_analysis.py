@@ -291,7 +291,7 @@ class PeakAnalysis(DataViz):
         plt.ylabel(r'$\mathregular{FWHM (A^{-1})}$')
 
     def peak_fit(self, q0_approx, window_width, func='gaussian',
-                 err_lim=1e-4, progress=True, sigma='Poisson'):
+                 err_lim=1e-4, progress=True, poisson=True):
         """ Single peak fitting to all points/azimuthal slices.
 
         Fits a Gaussian/Lorentzian/Psuedo-Voigt curve to a peak in a
@@ -315,14 +315,15 @@ class PeakAnalysis(DataViz):
 
         print('\n%s acquisition points\n' % self.I[..., 0, 0].size)
 
-        fit = array_fit(self.q, self.I, peak_window, func, err_lim, progress, sigma)
+        fit = array_fit(self.q, self.I, peak_window, func, err_lim, progress, poisson)
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = fit
         # Reset strain to None after peak fitting...
         self.strain, self.strain_err, self.strain_tensor = None, None, None
         self.strain_tensor_err, self.strain_tensor_rmse = None, None
         self.analysis_state = 'peaks'
 
-    def pawley_fit(self, err_lim=1e-4, q_lim=[2, None], progress=True, func='gaussian'):
+    def pawley_fit(self, err_lim=1e-4, q_lim=[2, None], progress=True, 
+                   func='gaussian', poisson=True):
         """ Basic Pawley refinement of full diffraction profile.
 
         Fits the full diffraction profile according to a Pawley type
@@ -349,7 +350,7 @@ class PeakAnalysis(DataViz):
         print('\n%s acquisition points\n' % self.I[..., 0, 0].size)
 
         fit = array_fit_pawley(self.q, self.I, self.detector, err_lim,
-                               q_lim, progress, func=func)
+                               q_lim, progress, func=func, poisson=poisson)
         self.peaks, self.peaks_err, self.fwhm, self.fwhm_err = fit
         # Reset strain to None after peak fitting...
         self.strain, self.strain_err, self.strain_tensor = None, None, None

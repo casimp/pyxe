@@ -272,6 +272,7 @@ def p0_approx(data, window, func='gaussian'):
     if stdev <= 0:
         stdev = 0.1
     p0 = [min(I), max(I) - min(I), q[max_index], stdev]
+    p0.append(0) # linear background
 
     if func == 'psuedo_voigt':
         p0.append(0.5)
@@ -356,8 +357,10 @@ def array_fit(q_array, I_array, window, func='gaussian',
                     fw, fw_err = fw * 2.35482, fw_err * 2.35482
                 elif func == 'lorentzian':
                     fwhm, fwhm_err = fw * 2, fw_err * 2
+                
+                
                 # Check error and store
-                if peak_err / peak > error_limit:
+                if np.abs(peak_err / peak) > error_limit:
                     err_exceed += 1
                 else:
                     peaks[index], peaks_err[index] = peak, peak_err
