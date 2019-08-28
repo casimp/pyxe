@@ -44,6 +44,7 @@ data_dict=i12_dict(x, y, q, I)
 
 q0_ = intensity_array(i12, pnts=(1, 1), max_strain=0)
 x, y, q, I, _ = q0_
+
 q0_data_dict=i12_dict(x, y, q, I)
 
 @patch("h5py.File")
@@ -57,8 +58,11 @@ def integration(h5py_file):
 
 def peak_fit():
     data, q0 = integration()
+    data.I += 1e-10
     data.peak_fit(3.1, 1.)
+    q0.I += 1e-10
     q0.peak_fit(3.1, 1.)
+    
     return data, q0
 
 
@@ -105,6 +109,7 @@ class TestEnergy(object):
         # Compare positions, same angle
         for idx in [0, 7, 12, 17, 22]:
             tensor = e_xx, e_yy, e_xy
+            
             initial = strain_transformation(self.data.phi[idx], *tensor)
             processed_1 = self.data.strain[..., idx]
             processed_2 = self.data.extract_slice(phi=self.data.phi[idx])
@@ -182,12 +187,11 @@ class TestEnergy(object):
             d1.plot_slice(name, phi=phi)
             plt.close()
         for d2, name, az in product(d_, az_names, az_):
-            try:
-                d2.plot_slice(name, az_idx=az)
-                plt.close()
+            d2.plot_slice(name, az_idx=az)
+            plt.close()
             # Except for contour levels must be increasing (silly array!)
-            except ValueError: 
-                pass
+            # except ValueError: 
+            #     pass
 
     def test_save_reload(self):
         self.data.calculate_strain(self.q0)

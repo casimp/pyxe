@@ -266,16 +266,17 @@ def p0_approx(data, window, func='gaussian'):
     q = x[peak_ind[0]:peak_ind[1]]
     I = y[peak_ind[0]:peak_ind[1]]
     max_index = np.argmax(I)
-    hm = min(I) + (max(I) - min(I)) / 2
+    hm = np.min(I) + (np.max(I) - np.min(I)) / 2
     
     stdev = q[max_index + np.argmin(I[max_index:] > hm)] - q[max_index]
     if stdev <= 0:
         stdev = 0.1
-    p0 = [min(I), max(I) - min(I), q[max_index], stdev]
+    p0 = [np.min(I), np.max(I) - np.min(I), q[max_index], stdev]
     p0.append(0) # linear background
 
     if func == 'psuedo_voigt':
         p0.append(0.5)
+    print(p0)
     return p0
 
 
@@ -347,6 +348,7 @@ def array_fit(q_array, I_array, window, func='gaussian',
             index = tuple(position) + (az_idx,)
             I = I_array[index]
             p0 = p0_approx((q, I), window, func)
+            
             # Fit peak across window
             try:
                 coeff, var_matrix = peak_fit((q, I), window, p0, func, poisson)
@@ -407,32 +409,26 @@ def full_ring_fit(strain, phi):
     strain_tensor_rmse = np.nan * np.ones(strain.shape[:-1] + (1,))
 
     error_count = 0
-    for idx_ in np.ndindex(strain_tensor.shape):
-        idx = idx_[:-1]
+    for idx in np.ndindex(strain_tensor.shape[:-1]):
         data = strain[idx]
         not_nan = ~np.isnan(data)
 
-        phi_range = np.max(phi) - np.min(phi)
-        # nyquist - twice the frequency response (strain freq = 2 * ang freq)
-        nyquist_sampling = 1 + 2 * np.ceil(2 * phi_range / np.pi)
-        if phi[not_nan].size >= nyquist_sampling:
-            # Estimate curve parameters
-            p0 = [np.nanmean(data), 3 * np.nanstd(data) / (2 ** 0.5), 0]
-            try:
-                popt, pcov = curve_fit(strain_transformation,
-                                 phi[not_nan], data[not_nan], p0)
-                strain_tensor[idx] = popt
-                strain_tensor_error[idx] = np.sqrt(np.diag(pcov))
-                e_t = strain_transformation(phi, *popt)
-                e = strain[idx]
-                strain_tensor_rmse[idx] = np.nanmean((e_t - e)**2)**0.5
-                # np.nanmean((e_t - strain)**2)**0.5
-                
-                
-            except (TypeError, RuntimeError):
-                error_count += 1
-        else:
+        p0 = [np.nanmean(data), 3 * np.nanstd(data) / (2 ** 0.5), 0]
+        try:
+            popt, pcov = curve_fit(strain_transformation,
+                             phi[not_nan], data[not_nan], p0)
+            
+            strain_tensor[idx] = popt
+            strain_tensor_error[idx] = np.sqrt(np.diag(pcov))
+            e_t = strain_transformation(phi, *popt)
+            e = strain[idx]
+            strain_tensor_rmse[idx] = np.nanmean((e_t - e)**2)**0.5
+            
+            
+        except (TypeError, RuntimeError):
             error_count += 1
+        #else:
+        #    error_count += 1
     print('\nUnable to fit full ring at %i out of %i points'
           % (error_count, np.size(strain[..., 0])))
 
