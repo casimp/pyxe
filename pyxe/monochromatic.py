@@ -12,14 +12,23 @@ from __future__ import unicode_literals
 
 import re
 import os
-import fabio
-import h5py
-import numpy as np
-import pyFAI
-
-import pyFAI.azimuthalIntegrator
 import warnings
 import sys
+import h5py
+import numpy as np
+
+try:
+    import fabio
+    import pyFAI
+    import pyFAI.azimuthalIntegrator
+except ModuleNotFoundError:
+    warnings.warn(
+        "fabIO/pyFAI not installed. Azimuthal Integration not possible within"
+        "pyxe.",
+        ImportWarning,
+    )
+                
+
 import scipy.io as io
 
 from pyxe.data_io import dim_fill, extract_fnames, dimension_fill_pixium10

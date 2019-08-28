@@ -4,7 +4,5 @@ mock
 numpy
 numba
 scipy
-pyFAI
-fabio
 xrdpb
 six
