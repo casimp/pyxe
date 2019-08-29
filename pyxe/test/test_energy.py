@@ -236,6 +236,20 @@ class TestEnergy(object):
         plt.close()
 
 
+    def test_pawley_plot(self):
+
+        self.data.add_material('Fe')
+        self.data.plot_intensity(pawley=True)
+        plt.close()
+        
+    def test_pawley_fit(self):
+        data2 = copy.deepcopy(self.data)
+        # Slow so reduce number of points
+        data2.crop1d(0, None, 3)
+        data2.add_material('Fe')
+        data2.pawley_fit()
+        data2.calculate_strain(a0=data2.peaks[0,0])
+
 if __name__ == '__main__':
     
     h = TestEnergy()
