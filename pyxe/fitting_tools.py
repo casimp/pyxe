@@ -61,9 +61,6 @@ def pawley_hkl(detector, back, fw_order=None, func='gaussian'):
     Returns:
         function: Pawley fitting function
         """
-        
-        
-
 
             
     def pawley(q, *p):

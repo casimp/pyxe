@@ -40,7 +40,7 @@ from scipy.interpolate import interp1d, griddata
 
 from pyxe.command_parsing import analysis_check
 from pyxe.fitting_tools import (array_fit, array_fit_pawley, full_ring_fit,
-    single_pawley, fwhm_single, q0_valid_range)
+    single_pawley, fwhm_single, q0_valid_range, peak_fit)
 from pyxe.data_io import pyxe_to_hdf5, data_extract, detector_extract
 from pyxe.plotting import DataViz
 from pyxe.merge import basic_merge
@@ -221,74 +221,45 @@ class PeakAnalysis(DataViz):
             plt.xlabel(r'$\mathregular{q (A^{-1})}$')
             plt.ylabel(r'Intensity')
 
-    def estimate_fwhm(self, pnt, az_idx=0, k=None, single=False,
-                      window=None, store=True):
-        """ FWHM estimation and fitting.
+    def estimate_fwhm(self, pnt, q0s, k=1, az_idx=0, window=0.4):
+        """ FWHM polynomial estimation and fitting.
 
-        Re-estimation of the polynomial parameters used for the FWHM fit.
-        These values are used in the complete Pawley fit and improving the
-        initial estimate may aid convergence. The order of the polynomial may
-        be reduced from 2 to 1. This has been observed to help in situations
-        in which the FWHM distribution is linear and not quadratic.
+        Estimation of the initial polynomial parameters used for the FWHM fit.
+        These values are used in the complete Pawley fit. Improving the
+        initial estimate may aid convergence. Choose peaks which span the 
+        range over which the pawley fit will be completed.
+        
+        e.g. q0s=[3.01, 4.4, 5.37, 6.2, 6.9] # BCC
+            
 
         Args:
-            az_idx (int): Azimuthal slice to plot
             pnt (tuple): Point co_ords or None for averaged data
+            q0s (list): List of all peaks to calculate fwhm
             k (int): Order for FWHM polynomial
-            single(bool): Show the FWHM values calc. from single peak fit
-            window (tuple): Window used for single peak fit
-            store (bool): Store new estimation of parameters
+            az_idx (int): Azimuthal slice to plot
+            window (tuple): Window used for peak fit
         """
-        # Automatically average over all points unless point is specified
-        #ndim = self.I.ndim - 2
-        #I = np.sum(self.I, tuple(range(ndim))) if pnt is None else self.I[pnt]
+        assert np.size(pnt) == self.I.ndim - 2, 'Incorrect pnt dimensions.'
         I = self.I[pnt]
         q, I = self.q[az_idx], I[az_idx]
-        detector, back = self.detector, self.detector._back[az_idx]
-        nmat, nf = len(detector.materials), len(detector._fwhm)
-
-        # Initial fitting using detector based estimated (k=2)
-        k = nf if k is None else k
-        error = "k must be less or equal to than current polynomial order."
-        assert nf - 1 >= k, error
-
-        # Calculate the polynomials from Pawley fit
-        q0_all = np.concatenate([detector.q0[i] for i in detector.materials])
-        estp0 = single_pawley(detector, q, I, back)
-        estp1 = None
-        if k < nf - 1:
-            f0 = estp0[0][nmat:nmat+nf]
-            f = np.polyfit(q0_all, np.polyval(f0, q0_all), k)
-            estp1 = single_pawley(detector, q, I, back, f)
-
-        # Evaluate and plot fwhm from polynomials
-        q0_all = q0_all[np.argsort(q0_all)]
-        fwhm0 = np.polyval(detector._fwhm, q0_all) #** 0.5
-        plt.plot(q0_all, fwhm0, 'r--', label='Est0 (k={})'.format(nf - 1))
-        for idx, (est, c) in enumerate(zip([estp0, estp1], ['r', 'k'])):
-            if est is not None:
-                i = range(nmat, nmat + nf - idx)
-                coeff, var_mat = est
-                fwhm = np.polyval(coeff[i], q0_all) # ** 0.5
-                #print(fwhm)
-                q0_min, q0_max = q0_valid_range(detector, [q.min(), q.max()])
-                q0_range = np.linspace(q0_min, q0_max, 100)
-                perr = np.sqrt(np.diag(var_mat))
-                err = np.sum(np.polyval(perr[i], q0_range) ** 0.5) / 100
-                label = 'Est{} (k={}, e={:.0e})'.format(idx, nf - 1 - idx, err)
-                plt.plot(q0_all, fwhm, '.-', color=c, label=label)
-
-        # Store new default parameters
-        detector._fwhm = list(coeff[i]) if store else detector._fwhm
-
-        # Attempt to find FWHM for each peak individually (for comparison)
-        if single:
-            q0_v, fw_v = fwhm_single(detector, q, I, window)
-            #print('fw_v', fw_v)
-            plt.plot(q0_v, fw_v, 'o', color='0.75', label='Single')
-        plt.legend(numpoints=1, loc=2)
+        
+        q_, fw = [], []
+        for q0 in q0s:
+            popt, pcov = peak_fit((q, I), [q0-window/2, q0+window/2], 
+                                  p0=None, func='gaussian', poisson=True)
+            q_.append(popt[2])
+            fw.append(popt[3])
+        
+        f = np.polyfit(q_, fw, k)
+        plt.plot(q_, np.polyval(f, q_), 'k-', label='New')
+        plt.plot(q_, np.polyval(self.detector._fwhm, q_), 'r-', label='Old')
+        
+        plt.plot(q_, fw, 'k.')
         plt.xlabel(r'$\mathregular{q (A^{-1})}$')
         plt.ylabel(r'$\mathregular{FWHM (A^{-1})}$')
+        self.detector._fwhm = f
+        return f
+
 
     def peak_fit(self, q0_approx, window_width, func='gaussian',
                  err_lim=1e-4, progress=True, poisson=True):

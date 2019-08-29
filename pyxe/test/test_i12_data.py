@@ -15,7 +15,9 @@ fpath_2 = os.path.join(folder, r'50414.nxs')
 
 def test_real():
     fine = EDI12(fpath_1)
+    fine.crop1d(2, None, 6)
     coarse = EDI12(fpath_2)
+    coarse.crop1d(5, -3, 6)
     for data in [fine, coarse]:
         data.peak_fit(3.1, 0.25)
         data.calculate_strain(3.1)
@@ -27,4 +29,5 @@ def test_real():
 
 if __name__ == '__main__':
     f, c, m = test_real()
+    m.add_material('Fe')
     plt.show()

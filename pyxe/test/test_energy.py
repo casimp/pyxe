@@ -249,7 +249,18 @@ class TestEnergy(object):
         data2.add_material('Fe')
         data2.pawley_fit()
         data2.calculate_strain(a0=data2.peaks[0,0])
-
+        
+    def test_fwhm_est(self):
+        self.data.add_material('Fe')
+        self.data.estimate_fwhm(pnt=(0,0),q0s=[3.01, 4.4, 5.37, 6.2, 6.9], k=0)
+        self.data.estimate_fwhm(pnt=(0,0),q0s=[3.01, 4.4, 5.37, 6.2, 6.9], k=2)
+        self.data.estimate_fwhm(pnt=(0,0),q0s=[3.01, 4.4, 5.37, 6.2, 6.9], k=1)
+        
+    def test_define_background(self):
+        self.data.add_material('Fe')
+        self.data.define_background(seg=13, k=1)
+        plt.close()
+        
 if __name__ == '__main__':
     
     h = TestEnergy()
