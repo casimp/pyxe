@@ -61,7 +61,11 @@ def peak_fit():
     data.I += 1e-10
     data.peak_fit(3.1, 1.)
     q0.I += 1e-10
-    q0.peak_fit(3.1, 1.)
+
+    # Test different fitting functions
+    q0.peak_fit(3.1, 1., func='lorentzian')
+    q0.peak_fit(3.1, 1., func='psuedo_voigt')
+    q0.peak_fit(3.1, 1., func='gaussian')
     
     return data, q0
 

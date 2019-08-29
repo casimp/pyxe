@@ -287,7 +287,7 @@ def peak_fit(data, window, p0=None, func='gaussian', poisson=True):
         data (tuple, list): q, I data arrays
         window (tuple, list): min, max edges of the search window
         p0 (tuple): Estimated curve paramaters
-        func (str): Peak fitting function (gaussian, lorentzian, psuedo-voigt)
+        func (str): Peak fitting function (gaussian, lorentzian, psuedo_voigt)
 
     Return:
         tuple: parameters, co-variance matrix (see scipy.optimize.curve_fit)
@@ -354,7 +354,7 @@ def array_fit(q_array, I_array, window, func='gaussian',
                 if func == 'gaussian':
                     fw, fw_err = fw * 2.35482, fw_err * 2.35482
                 elif func == 'lorentzian':
-                    fwhm, fwhm_err = fw * 2, fw_err * 2
+                    fw, fw_err = fw * 2, fw_err * 2
                 
                 
                 # Check error and store
