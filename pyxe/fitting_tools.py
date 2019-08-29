@@ -431,58 +431,58 @@ def full_ring_fit(strain, phi):
     return strain_tensor, strain_tensor_error, strain_tensor_rmse
 
 
-def mirror_data(phi, data):
-    """ Attempts to merge azimuthally distributed data across poles.
-
-    Only works in when there is an odd number of azimuthal slices.
-
-    Args:
-        phi (ndarray): Azimuthal slice positions (rad)
-        data (ndarray): Data to be azimuthally mirrored
-
-    Returns:
-        tuple: mphi, mdata - azimuthally merged data
-    """
-    mphi = phi[:int(phi[:].shape[0]/2)]
-    peak_shape = data.shape
-    phi_len = int(peak_shape[-2]/2)
-    new_shape = (peak_shape[:-2] + (phi_len, ) + peak_shape[-1:])
-    mdata = np.nan * np.zeros(new_shape)
-    for i in range(phi_len):
-        mdata[:, i] = (data[:, i] + data[:, i + new_shape[-2]]) / 2
-    return mphi, mdata
-
-
-def single_pawley(detector, q, I, back, p_fw=None, func='gaussian'):
-    """ Full pawley fitting for a specific q, I combination.
-
-    Option to use different initial parameters for FWHM fit. This allows a
-    lower order polynomial to be specified.
-
-    Args:
-        detector: pyxpb detector object
-        q (ndarray): Reciprocal lattice
-        I (ndarray): Intensity values
-        az_idx (int): Azimuthal slice index
-        p_fw (list, tuple): New initial estimate
-    """
-    nmat, nf = len(detector.materials), len(detector._fwhm)
-    background = chebval(q, back)
-    q_lim = [np.min(q), np.max(q)]
-    p0 = extract_parameters(detector, q_lim, np.nanmax(I))
-
-    if p_fw is not None:
-        p_fw0_idx = range(nmat, nmat + nf)
-        p0_new = [i for idx, i in enumerate(p0) if idx not in p_fw0_idx]
-
-        for idx, i in enumerate(p_fw):
-            p0_new.insert(nmat + idx, i)
-
-        nf = len(p_fw)
-    else:
-        p0_new = p0
-    pawley = pawley_hkl(detector, background, nf - 1, func=func)
-    return curve_fit(pawley, q, I, p0=p0_new)
+#def mirror_data(phi, data):
+#    """ Attempts to merge azimuthally distributed data across poles.
+#
+#    Only works in when there is an odd number of azimuthal slices.
+#
+#    Args:
+#        phi (ndarray): Azimuthal slice positions (rad)
+#        data (ndarray): Data to be azimuthally mirrored
+#
+#    Returns:
+#        tuple: mphi, mdata - azimuthally merged data
+#    """
+#    mphi = phi[:int(phi[:].shape[0]/2)]
+#    peak_shape = data.shape
+#    phi_len = int(peak_shape[-2]/2)
+#    new_shape = (peak_shape[:-2] + (phi_len, ) + peak_shape[-1:])
+#    mdata = np.nan * np.zeros(new_shape)
+#    for i in range(phi_len):
+#        mdata[:, i] = (data[:, i] + data[:, i + new_shape[-2]]) / 2
+#    return mphi, mdata
+#
+#
+#def single_pawley(detector, q, I, back, p_fw=None, func='gaussian'):
+#    """ Full pawley fitting for a specific q, I combination.
+#
+#    Option to use different initial parameters for FWHM fit. This allows a
+#    lower order polynomial to be specified.
+#
+#    Args:
+#        detector: pyxpb detector object
+#        q (ndarray): Reciprocal lattice
+#        I (ndarray): Intensity values
+#        az_idx (int): Azimuthal slice index
+#        p_fw (list, tuple): New initial estimate
+#    """
+#    nmat, nf = len(detector.materials), len(detector._fwhm)
+#    background = chebval(q, back)
+#    q_lim = [np.min(q), np.max(q)]
+#    p0 = extract_parameters(detector, q_lim, np.nanmax(I))
+#
+#    if p_fw is not None:
+#        p_fw0_idx = range(nmat, nmat + nf)
+#        p0_new = [i for idx, i in enumerate(p0) if idx not in p_fw0_idx]
+#
+#        for idx, i in enumerate(p_fw):
+#            p0_new.insert(nmat + idx, i)
+#
+#        nf = len(p_fw)
+#    else:
+#        p0_new = p0
+#    pawley = pawley_hkl(detector, background, nf - 1, func=func)
+#    return curve_fit(pawley, q, I, p0=p0_new)
 
 #
 #if __name__ == '__main__':

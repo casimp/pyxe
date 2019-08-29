@@ -265,6 +265,23 @@ class TestEnergy(object):
         self.data.define_background(seg=13, k=1)
         plt.close()
         
+    def test_define_temperature(self):
+        # 2d temp distrib
+        self.data.define_temperature(T=[10, 20, 30, 40], d1=[-1, -1, 1, 1], 
+                                     d2=[-1, 1, -1, 1], plot=True)
+        plt.close()
+        
+        # 1d temp distrib in d1
+        self.data.define_temperature(T=[10, 20, 30, 40], d1=[-1, -0.8, 0, 1], 
+                             bounds_error=False, 
+                             fill_value='extrapolate', plot=True)
+        plt.close()
+        # 1d temp distrib in d2
+        self.data.define_temperature(T=[10, 20, 30, 40], d2=[-1, -0.8, 0, 1],
+                                     bounds_error=False, 
+                                     fill_value='extrapolate', plot=True)
+        plt.close()
+        
 #if __name__ == '__main__':
 #    
 #    h = TestEnergy()

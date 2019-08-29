@@ -111,24 +111,34 @@ class PeakAnalysis(DataViz):
         if background:
             self.define_background(plot=False)
             
-    def define_temperature(self, T, x=None, y=None, kind='linear', 
-                           bounds_error=True, fill_value=np.nan, plot=True):
-        """ Fits a function to temperature data - calculates T across all pos.
+    def define_temperature(self, T, d1=None, d2=None, kind='linear', 
+                           bounds_error=False, fill_value='extrapolate', plot=True):
+        """ Calcs temp for all points from limited temperature measurements.
         
-        See documentation fro interpd1d/griddata
+        See documentation fro interpd1d/griddata. Currently set to extrapolate
+        if points are outside measured values for linear interpolation. 
+        FOR 2d interpolation no extraploation is carried out. Data must be 
+        properly bounded (unless 'nearest' is chosen). See interp.griddata 
+        docs.
         
-        Not yet able to take 3D data - is this needed? This is to be used in 
-        conjunciton with other stuff.
+        Args:
+            T (list, array): Measured temps
+            d1 (list, array): Position (d1) at which temp was measured
+            d2 (list, array): Position (d1) at which temp was measured
+            kind (str): Type of interpolation
+            bounds_error (str): Raise error if data outside measured points
+            fill_value (str): Fill value outside measured points
+
         """
-        if x is None:
-            f = interp1d(y, T, kind=kind, bounds_error=bounds_error, 
+        if d1 is None:
+            f = interp1d(d2, T, kind=kind, bounds_error=bounds_error, 
                          fill_value=fill_value)
             self.T = f(self.d2)
             if plot:
                 self.plot_temperature(1)
                 
-        elif y is None:
-            f = interp1d(x, T, kind=kind, bounds_error=bounds_error, 
+        elif d2 is None:
+            f = interp1d(d1, T, kind=kind, bounds_error=bounds_error, 
                          fill_value=fill_value)
             self.T = f(self.d1)
             if plot:
@@ -136,14 +146,17 @@ class PeakAnalysis(DataViz):
             
         else:
             
-            self.T = griddata((x, y), T, (self.d1, self.d2))
+            self.T = griddata((d1, d2), T, (self.d1, self.d2), method=kind)
             if plot:
                 self.plot_temperature(2)
         
 
-        
-    
     def plot_temperature(self, order=None):
+        """ Plot temperature distribution across sample/data.
+        
+        Args:
+            order (int): Ndims of data
+        """
         
         order = self.ndim if order is None else order
         if order == 1:
@@ -328,7 +341,7 @@ class PeakAnalysis(DataViz):
 
     @analysis_check('peaks')
     def calculate_strain(self, q0=None, a0=None, tensor_fit=True, f=None, 
-                         variables=None, plot=False):
+                         variables=None):
         """ Calculate strain based on q0/a0 value(s).
 
         Strain can be calculated with respect to a single value of
@@ -391,16 +404,6 @@ class PeakAnalysis(DataViz):
             self.q0 = q0
             self.strain = (self.q0 / self.peaks) - 1            
             self.strain_err =  (self.q0 / (self.q0 - self.peaks_err)) - 1
-            
-            if plot:
-                try:
-                    d1i = np.linspace(self.d1.min(), self.d1.max(), 100)
-                    d2i = np.linspace(self.d2.min(), self.d2.max(), 100)
-                    d1, d2 = np.meshgrid(d1i, d2i)
-                    q0_ = griddata((self.d1, self.d2), np.nanmean(self.q0, axis=-1), (d1, d2))
-                    plt.contourf(q0_)
-                except IndexError:
-                    print('Index Error - needs to be fixed or plotting removed')
 
 
         if tensor_fit:
@@ -438,7 +441,7 @@ class PeakAnalysis(DataViz):
         self.stress_eqn = stress_states[self.stress_state]
         self.analysis_state = self.analysis_state.replace('strain', 'stress')
 
-    def save_to_hdf5(self, fpath=None, overwrite=False):
+    def save_to_hdf5(self, fpath, overwrite=False):
         """ Save data back to hdf5 file format.
 
         Saves analyzed information and the detector setup. Data is discarded
@@ -449,12 +452,6 @@ class PeakAnalysis(DataViz):
                          parent directory (*/folder/folder_pyxe.h5)
             overwrite (bool): Overwrite file if it already exists
         """
-        if fpath is None:
-            if self.fpath[-8:] == '_pyxe.h5':
-                fpath = self.fpath
-            else:
-                fpath = '%s_pyxe.h5' % os.path.splitext(self.fpath)[0]
-
         pyxe_to_hdf5(fpath, self, overwrite)
 
     def __add__(self, other):

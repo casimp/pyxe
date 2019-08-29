@@ -24,10 +24,11 @@ def test_real():
         data.material_parameters(E=200*10**9, v=0.3)
     merged = ordered_merge([fine, coarse], [0, 1], pad=0.2)
     merged.plot_slice('stress', phi=np.pi/3)
+    plt.close()
 
     return fine, coarse, merged
 
-if __name__ == '__main__':
-    f, c, m = test_real()
-    m.add_material('Fe')
-    plt.show()
+#if __name__ == '__main__':
+#    f, c, m = test_real()
+#    m.add_material('Fe')
+#    plt.show()
