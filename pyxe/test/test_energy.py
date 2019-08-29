@@ -261,11 +261,11 @@ class TestEnergy(object):
         self.data.define_background(seg=13, k=1)
         plt.close()
         
-if __name__ == '__main__':
-    
-    h = TestEnergy()
-    h.data.calculate_strain(h.q0)
-    h.data.plot_slice('strain', phi=0)
+#if __name__ == '__main__':
+#    
+#    h = TestEnergy()
+#    h.data.calculate_strain(h.q0)
+#    h.data.plot_slice('strain', phi=0)
 #    data, q0 = integration()
 #    data.peak_fit(3.1, 1.)
 #    q0.peak_fit(3.1, 1.)

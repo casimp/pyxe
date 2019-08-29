@@ -40,7 +40,7 @@ from scipy.interpolate import interp1d, griddata
 
 from pyxe.command_parsing import analysis_check
 from pyxe.fitting_tools import (array_fit, array_fit_pawley, full_ring_fit,
-    single_pawley, fwhm_single, q0_valid_range, peak_fit)
+     q0_valid_range, peak_fit)
 from pyxe.data_io import pyxe_to_hdf5, data_extract, detector_extract
 from pyxe.plotting import DataViz
 from pyxe.merge import basic_merge
@@ -230,7 +230,6 @@ class PeakAnalysis(DataViz):
         range over which the pawley fit will be completed.
         
         e.g. q0s=[3.01, 4.4, 5.37, 6.2, 6.9] # BCC
-            
 
         Args:
             pnt (tuple): Point co_ords or None for averaged data

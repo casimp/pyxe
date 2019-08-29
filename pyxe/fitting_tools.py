@@ -484,50 +484,15 @@ def single_pawley(detector, q, I, back, p_fw=None, func='gaussian'):
     pawley = pawley_hkl(detector, background, nf - 1, func=func)
     return curve_fit(pawley, q, I, p0=p0_new)
 
-
-def fwhm_single(detector, q, I , window, err_lim=3e-4):
-    """ FWHM estimation for each individual peak in profile.
-
-    Args:
-        detector: pyxpb detector object
-        q (ndarray): Reciprocal lattice
-        I (ndarray): Intensity values
-        window (tuple, list): min, max q value for peak fitting
-
-    Returns:
-        tuple: q0_v, fw_v - lists of q0 and fwhm values
-    """
-    q0_v, fw_v = [], []
-    q0 = np.concatenate([detector.q0[i] for i in detector.materials])
-    fw0 = np.polyval(detector._fwhm, q0)
-    w0 = (q0 - 20 * fw0, q0 + 20 * fw0)
-    for idx, _ in enumerate(q0):
-        win = (w0[0][idx], w0[1][idx]) if window is None else window
-        p0 = p0_approx((q, I), win)
-        try:
-            est = peak_fit((q, I), win, p0)
-            peak, sig = est[0][2:4]
-            #print(np.diag(est[1])[2:4])
-            peak_err, sig_err = np.sqrt(np.diag(est[1]))[2:4]
-            #print(peak_err)
-            fw, fw_err = sig * 2.35482, sig_err * 2.35482
-            if peak_err / peak < err_lim:
-
-                q0_v.append(q0[idx])
-                fw_v.append(fw)
-        except RuntimeError:
-            pass
-    return q0_v, fw_v
-
-
-if __name__ == '__main__':
-    import os
-    from pyxe.energy_dispersive import EDI12
-    base = os.path.split(os.path.dirname(__file__))[0]
-    fpath_1 = os.path.join(base, r'pyxe/data/50418.nxs')
-    fpath_2 = os.path.join(base, r'pyxe/data/50414.nxs')
-    fine = EDI12(fpath_1)
-    fine.add_material('Fe')
-    fine.plot_intensity(pawley=True)
-    plt.show()
-    print(fine.detector.fwhm_param)
+#
+#if __name__ == '__main__':
+#    import os
+#    from pyxe.energy_dispersive import EDI12
+#    base = os.path.split(os.path.dirname(__file__))[0]
+#    fpath_1 = os.path.join(base, r'pyxe/data/50418.nxs')
+#    fpath_2 = os.path.join(base, r'pyxe/data/50414.nxs')
+#    fine = EDI12(fpath_1)
+#    fine.add_material('Fe')
+#    fine.plot_intensity(pawley=True)
+#    plt.show()
+#    print(fine.detector.fwhm_param)

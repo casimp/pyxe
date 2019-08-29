@@ -241,9 +241,9 @@ def peak_fit():
 #        merged.save_to_txt('pyxe/data/test.csv', phi_lst, phi=-np.pi/3)
 #
 
-
-if __name__ == '__main__':
-    pass
+#
+#if __name__ == '__main__':
+#    pass
     # data, q0 = integration()
     # data.calculate_strain(q0)
     # d2 = copy.deepcopy(data)
