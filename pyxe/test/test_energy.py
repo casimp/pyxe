@@ -223,6 +223,17 @@ class TestEnergy(object):
         phi_lst = ['strain', 'shear strain', 'stress', 'shear stress']
         merged.save_to_txt('pyxe/data/test.csv', az_lst, az_idx=2)
         merged.save_to_txt('pyxe/data/test.csv', phi_lst, phi=-np.pi/3)
+        
+    def text_crop_rotate_centre(self):
+        data2 = copy.deepcopy(self.data)
+        data2.centre((0.25, -0.25))
+        data2.flipaxis(0)
+        data2.flipaxis(1)
+        data2.swapaxes(0, 1)
+        
+        data2.crop1d(0, None, 2)
+        data2.plot_slice('strain', phi=0)
+        plt.close()
 
 
 if __name__ == '__main__':
