@@ -15,7 +15,7 @@ import numpy as np
 from mock import patch
 from pyxpb.detectors import MonoDetector
 from pyxpb.conversions import e_to_w
-from pyxe.monochromatic import Mono
+from pyxe.monochromatic import MonoPyFAI
 from pyxe.fitting_functions import strain_transformation
 from pyxpb.array_create import ring_array
 from pyxe.merge import ordered_merge
@@ -75,12 +75,12 @@ q0_fnames, q0_co_ords, q0_images, _ = faked_data(mono, (1,1), crop=crop,
 def integration(extract_fnames, fabio_open):
     fabio_open.side_effect = images
     extract_fnames.return_value = fnames
-    data_ = Mono('', co_ords, fit2Dparams, e_to_w(energy), f_ext='.tif',
+    data_ = MonoPyFAI('', co_ords, fit2Dparams, e_to_w(energy), f_ext='.tif',
                  progress=False, npt_rad=crop_shape[0] / 2)
 
     fabio_open.side_effect = q0_images
     extract_fnames.return_value = q0_fnames
-    q0_ = Mono('', q0_co_ords, fit2Dparams, e_to_w(energy), f_ext='.tif',
+    q0_ = MonoPyFAI('', q0_co_ords, fit2Dparams, e_to_w(energy), f_ext='.tif',
                progress=False, npt_rad=crop_shape[0] / 2)
 
     return data_, q0_
