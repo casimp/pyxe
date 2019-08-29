@@ -13,6 +13,7 @@
 #Data
 /pyxe/data/*.h5
 /pyxe/data/test.csv
+/pyxe/test/_pyxe.h5
 
 
 
