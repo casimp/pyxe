@@ -209,9 +209,8 @@ def array_fit_pawley(q_array, I_array, detector, err_lim=1e-4,
                 coeff, var_mat = curve_fit(pawley, q, I, p0=p0, sigma=sig)
                 perr = np.sqrt(np.diag(var_mat))
                 peak, peak_err = coeff[0], perr[0]  # Single material
-
                 pfw, pfw_err = coeff[nmat: nmat + nf], perr[nmat: nmat + nf]
-
+                # print([pfw, q0_range[0], q0_range[-1]])
                 fw = np.sum(np.polyval(pfw, q0_range)**0.5) / 100
                 fw_err = np.sum(np.polyval(pfw_err, q0_range)**0.5) / 100
                 # Check error and store

@@ -58,9 +58,10 @@ def integration(h5py_file):
 
 def peak_fit():
     data, q0 = integration()
-    data.I += 1e-10
+   
+    data.I += 1e-6
     data.peak_fit(3.1, 1.)
-    q0.I += 1e-10
+    q0.I += 1e-6
 
     # Test different fitting functions
     q0.peak_fit(3.1, 1., func='lorentzian')
@@ -228,7 +229,7 @@ class TestEnergy(object):
         merged.save_to_txt('pyxe/data/test.csv', az_lst, az_idx=2)
         merged.save_to_txt('pyxe/data/test.csv', phi_lst, phi=-np.pi/3)
         
-    def text_crop_rotate_centre(self):
+    def test_crop_rotate_centre(self):
         data2 = copy.deepcopy(self.data)
         data2.centre((0.25, -0.25))
         data2.flipaxis(0)
