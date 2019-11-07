@@ -82,7 +82,7 @@ class MonoDLS(PeakAnalysis):
                  q='entry/result/q',
                  I='entry/result/data',
                  phi='entry/result/azimuthal angle (degrees)',
-                 detector=('Pilatus', 1000, 80, 0.1):
+                 detector=('Pilatus', 1000, 80, 0.1)):
 
         """ Extract data from pre-processed .nxs/.h5 file.
 
