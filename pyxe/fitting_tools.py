@@ -307,7 +307,17 @@ def peak_fit(data, window, p0=None, func='gaussian', poisson=True):
     x = data[0][peak_ind[0]:peak_ind[1]]
     I = data[1][peak_ind[0]:peak_ind[1]]
 
-    sig = 1 + I**0.5 if poisson else None
+    sig = I**0.5 if poisson else None
+    
+    # Likely better than a fixed value for EDXRD versus. monochromatic
+    # as min(EDXRD_I>0) = 1 whereas min(mono_I>0) << 1
+    if sig is not None: sig[sig == 0] = np.min(sig[sig > 0])
+    
+    # Weighted fit is done in the following manner (see scipy docs):
+    # r = ydata - f(xdata, *popt)
+    # chisq = sum((r / sigma) ** 2)
+    # poisson weighting: chisq = sum((r / ydata**0.5) ** 2)
+    
     return curve_fit(func, x, I, p0, sigma=sig)
 
 
