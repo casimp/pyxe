@@ -4,4 +4,5 @@ mock
 numpy
 numba
 scipy
+six
 git+git://github.com/casimp/pyxpb.git
