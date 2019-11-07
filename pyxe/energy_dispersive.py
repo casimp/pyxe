@@ -122,20 +122,24 @@ def e_to_w(energy):
     wavelength = h * c / energy_j
     return wavelength
 
-
-def w_to_e(wavelength):
-    """ Takes wavelength (m) -> returns photon energy (keV) """
-    energy_j = h * c / np.array(wavelength)
-    energy_kev = energy_j / (eV * 1000)
-    return energy_kev
-
-
 def e_to_q(energy, two_theta):
     """ Takes energy (keV) and 2theta (rad) -> returns q (A-1) """
     wavelength = e_to_w(energy)
     q_per_m = np.sin(two_theta / 2) * 4 * np.pi / wavelength
     q_per_a = q_per_m / (10**10)  # convert to A^-1
     return q_per_a
+
+
+#
+#
+#def w_to_e(wavelength):
+#    """ Takes wavelength (m) -> returns photon energy (keV) """
+#    energy_j = h * c / np.array(wavelength)
+#    energy_kev = energy_j / (eV * 1000)
+#    return energy_kev
+#
+
+
 
 class EDID15(PeakAnalysis):
 
