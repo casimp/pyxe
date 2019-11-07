@@ -214,9 +214,13 @@ class TestEnergy(object):
         merged_reload_b.plot_slice('shear strain', phi=np.pi / 3)
         plt.close()
 
+<<<<<<< HEAD
         err = '{}, {}, ({}, {})'.format(merged.peaks.shape, merged_reload.peaks.shape,
                                         merged.peaks, merged_reload.peaks)
         assert np.array_equal(merged.peaks, merged_reload.peaks)
+=======
+        assert np.array_equal(merged.peaks, merged_reload.peaks), '{}, {}'.format(merged.peaks.shape, merged_reload.peaks.shape)
+>>>>>>> 10a29e07cc7d01cc0e7ddf272d66ff3d0a7c5be7
 
     def test_save_to_text(self):
         self.data.calculate_strain(self.q0)
