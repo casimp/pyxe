@@ -2,9 +2,9 @@ v 0.1.0, 20151130 -- Initial release
 v 0.1.1, 20160208 -- Minor updates and restructuring
 v 0.2.0, 20160212 -- Reworked all core functionality to allow for data that is acquired in any dimensional order e.g. (x, y) v (z, x).
 v 0.5.0, 20160226 -- First addition of monochromatic area detector type strain analysis.
-v 0.6.0, 20160227 -- Package rename to reflect general strain analysis capabilities. Significant restructuring and improved compatability and testing under python 2.7.
-v 0.7.0, 20160303 -- Stable release of pyxe interaction with merged and unmerged data now almost identical. More functionality for 1D data - especially in plotting (mohrs, fitted and intensity). Much more robust usage of area data.
-v 0.7.1, 20160303 -- Small documentatation and version number updates.
+v 0.6.0, 20160227 -- Package rename to reflect general strain analysis capabilities. Significant restructuring and improved compatibility and testing under python 2.7.
+v 0.7.0, 20160303 -- Stable release of pyXe interaction with merged and unmerged data now almost identical. More functionality for 1D data - especially in plotting (mohrs, fitted and intensity). Much more robust usage of area data.
+v 0.7.1, 20160303 -- Small documentation and version number updates.
 v 0.8.0, 20160415 -- Extraction/plotting refactoring , interaction/plotting of 3D data sets, FWHM extraction and plotting
 v 0.8.1, 20160421 -- Small improvements and bug fixes
 v 0.9.0, 20160903 -- Large scale breaking changes to all aspects of projects - cleaner interface, significant testing and inclusion of full peak (Pawley) fitting.

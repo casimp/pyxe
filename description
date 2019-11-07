@@ -3,7 +3,7 @@ ease some of the bottlenecks observed both during and after synchrotron X-ray
 diffraction (SXRD) experiments.
 
 During experiments at these type of large scale facilities it is important to
-visualise the incoming data in as close to real time as possible. This allows
+visualize the incoming data in as close to real time as possible. This allows
 for a tight feedback loop and efficient optimization of  experimental
 parameters. The first aim of the pyXe package is to therefore provide a fast,
 simple and consistent interface for the analysis of data from different
@@ -12,7 +12,7 @@ detectors). The data from different source/setup combinations is output in
 different forms and the interface is designed to be easily extensible.
 
 For a monochromatic setup the pyFAI package is leveraged to carry out the
-azimuthal integration required to simplifiy the Debye-Scherrer cones to 1D
+azimuthal integration required to simplify the Debye-Scherrer cones to 1D
 line profiles (as a function of azimuthal angle). The 1D data is directly
 available in the case of an energy-dispersive (white beam) detector. From
 these 1D profiles single peak or full profile (Pawley) fitting is possible,
@@ -21,8 +21,8 @@ or lattice spacing. Peak fitting routines can be run over 1D, 2D and 3D data
 sets. The resultant strain data can be further interrogated to allow for the
 calculation of principal and shear strains.
 
-The data exploration and analysis procedure is designed to be repoducable and
+The data exploration and analysis procedure is designed to be reproduceable and
 can be stopped and restarted at any point, with data being stored in the hdf5
-file format. A number of data vizulisation tools are provided and can be built
+file format. A number of data visualization tools are provided and can be built
 upon, with the aim being that publication quality figures can be achieved with
 minimal difficulty.
