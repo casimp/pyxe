@@ -58,7 +58,7 @@ def integration(h5py_file):
 
 def peak_fit():
     data, q0 = integration()
-   
+
     data.I += 1e-6
     data.peak_fit(3.1, 1.)
     q0.I += 1e-6
@@ -67,7 +67,7 @@ def peak_fit():
     q0.peak_fit(3.1, 1., func='lorentzian')
     q0.peak_fit(3.1, 1., func='psuedo_voigt')
     q0.peak_fit(3.1, 1., func='gaussian')
-    
+
     return data, q0
 
 
@@ -114,7 +114,7 @@ class TestEnergy(object):
         # Compare positions, same angle
         for idx in [0, 7, 12, 17, 22]:
             tensor = e_xx, e_yy, e_xy
-            
+
             initial = strain_transformation(self.data.phi[idx], *tensor)
             processed_1 = self.data.strain[..., idx]
             processed_2 = self.data.extract_slice(phi=self.data.phi[idx])
@@ -195,7 +195,7 @@ class TestEnergy(object):
             d2.plot_slice(name, az_idx=az)
             plt.close()
             # Except for contour levels must be increasing (silly array!)
-            # except ValueError: 
+            # except ValueError:
             #     pass
 
     def test_save_reload(self):
@@ -214,7 +214,9 @@ class TestEnergy(object):
         merged_reload_b.plot_slice('shear strain', phi=np.pi / 3)
         plt.close()
 
-        assert np.array_equal(merged.peaks, merged_reload.peaks)
+        err = '{}, {}, ({}, {})'.format(merged.peaks.shape, merged_reload.peaks.shape,
+                                        merged.peaks, merged_reload.peaks)
+        assert np.array_equal(merged.peaks, merged_reload.peaks),
 
     def test_save_to_text(self):
         self.data.calculate_strain(self.q0)
@@ -228,14 +230,14 @@ class TestEnergy(object):
         phi_lst = ['strain', 'shear strain', 'stress', 'shear stress']
         merged.save_to_txt('pyxe/data/test.csv', az_lst, az_idx=2)
         merged.save_to_txt('pyxe/data/test.csv', phi_lst, phi=-np.pi/3)
-        
+
     def test_crop_rotate_centre(self):
         data2 = copy.deepcopy(self.data)
         data2.centre((0.25, -0.25))
         data2.flipaxis(0)
         data2.flipaxis(1)
         data2.swapaxes(0, 1)
-        
+
         data2.crop1d(0, None, 2)
         data2.plot_slice('strain', phi=0)
         plt.close()
@@ -246,7 +248,7 @@ class TestEnergy(object):
         self.data.add_material('Fe')
         self.data.plot_intensity(pawley=True)
         plt.close()
-        
+
     def test_pawley_fit(self):
         data2 = copy.deepcopy(self.data)
         # Slow so reduce number of points
@@ -254,37 +256,37 @@ class TestEnergy(object):
         data2.add_material('Fe')
         data2.pawley_fit()
         data2.calculate_strain(a0=data2.peaks[0,0])
-        
+
     def test_fwhm_est(self):
         self.data.add_material('Fe')
         self.data.estimate_fwhm(pnt=(0,0),q0s=[3.01, 4.4, 5.37, 6.2, 6.9], k=0)
         self.data.estimate_fwhm(pnt=(0,0),q0s=[3.01, 4.4, 5.37, 6.2, 6.9], k=2)
         self.data.estimate_fwhm(pnt=(0,0),q0s=[3.01, 4.4, 5.37, 6.2, 6.9], k=1)
-        
+
     def test_define_background(self):
         self.data.add_material('Fe')
         self.data.define_background(seg=13, k=1)
         plt.close()
-        
+
     def test_define_temperature(self):
         # 2d temp distrib
-        self.data.define_temperature(T=[10, 20, 30, 40], d1=[-1, -1, 1, 1], 
+        self.data.define_temperature(T=[10, 20, 30, 40], d1=[-1, -1, 1, 1],
                                      d2=[-1, 1, -1, 1], plot=True)
         plt.close()
-        
+
         # 1d temp distrib in d1
-        self.data.define_temperature(T=[10, 20, 30, 40], d1=[-1, -0.8, 0, 1], 
-                             bounds_error=False, 
+        self.data.define_temperature(T=[10, 20, 30, 40], d1=[-1, -0.8, 0, 1],
+                             bounds_error=False,
                              fill_value='extrapolate', plot=True)
         plt.close()
         # 1d temp distrib in d2
         self.data.define_temperature(T=[10, 20, 30, 40], d2=[-1, -0.8, 0, 1],
-                                     bounds_error=False, 
+                                     bounds_error=False,
                                      fill_value='extrapolate', plot=True)
         plt.close()
-        
+
 #if __name__ == '__main__':
-#    
+#
 #    h = TestEnergy()
 #    h.data.calculate_strain(h.q0)
 #    h.data.plot_slice('strain', phi=0)
