@@ -216,7 +216,7 @@ class TestEnergy(object):
 
         err = '{}, {}, ({}, {})'.format(merged.peaks.shape, merged_reload.peaks.shape,
                                         merged.peaks, merged_reload.peaks)
-        assert np.array_equal(merged.peaks, merged_reload.peaks),
+        assert np.array_equal(merged.peaks, merged_reload.peaks)
 
     def test_save_to_text(self):
         self.data.calculate_strain(self.q0)
