@@ -52,22 +52,25 @@ def pyxe_to_hdf5(fname, pyxe, overwrite=False):
                 pass
 
         for name in detector_ids:
-            d_path = 'setup/%s' % name
-            data = getattr(pyxe.detector, name)
-            data = data.encode() if isinstance(data, string_types) else data
-            if data is not None:
-                if name == 'materials':
-                    for mat in data:
-                        d = [data[mat][x] for x in ['a', 'b', 'weight']]
-                        d_path_new = '{}/{}'.format(d_path, mat)
-                        f.create_dataset(d_path_new, data=np.array(d))
-                elif name == '_det_param':
-                    for param in data:
-                        d = data[param]
-                        d_path_new = '{}/{}'.format(d_path, param)
-                        f.create_dataset(d_path_new, data=np.array(d))
-                else:
-                    f.create_dataset(d_path, data=data)
+            try:
+                d_path = 'setup/%s' % name
+                data = getattr(pyxe.detector, name)
+                data = data.encode() if isinstance(data, string_types) else data
+                if data is not None:
+                    if name == 'materials':
+                        for mat in data:
+                            d = [data[mat][x] for x in ['a', 'b', 'weight']]
+                            d_path_new = '{}/{}'.format(d_path, mat)
+                            f.create_dataset(d_path_new, data=np.array(d))
+                    elif name == '_det_param':
+                        for param in data:
+                            d = data[param]
+                            d_path_new = '{}/{}'.format(d_path, param)
+                            f.create_dataset(d_path_new, data=np.array(d))
+                    else:
+                        f.create_dataset(d_path, data=data)
+            except AttributeError:
+                pass
 
 
 def data_extract(pyxe_h5, variable_id):
