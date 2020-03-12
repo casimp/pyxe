@@ -311,7 +311,11 @@ def peak_fit(data, window, p0=None, func='gaussian', poisson=True):
     
     # Likely better than a fixed value for EDXRD versus. monochromatic
     # as min(EDXRD_I>0) = 1 whereas min(mono_I>0) << 1
-    if sig is not None: sig[sig == 0] = np.min(sig[sig > 0])
+    if sig is not None: 
+        if np.max(sig) == 0:
+            sig[sig == 0] = 1
+        else:
+            sig[sig == 0] = np.min(sig[sig > 0])
     
     # Weighted fit is done in the following manner (see scipy docs):
     # r = ydata - f(xdata, *popt)
