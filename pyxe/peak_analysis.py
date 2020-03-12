@@ -358,7 +358,7 @@ class PeakAnalysis(DataViz):
             q0 (float, object): q0 float or pyxe data object
             a0 (float, object): a0 float or pyxe data object
             tensor_fit (bool): Calculate the full strain tensor
-            f (func): interp1d or interpd2d function
+            f (func, np.array): interp1d/interpd2d func, or np.array w/ polyval
             variables (list): list of variables ('d1', 'd2', 'T' etc) for func
         """
         assert (q0, a0) is not (None, None), 'Specify either q0 or a0'
@@ -368,9 +368,16 @@ class PeakAnalysis(DataViz):
             vals = []
             for v in variables:
                 vals.append(self.__dict__[v])
+            
             # This should just tell us the distribution of q0/a0 wrt. 
             # variables not wrt. phi
-            q0_mean = f(*vals)
+            if isinstance(f, np.ndarray):
+                err_string = 'Passed in a numpy array for polyval;' \
+                + 'can only use single variable for fit'
+                assert len(vals) == 1, err_string
+                q0_mean = np.polyval(f, vals[0])
+            else:
+                q0_mean = f(*vals)
             # print('q0_mean', np.shape(q0_mean))
             #q0_mean.respae()
 
