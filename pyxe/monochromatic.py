@@ -112,10 +112,9 @@ class MonoDLS(PeakAnalysis):
         self.q = np.repeat(q[None, :], self.phi.size, axis=0)
         self.analysis_state = 'integrated'
         try:
-            if isinstance(detector, dict):
+            if isinstance(detector, tuple):
                 default = ('Pilatus', 1000, 80, 0.1)
                 detector = [i if i is not None else j for i, j in zip(detector, default)]
-                name, sample_detector, energy, delta_energy = detector
                 self.detector = detectors[detector[0]](*detector[1:])
             else:
                 self.detector = detector
