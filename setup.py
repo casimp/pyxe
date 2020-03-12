@@ -11,7 +11,7 @@ setup(
     download_url = 'https://github.com/casimp/pyxe/tarball/v0.9.3',
     license='LICENSE.txt',
     description='XRD strain analysis package. Efficient analysis and visulisation of diffraction data.',
-    keywords = ['XRD', 'EDXD', 'x-ray', 'diffraction', 'strain', 'synchrotron'],
+    keywords = ['XRD', 'EDXRD', 'x-ray', 'diffraction', 'strain', 'synchrotron'],
 #    long_description=open('description').read(),
     classifiers=[
         "Development Status :: 4 - Beta",
