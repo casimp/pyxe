@@ -434,7 +434,7 @@ def full_ring_fit(strain, phi):
             strain_tensor_rmse[idx] = np.nanmean((e_t - e)**2)**0.5
             
             
-        except (TypeError, RuntimeError):
+        except (TypeError, RuntimeError, ValueError):
             error_count += 1
         #else:
         #    error_count += 1
